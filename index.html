@@ -171,6 +171,11 @@
     .bob { animation: bob 3.2s ease-in-out infinite; }
     @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
+    .mascot .spark { animation: spark 2.8s ease-in infinite; opacity: 0; }
+    @keyframes spark { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .95; } 100% { transform: translateY(-38px); opacity: 0; } }
+    .mascot .aura { transform-origin: 60px 70px; animation: aura 3s ease-in-out infinite; }
+    @keyframes aura { 0%,100% { opacity: .3; transform: scale(1); } 50% { opacity: .75; transform: scale(1.06); } }
+
     /* ===== Splash ===== */
     #splash {
       position: fixed; inset: 0; z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -190,18 +195,38 @@
     #splash .bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #f59e0b, #fcd34d); transform-origin: left; animation: load 1.6s .2s cubic-bezier(.65,0,.35,1) backwards; border-radius: 3px; }
     @keyframes load { from { transform: scaleX(0); } }
 
+    /* ===== Budget game bits ===== */
+    .punch { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed rgba(255,255,255,.22); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; }
+    .punch.on { border: 1.5px solid rgba(245,158,11,.7); background: radial-gradient(circle at 50% 35%, rgba(0,0,0,.75), rgba(245,158,11,.22)); box-shadow: inset 0 2px 6px rgba(0,0,0,.7), 0 0 14px rgba(245,158,11,.3); color: #fcd34d; font-weight: 700; }
+    .punch.on span { line-height: 1; }
+    .punch i { font-style: normal; font-size: 7.5px; font-weight: 500; color: rgba(255,255,255,.5); margin-top: 1px; }
+    .punch.fresh { animation: punchIn .75s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes punchIn { 0% { transform: scale(1.8); opacity: 0; } 60% { transform: scale(.88); } 100% { transform: scale(1); opacity: 1; } }
+    .punch-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+    .bingo-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+    .pulse-btn { animation: pulseBtn 1.6s ease-in-out infinite; }
+    @keyframes pulseBtn { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,.5); } 50% { box-shadow: 0 0 0 10px rgba(16,185,129,0); } }
+    .bingo-sq { aspect-ratio: 1; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 3px; text-align: center; min-width: 0; }
+    .bingo-sq .bq { font-size: 8.5px; line-height: 1.1; color: rgba(255,255,255,.62); display: block; overflow: hidden; max-height: 2.25em; overflow-wrap: anywhere; }
+    .bingo-sq.on { background: rgba(245,158,11,.22); border-color: rgba(245,158,11,.5); color: #fcd34d; }
+    .bingo-sq.on .bq { color: rgba(253,230,138,.85); }
+    .bingo-sq.win { box-shadow: 0 0 0 1.5px rgba(52,211,153,.85), 0 0 14px rgba(52,211,153,.35); }
+    #earn-pop {
+      position: fixed; left: 50%; bottom: calc(88px + env(safe-area-inset-bottom)); width: min(92vw, 380px); z-index: 150;
+      padding: 16px; border-radius: 24px; background: linear-gradient(160deg, rgba(44,44,58,.96), rgba(18,18,26,.97));
+      border: 1px solid rgba(255,255,255,.16); box-shadow: 0 20px 50px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.12);
+      transform: translate(-50%, 40px) scale(.94); opacity: 0; pointer-events: none;
+      transition: transform .55s cubic-bezier(.34,1.4,.64,1), opacity .3s;
+    }
+    #earn-pop.show { transform: translate(-50%, 0) scale(1); opacity: 1; pointer-events: auto; }
+
     .view { will-change: transform, opacity; }
   </style>
 </head>
 <body class="spatial-bg h-full flex flex-col">
 
   <!-- shared mascot gradients -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <defs>
-      <linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde68a"/><stop offset=".45" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/></linearGradient>
-      <linearGradient id="mg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbeb"/><stop offset="1" stop-color="#fcd34d"/></linearGradient>
-    </defs>
-  </svg>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="mascot-defs"></defs></svg>
 
   <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
 
@@ -248,8 +273,11 @@
 
         <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
           <div class="grid grid-cols-3 gap-3">
-            <div class="glass rounded-2xl p-3.5 text-center float">
-              <div class="text-2xl font-semibold text-amber-300" id="stat-streak">0</div>
+            <div class="glass rounded-2xl p-3.5 text-center float" onclick="openStreakSheet()">
+              <div class="flex items-center justify-center gap-1.5">
+                <span id="stat-flame" class="inline-block" style="width:18px;height:24px"></span>
+                <span class="text-2xl font-semibold text-amber-300" id="stat-streak">0</span>
+              </div>
               <div class="text-[10px] text-white/40 mt-0.5 uppercase tracking-wide">Streak</div>
             </div>
             <div class="glass rounded-2xl p-3.5 text-center float">
@@ -269,9 +297,9 @@
               <div class="text-[11px] text-white/40">Worked or scheduled</div>
             </button>
             <button onclick="showView('money')" class="glass-strong rounded-2xl p-4 text-left float">
-              <div class="text-2xl mb-1">💵</div>
-              <div class="text-sm font-medium">Paycheck</div>
-              <div class="text-[11px] text-white/40">Record & allocate</div>
+              <div class="text-2xl mb-1">💸</div>
+              <div class="text-sm font-medium">Budget</div>
+              <div class="text-[11px] text-white/40">Plan your next check</div>
             </button>
           </div>
 
@@ -355,25 +383,45 @@
         </div>
       </div>
 
-      <!-- MONEY -->
+      <!-- BUDGET -->
       <div id="view-money" class="view absolute inset-0 flex flex-col safe-top hidden">
         <div class="px-5 pt-3 pb-2">
-          <h1 class="text-[28px] font-semibold tracking-tight">Money</h1>
-          <p class="text-sm text-white/40 mt-0.5">Checks in. Money into goals. Tap a check to edit.</p>
+          <h1 class="text-[28px] font-semibold tracking-tight">Budget</h1>
+          <p class="text-sm text-white/40 mt-0.5">Plan the check before it lands.</p>
         </div>
-        <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
-          <div class="grid grid-cols-2 gap-3">
-            <div class="glass rounded-2xl p-3.5">
-              <div class="text-[10px] text-white/40 uppercase tracking-wide">Received</div>
-              <div class="text-xl font-semibold mt-0.5" id="money-total">$0.00</div>
-            </div>
-            <div class="glass rounded-2xl p-3.5">
-              <div class="text-[10px] text-white/40 uppercase tracking-wide">Unallocated</div>
-              <div class="text-xl font-semibold mt-0.5 text-amber-300" id="money-unalloc">$0.00</div>
+        <div class="flex-1 scroll-y px-5 pb-28 space-y-5">
+          <div id="bud-hero"></div>
+          <div>
+            <div class="flex items-center justify-between mb-2 px-1"><h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Must pay</h2><span id="bud-bills-sum" class="text-[11px] text-white/40"></span></div>
+            <div id="bud-bills" class="space-y-2"></div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-2 px-1"><h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Spending plans</h2><span id="bud-spend-sum" class="text-[11px] text-white/40"></span></div>
+            <div id="bud-spend" class="space-y-2"></div>
+          </div>
+          <button onclick="openBudgetItemSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add bill or spending plan</button>
+          <div id="punch-card"></div>
+          <div id="bingo-card"></div>
+          <div>
+            <button onclick="toggleChecks()" class="w-full glass-subtle rounded-2xl px-4 py-3 flex items-center justify-between text-left">
+              <span><span class="text-sm font-medium">Paychecks</span> <span id="checks-sum" class="text-[11px] text-white/40 ml-1"></span></span>
+              <span id="checks-caret" class="text-white/40 text-sm transition-transform">▾</span>
+            </button>
+            <div id="checks-body" class="hidden mt-3">
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div class="glass rounded-2xl p-3.5">
+                  <div class="text-[10px] text-white/40 uppercase tracking-wide">Received</div>
+                  <div class="text-xl font-semibold mt-0.5" id="money-total">$0.00</div>
+                </div>
+                <div class="glass rounded-2xl p-3.5">
+                  <div class="text-[10px] text-white/40 uppercase tracking-wide">Unallocated</div>
+                  <div class="text-xl font-semibold mt-0.5 text-amber-300" id="money-unalloc">$0.00</div>
+                </div>
+              </div>
+              <button onclick="openCheckSheet()" class="w-full py-3 rounded-2xl bg-amber-500 text-black font-semibold text-sm mb-3">+ Record Paycheck</button>
+              <div id="checks-list" class="space-y-3"></div>
             </div>
           </div>
-          <button onclick="openCheckSheet()" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">+ Record Paycheck</button>
-          <div id="checks-list" class="space-y-3"></div>
         </div>
       </div>
 
@@ -387,6 +435,7 @@
           <div class="glass-strong rounded-2xl p-4 border border-emerald-500/20 shadow-glow-green">
             <div class="text-[11px] text-white/40 uppercase tracking-wider">Lifetime Saved</div>
             <div class="text-3xl font-semibold text-emerald-400 mt-1" id="lifetime-saved">$0.00</div>
+            <div id="milestone-box"></div>
           </div>
           <div id="goals-list" class="space-y-3"></div>
           <button onclick="openGoalSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add goal</button>
@@ -401,7 +450,7 @@
         <button onclick="showView('home')" data-view="home" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">🏠</span><span class="text-[10px] font-medium">Home</span></button>
         <button onclick="showView('jobs')" data-view="jobs" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">💼</span><span class="text-[10px] font-medium">Jobs</span></button>
         <button onclick="showView('log')" data-view="log" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">⏱️</span><span class="text-[10px] font-medium">Log</span></button>
-        <button onclick="showView('money')" data-view="money" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">💰</span><span class="text-[10px] font-medium">Money</span></button>
+        <button onclick="showView('money')" data-view="money" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">🧾</span><span class="text-[10px] font-medium">Budget</span></button>
         <button onclick="showView('goals')" data-view="goals" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">🎯</span><span class="text-[10px] font-medium">Goals</span></button>
       </div>
     </div>
@@ -414,6 +463,7 @@
   </div>
 
   <div id="toast"></div>
+  <div id="earn-pop"></div>
 
   <script>
     // ========== CONSTANTS / STATE ==========
@@ -446,7 +496,7 @@
       return isNaN(d) ? (s || '') : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
     }
     function dayDiff(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000); }
-    function xpNeeded(level) { return Math.floor(100 * Math.pow(1.35, level - 1)); }
+    function xpNeeded(level) { return Math.floor(250 * Math.pow(1.5, level - 1)); }
     function levelTitle(l) { return LEVEL_TITLES[Math.min(l, 10)] || `Level ${l}`; }
     function goalCurrent(g) { return r2((g.contributions || []).reduce((s, c) => s + c.amount, 0)); }
     function checkAllocated(id) { return r2(state.goals.reduce((s, g) => s + g.contributions.filter(c => c.checkId === id).reduce((a, c) => a + c.amount, 0), 0)); }
@@ -454,18 +504,46 @@
     function jobById(id) { return state.jobs.find(j => j.id === id); }
     function jobLabel(id) { const j = jobById(id); return j ? `${j.icon} ${esc(j.name)}` : '— Deleted job'; }
 
-    function mascot(cls = '') {
+    // Flame stages: evolves with your streak
+    const GRACE = 3; // log at least every 3 days (2 days off in a row is fine)
+    const STAGE_AT = [0, 1, 7, 14, 30, 60];
+    const STAGE_NAMES = ['Cold', 'Spark', 'Flame', 'Blaze', 'Inferno', 'Legend'];
+    const STAGE_PAL = [
+      { c: ['#d6d3d1', '#a8a29e', '#57534e'], i: ['#e7e5e4', '#a8a29e'], glow: 'rgba(168,162,158,.25)' },
+      { c: ['#fde68a', '#fbbf24', '#d97706'], i: ['#fffbeb', '#fcd34d'], glow: 'rgba(245,158,11,.45)' },
+      { c: ['#fed7aa', '#fb923c', '#c2410c'], i: ['#fff7ed', '#fdba74'], glow: 'rgba(249,115,22,.5)' },
+      { c: ['#fecaca', '#f87171', '#b91c1c'], i: ['#fff1f2', '#fca5a5'], glow: 'rgba(239,68,68,.55)' },
+      { c: ['#bfdbfe', '#60a5fa', '#1d4ed8'], i: ['#eff6ff', '#93c5fd'], glow: 'rgba(59,130,246,.6)' },
+      { c: ['#e9d5ff', '#a78bfa', '#6d28d9'], i: ['#faf5ff', '#d8b4fe'], glow: 'rgba(167,139,250,.7)' }
+    ];
+    function streakStage(n) { let st = 0; STAGE_AT.forEach((t, i) => { if (i > 0 && n >= t) st = i; }); return st; }
+    function buildDefs() {
+      $('mascot-defs').innerHTML = STAGE_PAL.map((p, i) =>
+        `<linearGradient id="mg${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.c[0]}"/><stop offset=".45" stop-color="${p.c[1]}"/><stop offset="1" stop-color="${p.c[2]}"/></linearGradient>` +
+        `<linearGradient id="ig${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.i[0]}"/><stop offset="1" stop-color="${p.i[1]}"/></linearGradient>`).join('');
+    }
+    function flameIcon(stage) {
+      return `<svg viewBox="20 0 80 116" class="mascot" aria-hidden="true"><path d="M60 6c5 22 34 34 34 68 0 22-15 38-34 38S26 96 26 74c0-18 11-26 17-40 4 7 9 9 17-28z" fill="url(#mg${stage})"/><path d="M60 42c3 12 20 20 20 38 0 14-9 24-20 24s-20-10-20-24c0-10 6-15 10-24 3 4 7 6 10-14z" fill="url(#ig${stage})" opacity=".75"/></svg>`;
+    }
+    function mascot(cls = '', stage) {
+      stage = Math.max(1, stage ?? ui.mascotStage ?? 1);
+      const col = STAGE_PAL[stage].c[0];
+      const tongues = stage >= 3 ? `<path d="M34 64c-10-8-10-22-4-32 2 10 10 16 12 26z" fill="url(#mg${stage})" opacity=".85"/><path d="M86 64c10-8 10-22 4-32-2 10-10 16-12 26z" fill="url(#mg${stage})" opacity=".85"/>` : '';
+      const sparks = stage >= 4 ? [[28, 62, 0], [94, 68, .9], [60, 20, 1.7]].map(([x, y, d]) => `<circle class="spark" cx="${x}" cy="${y}" r="2.4" fill="${col}" style="animation-delay:${d}s"/>`).join('') : '';
+      const aura = stage >= 5 ? `<circle class="aura" cx="60" cy="70" r="58" fill="none" stroke="${col}" stroke-width="1.5"/>` : '';
       return `<svg viewBox="0 0 120 124" class="mascot ${cls}" aria-hidden="true">
+        ${aura}
         <ellipse class="m-shadow" cx="60" cy="116" rx="26" ry="4.5" fill="#000" opacity=".4"/>
         <g class="m-body">
-          <path d="M60 6c5 22 34 34 34 68 0 22-15 38-34 38S26 96 26 74c0-18 11-26 17-40 4 7 9 9 17-28z" fill="url(#mg)"/>
-          <path d="M60 42c3 12 20 20 20 38 0 14-9 24-20 24s-20-10-20-24c0-10 6-15 10-24 3 4 7 6 10-14z" fill="url(#mg2)" opacity=".65"/>
+          ${tongues}
+          <path d="M60 6c5 22 34 34 34 68 0 22-15 38-34 38S26 96 26 74c0-18 11-26 17-40 4 7 9 9 17-28z" fill="url(#mg${stage})"/>
+          <path d="M60 42c3 12 20 20 20 38 0 14-9 24-20 24s-20-10-20-24c0-10 6-15 10-24 3 4 7 6 10-14z" fill="url(#ig${stage})" opacity=".65"/>
           <g class="m-eyes">
             <path d="M42 73h14a7 7 0 0 1-14 0z" fill="#1b1208"/><path d="M64 73h14a7 7 0 0 1-14 0z" fill="#1b1208"/>
             <circle cx="52" cy="77" r="1.6" fill="#fff" opacity=".85"/><circle cx="74" cy="77" r="1.6" fill="#fff" opacity=".85"/>
           </g>
           <path d="M53 90q7 4.5 14 0" fill="none" stroke="#1b1208" stroke-width="3" stroke-linecap="round"/>
-        </g></svg>`;
+        </g>${sparks}</svg>`;
     }
     function empty(msg) {
       return `<div class="py-6 flex flex-col items-center gap-2 text-sm text-white/35 text-center"><div class="w-14 h-14 opacity-80">${mascot()}</div>${msg}</div>`;
@@ -509,6 +587,17 @@
         delete g.current;
         return g;
       });
+      // Budget / punch card / bingo (added later; fill in defaults for older saves)
+      const t = today(), B = state.budget || {}, P = state.punch || {}, G = state.bingo || {};
+      state.budget = {
+        periodStart: B.periodStart || addDays(t, -7),
+        nextPayday: B.nextPayday || addDays(t, 7),
+        expectedIncome: B.expectedIncome > 0 ? B.expectedIncome : null,
+        items: Array.isArray(B.items) ? B.items : []
+      };
+      state.budget.items.forEach(i => { i.spends = Array.isArray(i.spends) ? i.spends : []; i.kind = i.kind === 'bill' ? 'bill' : 'spend'; });
+      state.punch = { reward: P.reward || '', days: Array.isArray(P.days) ? [...new Set(P.days)].sort().slice(0, 10) : [], claimed: P.claimed || 0 };
+      state.bingo = { anchor: G.anchor || t, cycles: G.cycles && typeof G.cycles === 'object' ? G.cycles : {} };
     }
 
     function load() {
@@ -570,22 +659,26 @@
     }
 
     // ========== PROGRESS (derived from data, so deleting/editing always stays consistent) ==========
+    function addDays(str, n) { const d = new Date(Date.parse(str + 'T00:00:00Z') + n * 86400000); return d.toISOString().slice(0, 10); }
+    // Streak = days you logged, as long as you never go more than GRACE days between logs.
     function calcStreaks() {
       const t = today();
       const dates = [...new Set(state.timeEntries.map(e => e.date))].filter(d => d <= t).sort();
       let longest = 0, run = 0, prev = null;
-      for (const d of dates) { run = (prev && dayDiff(prev, d) === 1) ? run + 1 : 1; longest = Math.max(longest, run); prev = d; }
+      for (const d of dates) { run = (prev && dayDiff(prev, d) <= GRACE) ? run + 1 : 1; longest = Math.max(longest, run); prev = d; }
       const last = dates.length ? dates[dates.length - 1] : null;
-      const cur = last && dayDiff(last, t) <= 1 ? run : 0;
+      const cur = last && dayDiff(last, t) <= GRACE ? run : 0;
       return { cur, longest, last };
     }
     function recalc() {
       let xp = 0;
-      xp += state.jobs.filter(j => !j.seed).length * 25;
-      xp += state.goals.length * 20;
-      xp += state.paychecks.length * 40;
-      state.timeEntries.forEach(e => { xp += Math.round(e.hours * 8) + (e.actual ? 10 : 5); });
-      state.goals.forEach(g => { xp += Math.round(Math.max(0, goalCurrent(g)) / 5); });
+      xp += state.jobs.filter(j => !j.seed).length * 10;
+      xp += state.goals.length * 10;
+      xp += state.paychecks.length * 25;
+      state.timeEntries.forEach(e => { xp += Math.round(e.hours * 2) + (e.actual ? 5 : 2); });
+      state.goals.forEach(g => { xp += Math.round(Math.max(0, goalCurrent(g)) / 10); });
+      xp += (state.punch.claimed * 10 + state.punch.days.length) * 5 + state.punch.claimed * 50;
+      Object.values(state.bingo.cycles).forEach(a => { xp += a.length * 12 + bingoLines(a) * 40; });
       let level = 1, rem = xp;
       while (rem >= xpNeeded(level)) { rem -= xpNeeded(level); level++; }
       const s = calcStreaks();
@@ -598,7 +691,7 @@
     }
     // Call after any change: recalc, save, redraw, celebrate.
     function commit(msg) {
-      const prevXp = state.progress.totalXp || 0, prevLevel = state.progress.level;
+      const prevXp = state.progress.totalXp || 0, prevLevel = state.progress.level, prevStage = streakStage(state.progress.currentStreak), prevSaved = state.progress.totalSaved || 0;
       recalc();
       save();
       render();
@@ -606,6 +699,12 @@
       if (state.progress.level > prevLevel) {
         toast(`Level ${state.progress.level} · ${levelTitle(state.progress.level)}`);
         const b = $('level-badge'); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump');
+      } else if (streakStage(state.progress.currentStreak) > prevStage) {
+        toast('🔥 Your flame evolved · ' + STAGE_NAMES[streakStage(state.progress.currentStreak)]);
+        const m = $('home-mascot'); m.classList.remove('bump'); void m.offsetWidth; m.classList.add('bump');
+      } else if (MILESTONES.some(m => prevSaved < m[0] && state.progress.totalSaved >= m[0])) {
+        const m = MILESTONES.filter(m => prevSaved < m[0] && state.progress.totalSaved >= m[0]).pop();
+        toast(`🏆 Milestone · ${m[1]}`);
       } else if (msg) {
         toast(msg + (gain > 0 ? ` · +${gain} XP` : ''));
       }
@@ -638,7 +737,8 @@
     function pick(group, val) {
       ui.pick[group] = val;
       document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.toggle('on', b.dataset.val === val));
-      if (group === 'jtype') $('f-rate-wrap')?.classList.toggle('hidden', val !== 'hourly');
+      if (group === 'jtype') $('f-rate-wrap')?.classList.toggle('hidden', val === 'other');
+      if (group === 'bkind') $('b-due-wrap')?.classList.toggle('hidden', val !== 'bill');
       if (group === 'cmode') {
         $('c-check-wrap')?.classList.toggle('hidden', val !== 'add');
         const b = $('c-save'); if (b) b.textContent = val === 'add' ? 'Add Money' : 'Withdraw';
@@ -717,9 +817,18 @@
       $('xp-needed').textContent = (needed - p.xp) + ' to next';
       $('xp-bar').style.width = Math.min(100, (p.xp / needed) * 100) + '%';
       $('stat-streak').textContent = p.currentStreak;
+      const st = streakStage(p.currentStreak);
+      if (ui._renderedStage !== st) {
+        ui._renderedStage = st;
+        ui.mascotStage = Math.max(1, st);
+        $('home-mascot').innerHTML = mascot('', st);
+        $('stat-flame').innerHTML = flameIcon(st);
+      }
       $('stat-hours').textContent = Math.round(p.totalHours * 10) / 10;
       $('stat-saved').textContent = '$' + Math.round(p.totalSaved);
       $('lifetime-saved').textContent = fmt(p.totalSaved);
+      renderMilestones();
+      renderBudget();
 
       const active = state.jobs.filter(j => j.active !== false);
 
@@ -729,17 +838,22 @@
           <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style="background:${j.color}22">${esc(j.icon)}</div>
           <div class="flex-1 min-w-0">
             <div class="font-medium truncate">${esc(j.name)}</div>
-            <div class="text-[11px] text-white/40">${j.type === 'hourly' && j.rate ? '$' + j.rate + '/hr' : j.type === 'gig' ? 'Gig / Variable' : j.type === 'hourly' ? 'Hourly' : 'Other'}</div>
+            <div class="text-[11px] text-white/40">${j.rate ? '$' + j.rate + '/hr' : j.type === 'gig' ? 'Gig / Variable' : j.type === 'hourly' ? 'Hourly' : 'Other'}</div>
           </div>
         </div>`).join('') : `<div class="glass rounded-2xl p-4 text-center text-sm text-white/40">No active jobs. <button onclick="openJobSheet()" class="text-amber-300">Add one</button></div>`;
 
       // Home goals
       $('home-goals-section').classList.toggle('hidden', !state.goals.length);
-      $('home-goals').innerHTML = state.goals.slice(0, 3).map(g => {
-        const cur = goalCurrent(g), pct = goalPct(g);
+      const homeGoals = [...state.goals].sort((a, b) => (nextPlan(b) ? 1 : 0) - (nextPlan(a) ? 1 : 0)).slice(0, 4);
+      $('home-goals').innerHTML = homeGoals.map(g => {
+        const cur = goalCurrent(g), pct = goalPct(g), nx = nextPlan(g);
         return `<div class="glass rounded-2xl p-3.5 tap" onclick="openGoalSheet('${g.id}')">
           <div class="flex justify-between text-sm mb-1.5"><span class="font-medium truncate pr-2">${esc(g.name)}</span><span class="text-white/50 shrink-0">${fmt(cur)} / ${fmt(g.target)}</span></div>
-          <div class="progress-track h-1.5"><div class="progress-fill bg-emerald-400" style="width:${pct}%"></div></div></div>`;
+          <div class="progress-track h-1.5"><div class="progress-fill bg-emerald-400" style="width:${pct}%"></div></div>
+          ${nx ? `<div class="mt-2.5 flex items-center justify-between gap-2">
+            <span class="text-[11px] text-amber-300/90">Next paycheck · save ${fmt(nx.amount)}</span>
+            <button onclick="event.stopPropagation();completePlan('${g.id}')" class="text-[11px] px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">Mark saved</button>
+          </div>` : ''}</div>`;
       }).join('');
 
       // Jobs list
@@ -749,7 +863,7 @@
           <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl" style="background:${j.color}22">${esc(j.icon)}</div>
           <div class="flex-1 min-w-0">
             <div class="font-medium truncate">${esc(j.name)}</div>
-            <div class="text-[11px] text-white/40">${j.type === 'hourly' ? (j.rate ? '$' + j.rate + '/hr' : 'Hourly') : j.type === 'gig' ? 'Gig' : 'Other'} · ${Math.round(hrs * 10) / 10}h logged</div>
+            <div class="text-[11px] text-white/40">${j.rate ? '$' + j.rate + '/hr' : j.type === 'hourly' ? 'Hourly' : j.type === 'gig' ? 'Gig' : 'Other'} · ${Math.round(hrs * 10) / 10}h logged</div>
           </div>
           <button onclick="event.stopPropagation();toggleJobActive('${j.id}')" class="text-[11px] px-2.5 py-1 rounded-full ${j.active !== false ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white/40'}">${j.active !== false ? 'Active' : 'Paused'}</button>
         </div>`;
@@ -804,7 +918,7 @@
           </div>
           <div class="text-[11px] text-white/40 mb-2">${fmt(cur)} of ${fmt(g.target)}</div>
           <div class="progress-track h-2"><div class="progress-fill ${done ? 'bg-amber-400' : 'bg-emerald-400'}" style="width:${pct}%"></div></div>
-          <div class="mt-3"><button onclick="event.stopPropagation();openContribSheet('${g.id}')" class="text-[12px] px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">+ Add money</button></div>
+          <div class="mt-3 flex items-center justify-between gap-2"><button onclick="event.stopPropagation();openContribSheet('${g.id}')" class="text-[12px] px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">+ Add money</button>${nextPlan(g) ? `<span class="text-[11px] text-amber-300/90">Next paycheck · ${fmt(nextPlan(g).amount)}</span>` : ''}</div>
         </div>`;
       }).join('') : empty('No goals yet. Set one and start stacking.');
     }
@@ -821,7 +935,7 @@
         <div class="space-y-3">
           <input id="f-name" type="text" placeholder="Job name (Walmart, Uber Eats…)" value="${esc(j?.name)}" class="w-full px-3.5 py-3 text-sm" />
           ${seg('jtype', [['hourly', 'Hourly'], ['gig', 'Gig'], ['other', 'Other']], ui.pick.jtype, 'py-2 text-xs')}
-          <div id="f-rate-wrap" class="${ui.pick.jtype === 'hourly' ? '' : 'hidden'}"><input id="f-rate" type="number" inputmode="decimal" step="0.01" placeholder="Hourly rate (optional)" value="${j?.rate ?? ''}" class="w-full px-3.5 py-3 text-sm" /></div>
+          <div id="f-rate-wrap" class="${ui.pick.jtype !== 'other' ? '' : 'hidden'}"><input id="f-rate" type="number" inputmode="decimal" step="0.01" placeholder="Pay per hour (optional)" value="${j?.rate ?? ''}" class="w-full px-3.5 py-3 text-sm" /></div>
           <div class="flex flex-wrap gap-2">${JOB_ICONS.map(i =>
             `<button type="button" data-group="jicon" data-val="${i}" onclick="pick('jicon','${i}')" class="seg seg-icon ${i === ui.pick.jicon ? 'on' : ''} w-10 h-10 rounded-xl text-lg">${i}</button>`).join('')}</div>
           <button onclick="saveJob('${id || ''}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">${j ? 'Save changes' : 'Add Job'}</button>
@@ -832,7 +946,7 @@
       const name = $('f-name').value.trim();
       if (!name) { toast('Give the job a name'); return; }
       const type = ui.pick.jtype;
-      const rate = type === 'hourly' ? (parseFloat($('f-rate').value) || null) : null;
+      const rate = type !== 'other' ? (parseFloat($('f-rate').value) || null) : null;
       if (id) {
         const j = jobById(id);
         Object.assign(j, { name, type, rate, icon: ui.pick.jicon });
@@ -858,9 +972,11 @@
       const notes = $('log-notes').value.trim();
       if (!jobId) { toast('Add a job first'); return; }
       if (!hours || hours <= 0) { toast('Enter hours'); return; }
-      state.timeEntries.push({ id: uid(), jobId, date, hours, actual: ui.pick.logType === 'worked', notes: notes || undefined, created: new Date().toISOString() });
+      const entry = { id: uid(), jobId, date, hours, actual: ui.pick.logType === 'worked', notes: notes || undefined, created: new Date().toISOString() };
+      state.timeEntries.push(entry);
       $('log-hours').value = ''; $('log-notes').value = '';
       commit('Logged');
+      showEarnPop(entry);
       const btn = $('btn-log'); btn.textContent = '✓ Logged'; setTimeout(() => { btn.textContent = 'Log Hours'; }, 1800);
     }
     function openEntrySheet(id) {
@@ -921,6 +1037,10 @@
       if (id) Object.assign(state.paychecks.find(x => x.id === id), data);
       else state.paychecks.push({ id: uid(), ...data, created: new Date().toISOString() });
       closeSheet(); commit(id ? 'Paycheck updated' : 'Paycheck saved');
+      if (!id) {
+        const due = state.goals.filter(g => nextPlan(g));
+        if (due.length) setTimeout(() => toast(`Plan: save ${fmt(nextPlan(due[0]).amount)} → ${due[0].name}` + (due.length > 1 ? ` (+${due.length - 1} more)` : '')), 2700);
+      }
     }
     function deleteCheck(id) {
       state.paychecks = state.paychecks.filter(c => c.id !== id);
@@ -955,6 +1075,7 @@
             <button onclick="openContribSheet('${g.id}')" class="py-3 rounded-xl bg-emerald-500 text-black font-semibold text-sm">+ Add money</button>
             <button onclick="openContribSheet('${g.id}',null,'withdraw')" class="py-3 rounded-xl glass-subtle text-sm font-medium">Withdraw</button>
           </div>
+          <button onclick="openPlanSheet('${g.id}')" class="w-full py-3 rounded-xl glass-subtle text-sm font-medium flex items-center justify-between px-4"><span>📋 Paycheck plan</span><span class="text-amber-300/80 text-xs">${nextPlan(g) ? 'Next: ' + fmt(nextPlan(g).amount) : 'Set up'}</span></button>
           <div class="pt-1 space-y-2">
             <label class="text-[11px] text-white/40 uppercase tracking-wider">Edit goal</label>
             <input id="g-name" type="text" value="${esc(g.name)}" class="w-full px-3.5 py-3 text-sm" />
@@ -996,8 +1117,119 @@
     function deleteContrib(goalId, cid) {
       const g = state.goals.find(x => x.id === goalId); if (!g) return;
       g.contributions = g.contributions.filter(c => c.id !== cid);
+      (g.plan || []).forEach(p => { if (p.contribId === cid) { p.done = false; p.contribId = null; } });
       commit('Removed');
       openGoalSheet(goalId);
+    }
+
+    // ========== PAYCHECK PLAN ==========
+    function nextPlan(g) { return (g.plan || []).find(p => !p.done); }
+    function setPlanDone(g, p, done) {
+      if (done) {
+        const cid = uid();
+        const latest = [...state.paychecks].sort((a, b) => b.date.localeCompare(a.date))[0];
+        const link = latest && checkRemaining(latest) >= p.amount - 0.004 ? latest.id : null;
+        g.contributions.push({ id: cid, amount: p.amount, date: today(), note: 'Paycheck plan', checkId: link, created: new Date().toISOString() });
+        p.done = true; p.contribId = cid;
+      } else {
+        g.contributions = g.contributions.filter(c => c.id !== p.contribId);
+        p.done = false; p.contribId = null;
+      }
+    }
+    function openPlanSheet(gid) {
+      const g = state.goals.find(x => x.id === gid); if (!g) return;
+      g.plan = g.plan || [];
+      const nx = nextPlan(g), total = g.plan.length, done = g.plan.filter(p => p.done).length;
+      const planned = r2(g.plan.filter(p => !p.done).reduce((a, p) => a + p.amount, 0));
+      const needed = Math.max(0, r2(g.target - goalCurrent(g)));
+      openSheet(`
+        ${sheetHead('Paycheck plan', esc(g.name))}
+        <div class="space-y-3">
+          <div class="glass-subtle rounded-2xl p-3.5">
+            ${nx ? `<div class="text-[11px] text-amber-300/80 uppercase tracking-wider">Next paycheck</div>
+              <div class="text-2xl font-semibold mt-0.5">Save ${fmt(nx.amount)}</div>
+              <button onclick="completePlan('${g.id}',true)" class="mt-3 w-full py-3 rounded-xl bg-emerald-500 text-black font-semibold text-sm">Mark saved</button>`
+              : `<div class="text-sm text-white/55">${total ? 'Plan complete. Add more amounts below.' : 'No plan yet. Add the amount you want to save from each paycheck.'}</div>`}
+            <div class="text-[11px] text-white/40 mt-2.5">${total ? `${done} of ${total} paychecks done · ` : ''}${needed > 0 ? `${fmt(planned)} planned of ${fmt(needed)} still needed` : 'Goal reached'}</div>
+          </div>
+          <div>
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">Add amounts</label>
+            <div class="flex gap-2 mt-1">
+              <input id="p-amounts" type="text" inputmode="decimal" placeholder="50, 50, 75, 100" class="flex-1 min-w-0 px-3.5 py-3 text-sm" />
+              <button onclick="addPlan('${g.id}')" class="px-4 rounded-xl bg-amber-500 text-black font-semibold text-sm">Add</button>
+            </div>
+            <div class="text-[11px] text-white/35 mt-1.5">One amount per paycheck, in order. Separate several with commas or spaces.</div>
+          </div>
+          ${total ? `<div class="space-y-1.5">${g.plan.map((p, i) => `
+            <div class="flex items-center gap-3 glass-subtle rounded-xl px-3 py-2 ${p.done ? 'opacity-50' : ''} ${nx && nx.id === p.id ? 'ring-1 ring-amber-400/50' : ''}">
+              <div class="w-6 text-[11px] text-white/40">#${i + 1}</div>
+              <div class="flex-1 text-sm font-medium ${p.done ? 'line-through' : ''}">${fmt(p.amount)}</div>
+              <button onclick="togglePlan('${g.id}','${p.id}')" class="text-[11px] px-2.5 py-1 rounded-lg ${p.done ? 'bg-white/10 text-white/50' : 'bg-emerald-500/20 text-emerald-300'}">${p.done ? 'Undo' : 'Saved'}</button>
+              <button onclick="removePlan('${g.id}','${p.id}')" class="text-white/30 px-1 text-sm">✕</button>
+            </div>`).join('')}</div>${delBtn('clearPlan', g.id, 'Clear plan')}` : ''}
+          <button onclick="openGoalSheet('${g.id}')" class="w-full py-3 rounded-xl glass-subtle text-sm">Back to goal</button>
+        </div>`);
+    }
+    function addPlan(gid) {
+      const g = state.goals.find(x => x.id === gid); if (!g) return;
+      const nums = ($('p-amounts').value || '').replace(/\$/g, '').split(/[\s,;]+/).map(parseFloat).filter(n => n > 0).map(r2);
+      if (!nums.length) { toast('Enter an amount'); return; }
+      g.plan = g.plan || [];
+      nums.forEach(a => g.plan.push({ id: uid(), amount: a, done: false, contribId: null }));
+      commit(nums.length > 1 ? `${nums.length} paychecks planned` : 'Added to plan');
+      openPlanSheet(gid);
+    }
+    function togglePlan(gid, pid) {
+      const g = state.goals.find(x => x.id === gid); const p = g && g.plan.find(x => x.id === pid); if (!p) return;
+      setPlanDone(g, p, !p.done);
+      commit(p.done ? 'Saved' : 'Undone');
+      openPlanSheet(gid);
+    }
+    function completePlan(gid, inSheet) {
+      const g = state.goals.find(x => x.id === gid); const p = g && nextPlan(g); if (!p) return;
+      setPlanDone(g, p, true);
+      commit('Saved ' + fmt(p.amount));
+      if (inSheet) openPlanSheet(gid);
+    }
+    function removePlan(gid, pid) {
+      const g = state.goals.find(x => x.id === gid); if (!g) return;
+      g.plan = g.plan.filter(p => p.id !== pid);
+      commit(); openPlanSheet(gid);
+    }
+    function clearPlan(gid) {
+      const g = state.goals.find(x => x.id === gid); if (!g) return;
+      g.plan = [];
+      commit('Plan cleared'); openPlanSheet(gid);
+    }
+
+    // ========== STREAK ==========
+    function openStreakSheet() {
+      const p = state.progress, st = streakStage(p.currentStreak), n = p.currentStreak;
+      const s = calcStreaks();
+      const nextAt = STAGE_AT[st + 1];
+      const pct = nextAt ? Math.min(100, (n - STAGE_AT[st]) / (nextAt - STAGE_AT[st]) * 100) : 100;
+      const deadline = s.last ? addDays(s.last, GRACE) : null;
+      openSheet(`
+        ${sheetHead('Your streak')}
+        <div class="space-y-4">
+          <div class="flex flex-col items-center text-center">
+            <div style="width:72px;height:96px;filter:drop-shadow(0 0 24px ${STAGE_PAL[st].glow})">${flameIcon(st)}</div>
+            <div class="text-3xl font-semibold mt-2">${n} day${n === 1 ? '' : 's'}</div>
+            <div class="text-sm text-amber-200/80">${STAGE_NAMES[st]}${n ? '' : ' · log hours to light it'}</div>
+            <div class="text-[11px] text-white/40 mt-1">Best: ${p.longestStreak} day${p.longestStreak === 1 ? '' : 's'}</div>
+          </div>
+          <div class="glass-subtle rounded-2xl p-3.5">
+            <div class="progress-track h-2"><div class="progress-fill bg-gradient-to-r from-amber-500 to-amber-300" style="width:${pct}%"></div></div>
+            <div class="text-[11px] text-white/45 mt-2">${nextAt ? `${nextAt - n} more day${nextAt - n === 1 ? '' : 's'} to ${STAGE_NAMES[st + 1]}` : 'Max flame reached'}</div>
+          </div>
+          <div class="text-[12px] text-white/50 leading-relaxed">Your streak counts the days you log hours. You don't need to log every day: take up to 2 days off in a row and it keeps burning. Go 3 days without a log and it goes cold.${n && deadline ? `<br><span class="text-amber-300/90">Log by ${fmtDate(deadline)} to keep it alive.</span>` : ''}</div>
+          <div class="space-y-1.5">${STAGE_NAMES.slice(1).map((nm, i) => { const k = i + 1; return `
+            <div class="flex items-center gap-3 glass-subtle rounded-xl px-3 py-2 ${st === k ? 'ring-1 ring-amber-400/50' : st > k ? 'opacity-60' : 'opacity-40'}">
+              <div style="width:20px;height:26px">${flameIcon(k)}</div>
+              <div class="flex-1 text-sm font-medium">${nm}</div>
+              <div class="text-[11px] text-white/40">${STAGE_AT[k]}${k < 5 ? '+' : '+'} day${STAGE_AT[k] === 1 ? '' : 's'}</div>
+            </div>`; }).join('')}</div>
+        </div>`);
     }
 
     // ========== ADD / WITHDRAW MONEY ==========
@@ -1047,6 +1279,499 @@
       if (fromCheck) closeSheet(); else openGoalSheet(gid); // goal detail shows the new balance
     }
 
+    // ========== BUDGET / PAY PERIOD ==========
+    const BUDGET_PRESETS = [
+      ['🏠', 'Rent', 'bill'], ['📱', 'Phone', 'bill'], ['🚗', 'Car payment', 'bill'], ['🛡️', 'Insurance', 'bill'],
+      ['💡', 'Utilities', 'bill'], ['📺', 'Subscriptions', 'bill'], ['⛽', 'Gas', 'spend'], ['🛒', 'Groceries', 'spend'],
+      ['🍔', 'Fast food', 'spend'], ['☕', 'Coffee', 'spend'], ['🎮', 'Fun money', 'spend']
+    ];
+    const BUDGET_ICONS = ['🏠', '📱', '🚗', '🛡️', '💡', '📺', '⛽', '🛒', '🍔', '☕', '🎮', '💳', '🐾', '🧴', '🎁', '💊'];
+
+    function fmtShort(s) {
+      const d = new Date((s || '') + 'T00:00:00');
+      return isNaN(d) ? (s || '') : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+    function jobRate(id) { const j = jobById(id); return j && j.rate > 0 ? j.rate : 0; }
+
+    // Hours between last payday and next payday -> money on the way.
+    function earnings() {
+      const b = state.budget, t = today();
+      const start = b.periodStart || addDays(t, -7), end = b.nextPayday || addDays(t, 7);
+      let earned = 0, sched = 0, noRate = false;
+      state.timeEntries.forEach(e => {
+        if (e.date < start || e.date > end) return;
+        const r = jobRate(e.jobId);
+        if (!r) { noRate = true; return; }
+        if (e.actual) earned += r * e.hours; else sched += r * e.hours;
+      });
+      return { earned: r2(earned), sched: r2(sched), projected: r2(earned + sched), start, end, noRate };
+    }
+    function itemSpent(it) { return r2((it.spends || []).reduce((s, x) => s + x.amount, 0)); }
+    function budgetTotals() {
+      const items = state.budget.items;
+      const bills = items.filter(i => i.kind === 'bill'), sp = items.filter(i => i.kind !== 'bill');
+      return {
+        bills, sp,
+        billsTotal: r2(bills.reduce((s, i) => s + i.amount, 0)),
+        billsPaid: r2(bills.filter(i => i.paid).reduce((s, i) => s + i.amount, 0)),
+        spPlanned: r2(sp.reduce((s, i) => s + i.amount, 0)),
+        spSpent: r2(sp.reduce((s, i) => s + itemSpent(i), 0)),
+        planned: r2(items.reduce((s, i) => s + i.amount, 0))
+      };
+    }
+
+    function renderBudget() {
+      const b = state.budget, e = earnings(), T = budgetTotals(), t = today();
+      const override = b.expectedIncome > 0;
+      const income = override ? b.expectedIncome : e.projected;
+      const left = r2(income - T.planned);
+      const daysTo = dayDiff(t, e.end);
+      const over = T.planned > income + 0.004;
+      const pct = income > 0 ? Math.min(100, T.planned / income * 100) : (T.planned > 0 ? 100 : 0);
+      const barCls = over ? 'bg-red-400' : pct > 85 ? 'bg-orange-400' : 'bg-amber-400';
+      const rated = state.jobs.filter(j => j.active !== false && j.rate > 0);
+      const avg = rated.length ? rated.reduce((s, j) => s + j.rate, 0) / rated.length : 0;
+      const unrated = state.jobs.filter(j => j.active !== false && !(j.rate > 0) && j.type !== 'other');
+      let status;
+      if (!T.planned) status = 'Add your bills and spending plans to see what is left.';
+      else if (over) status = `Short ${fmt(-left)}${avg ? ` · about ${Math.ceil(-left / avg)} more hours` : ''}`;
+      else status = `${fmt(left)} left after everything`;
+      const when = daysTo > 1 ? `${daysTo} days to payday` : daysTo === 1 ? 'Payday tomorrow' : daysTo === 0 ? 'Payday is today' : 'Payday passed';
+
+      $('bud-hero').innerHTML = `
+        <div class="glass-strong rounded-2xl p-4">
+          <div class="flex items-center justify-between tap" onclick="openPeriodSheet()">
+            <div>
+              <div class="text-[11px] uppercase tracking-wider text-white/40">Pay period · ${fmtShort(e.start)} → ${fmtShort(e.end)}</div>
+              <div class="text-[11px] ${daysTo < 0 ? 'text-red-300' : 'text-amber-300/80'} mt-0.5">${when}</div>
+            </div>
+            <span class="text-[11px] text-white/40">Edit</span>
+          </div>
+          <div class="mt-3 text-[11px] text-white/40">${override ? 'Expected paycheck' : 'On my way to'}</div>
+          <div class="text-4xl font-semibold text-amber-300 leading-tight">${fmt(income)}</div>
+          <div class="text-[11px] text-white/40 mt-0.5">Earned ${fmt(e.earned)} · Scheduled ${fmt(e.sched)}${override ? ' · using your number' : ''}</div>
+          <div class="progress-track h-2 mt-3.5"><div class="progress-fill ${barCls}" style="width:${pct}%"></div></div>
+          <div class="flex justify-between text-[11px] mt-1.5">
+            <span class="text-white/45">Planned ${fmt(T.planned)}</span>
+            <span class="${over ? 'text-red-300' : 'text-emerald-300'} font-medium">${status}</span>
+          </div>
+          ${daysTo < 0 ? `<button onclick="openPeriodSheet()" class="mt-3 w-full py-2.5 rounded-xl bg-amber-500 text-black text-sm font-semibold">Got paid? Start the next period</button>` : ''}
+          ${unrated.length ? `<button onclick="showView('jobs')" class="mt-3 w-full text-left text-[11px] text-amber-200/80 glass-subtle rounded-xl px-3 py-2">Add a pay rate for ${unrated.map(j => esc(j.name)).join(' & ')} so its hours count →</button>` : ''}
+        </div>`;
+
+      const t0 = today();
+      const bills = [...T.bills].sort((a, c) => (a.due || '9999').localeCompare(c.due || '9999') || a.name.localeCompare(c.name));
+      $('bud-bills-sum').textContent = T.bills.length ? `${fmt(T.billsPaid)} of ${fmt(T.billsTotal)} paid` : '';
+      $('bud-bills').innerHTML = bills.length ? bills.map(it => {
+        const overdue = !it.paid && it.due && it.due < t0;
+        return `<div class="glass rounded-2xl p-3 flex items-center gap-3">
+          <button onclick="toggleBill('${it.id}')" aria-label="Mark paid" class="w-8 h-8 shrink-0 rounded-full border flex items-center justify-center text-sm font-bold ${it.paid ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent'}">✓</button>
+          <div class="flex-1 min-w-0 tap" onclick="openBudgetItemSheet('${it.id}')">
+            <div class="text-sm font-medium truncate ${it.paid ? 'line-through text-white/40' : ''}">${esc(it.icon)} ${esc(it.name)}</div>
+            <div class="text-[11px] ${overdue ? 'text-red-300' : 'text-white/40'}">${it.paid ? 'Paid' : it.due ? (overdue ? 'Overdue · ' : 'Due ') + fmtShort(it.due) : 'No due date'}</div>
+          </div>
+          <div class="text-sm font-semibold ${it.paid ? 'text-white/40' : ''}">${fmt(it.amount)}</div>
+        </div>`;
+      }).join('') : `<div class="glass-subtle rounded-2xl p-3.5 text-[12px] text-white/40">Rent, phone, car, insurance… anything you must pay before your next check.</div>`;
+
+      $('bud-spend-sum').textContent = T.sp.length ? `${fmt(T.spSpent)} of ${fmt(T.spPlanned)} spent` : '';
+      $('bud-spend').innerHTML = T.sp.length ? T.sp.map(it => {
+        const sp = itemSpent(it), ov = sp > it.amount + 0.004, p = it.amount > 0 ? Math.min(100, sp / it.amount * 100) : 0;
+        return `<div class="glass rounded-2xl p-3.5">
+          <div class="flex items-center gap-3">
+            <div class="flex-1 min-w-0 tap" onclick="openBudgetItemSheet('${it.id}')">
+              <div class="text-sm font-medium truncate">${esc(it.icon)} ${esc(it.name)}</div>
+              <div class="text-[11px] ${ov ? 'text-red-300' : 'text-white/40'}">${fmt(sp)} of ${fmt(it.amount)}${ov ? ' · over by ' + fmt(sp - it.amount) : ' · ' + fmt(it.amount - sp) + ' left'}</div>
+            </div>
+            <button onclick="openSpendSheet('${it.id}')" class="text-[12px] px-3 py-1.5 rounded-full bg-white/10 font-medium">+ Spend</button>
+          </div>
+          <div class="progress-track h-1.5 mt-2.5"><div class="progress-fill ${ov ? 'bg-red-400' : p > 80 ? 'bg-orange-400' : 'bg-sky-400'}" style="width:${p}%"></div></div>
+        </div>`;
+      }).join('') : `<div class="glass-subtle rounded-2xl p-3.5 text-[12px] text-white/40">Fast food, gas, groceries, fun money… set how much you plan to spend, then log it as you go.</div>`;
+
+      renderChecksSummary();
+      renderPunch();
+      renderBingo();
+    }
+
+    function openBudgetItemSheet(id) {
+      const it = id ? state.budget.items.find(x => x.id === id) : null;
+      ui.pick.bkind = it?.kind || 'bill'; ui.pick.bicon = it?.icon || '💳';
+      openSheet(`
+        ${sheetHead(it ? 'Edit item' : 'Add to budget', 'Must-pay bills or spending you plan to do before next payday')}
+        <div class="space-y-3">
+          ${it ? '' : `<div class="flex flex-wrap gap-1.5">${BUDGET_PRESETS.map((p, i) => `<button type="button" onclick="applyPreset(${i})" class="seg px-2.5 py-1.5 rounded-full text-[12px]">${p[0]} ${p[1]}</button>`).join('')}</div>`}
+          <input id="b-name" type="text" placeholder="Name (Rent, Fast food…)" value="${esc(it?.name)}" class="w-full px-3.5 py-3 text-sm" />
+          ${seg('bkind', [['bill', 'Must-pay bill'], ['spend', 'Spending plan']], ui.pick.bkind, 'py-2 text-xs')}
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label><input id="b-amount" type="number" inputmode="decimal" step="0.01" placeholder="0.00" value="${it ? it.amount : ''}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div id="b-due-wrap" class="${ui.pick.bkind === 'bill' ? '' : 'hidden'}"><label class="text-[11px] text-white/40 uppercase tracking-wider">Due (optional)</label><input id="b-due" type="date" value="${esc(it?.due || '')}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+          </div>
+          <div class="flex flex-wrap gap-2">${BUDGET_ICONS.map(i => `<button type="button" data-group="bicon" data-val="${i}" onclick="pick('bicon','${i}')" class="seg seg-icon ${i === ui.pick.bicon ? 'on' : ''} w-10 h-10 rounded-xl text-lg">${i}</button>`).join('')}</div>
+          <button onclick="saveBudgetItem('${id || ''}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">${it ? 'Save changes' : 'Add'}</button>
+          ${it ? delBtn('deleteBudgetItem', id, 'Delete') : ''}
+        </div>`);
+    }
+    function applyPreset(i) {
+      const p = BUDGET_PRESETS[i];
+      $('b-name').value = p[1]; pick('bkind', p[2]); pick('bicon', p[0]);
+      $('b-amount').focus();
+    }
+    function saveBudgetItem(id) {
+      const name = $('b-name').value.trim(), amount = r2(parseFloat($('b-amount').value));
+      if (!name) { toast('Name it'); return; }
+      if (!(amount > 0)) { toast('Enter an amount'); return; }
+      const kind = ui.pick.bkind, due = kind === 'bill' ? ($('b-due').value || null) : null;
+      if (id) {
+        const it = state.budget.items.find(x => x.id === id);
+        Object.assign(it, { name, amount, kind, due, icon: ui.pick.bicon });
+      } else {
+        state.budget.items.push({ id: uid(), name, amount, kind, due, icon: ui.pick.bicon, paid: false, spends: [] });
+      }
+      closeSheet(); commit(id ? 'Updated' : 'Added to budget');
+    }
+    function deleteBudgetItem(id) {
+      state.budget.items = state.budget.items.filter(x => x.id !== id);
+      closeSheet(); commit('Removed');
+    }
+    function toggleBill(id) {
+      const it = state.budget.items.find(x => x.id === id); if (!it) return;
+      it.paid = !it.paid; commit(it.paid ? 'Marked paid' : 'Marked unpaid');
+    }
+
+    function openSpendSheet(id) {
+      const it = state.budget.items.find(x => x.id === id); if (!it) return;
+      ui.pick.sbreak = 'yes';
+      const hist = [...(it.spends || [])].sort((a, b) => b.date.localeCompare(a.date));
+      openSheet(`
+        ${sheetHead(esc(it.icon) + ' ' + esc(it.name), `${fmt(itemSpent(it))} of ${fmt(it.amount)} this pay period`)}
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label><input id="s-amount" type="number" inputmode="decimal" step="0.01" placeholder="12.50" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Date</label><input id="s-date" type="date" value="${today()}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+          </div>
+          <input id="s-note" type="text" placeholder="Note (optional)" class="w-full px-3.5 py-3 text-sm" />
+          ${seg('sbreak', [['yes', 'Counts as spending day'], ['no', 'Essential']], 'yes', 'py-2 text-xs')}
+          <div class="text-[11px] text-white/35">A spending day takes that day's punch off your no-spend card.</div>
+          <button onclick="saveSpend('${id}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Log spend</button>
+          ${hist.length ? `<div><label class="text-[11px] text-white/40 uppercase tracking-wider">This period</label><div class="mt-2 space-y-1.5">${hist.map(s => `
+            <div class="flex items-center gap-3 glass-subtle rounded-xl px-3 py-2">
+              <div class="flex-1 min-w-0"><div class="text-sm font-medium">${fmt(s.amount)}</div><div class="text-[11px] text-white/40 truncate">${fmtDate(s.date)}${s.note ? ' · ' + esc(s.note) : ''}${s.breaks === false ? ' · essential' : ''}</div></div>
+              <button onclick="arm(this,'removeSpend','${id}','${s.id}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-white/10 text-white/50">Remove</button>
+            </div>`).join('')}</div></div>` : ''}
+        </div>`);
+    }
+    function saveSpend(id) {
+      const it = state.budget.items.find(x => x.id === id); if (!it) return;
+      const amount = r2(parseFloat($('s-amount').value));
+      if (!(amount > 0)) { toast('Enter an amount'); return; }
+      const date = $('s-date').value || today(), breaks = ui.pick.sbreak !== 'no';
+      it.spends.push({ id: uid(), amount, date, note: $('s-note').value.trim() || undefined, breaks });
+      const lost = breaks && state.punch.days.includes(date);
+      if (lost) state.punch.days = state.punch.days.filter(d => d !== date);
+      closeSheet();
+      const ov = itemSpent(it) - it.amount;
+      commit(lost ? 'Logged · that day’s punch is gone' : ov > 0.004 ? `Over ${it.name} by ${fmt(ov)}` : 'Spend logged');
+    }
+    function removeSpend(itemId, sid) {
+      const it = state.budget.items.find(x => x.id === itemId); if (!it) return;
+      it.spends = it.spends.filter(s => s.id !== sid);
+      commit('Removed'); openSpendSheet(itemId);
+    }
+
+    function openPeriodSheet() {
+      const b = state.budget;
+      openSheet(`
+        ${sheetHead('Pay period', 'Hours you log between these dates count toward your next check')}
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Last payday</label><input id="pp-start" type="date" value="${esc(b.periodStart)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Next payday</label><input id="pp-end" type="date" value="${esc(b.nextPayday)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+          </div>
+          <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Expected paycheck (optional)</label>
+            <input id="pp-income" type="number" inputmode="decimal" step="0.01" placeholder="Blank = use my logged hours" value="${b.expectedIncome > 0 ? b.expectedIncome : ''}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+          <button onclick="savePeriod()" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Save</button>
+          <div class="pt-3 border-t border-white/10 space-y-2">
+            <div class="text-[11px] text-white/40">Got paid? This marks every bill unpaid, clears this period's spending and moves due dates forward.</div>
+            <button onclick="arm(this,'newPeriod')" class="w-full py-3 rounded-xl bg-white/10 text-sm font-medium">Start next pay period</button>
+          </div>
+        </div>`);
+    }
+    function savePeriod() {
+      const s = $('pp-start').value, e = $('pp-end').value;
+      if (!s || !e) { toast('Pick both dates'); return; }
+      if (e < s) { toast('Next payday is before the last one'); return; }
+      Object.assign(state.budget, { periodStart: s, nextPayday: e, expectedIncome: parseFloat($('pp-income').value) > 0 ? r2(parseFloat($('pp-income').value)) : null });
+      closeSheet(); commit('Pay period saved');
+    }
+    function newPeriod() {
+      const b = state.budget, t = today();
+      const len = Math.max(7, dayDiff(b.periodStart, b.nextPayday) || 14);
+      const start = b.nextPayday && b.nextPayday <= t ? b.nextPayday : t;
+      const shift = dayDiff(b.periodStart, start);
+      b.items.forEach(i => { i.paid = false; i.spends = []; if (i.due) i.due = addDays(i.due, shift); });
+      Object.assign(b, { periodStart: start, nextPayday: addDays(start, len), expectedIncome: null });
+      closeSheet(); commit('New pay period');
+    }
+
+    function toggleChecks() {
+      const open = $('checks-body').classList.toggle('hidden') === false;
+      $('checks-caret').style.transform = open ? 'rotate(180deg)' : '';
+    }
+    function renderChecksSummary() {
+      const n = state.paychecks.length, un = state.paychecks.reduce((s, c) => s + Math.max(0, checkRemaining(c)), 0);
+      $('checks-sum').textContent = n ? `${n} recorded · ${fmt(un)} unallocated` : 'none recorded';
+    }
+
+    // ========== NO-SPEND PUNCH CARD ==========
+    function spentOn(d) { return state.budget.items.some(i => (i.spends || []).some(s => s.date === d && s.breaks !== false)); }
+    function renderPunch() {
+      const P = state.punch, n = P.days.length, full = n >= 10, t = today(), y = addDays(t, -1);
+      const todayDone = P.days.includes(t), spentToday = spentOn(t);
+      const slots = Array.from({ length: 10 }, (_, i) => {
+        const d = P.days[i];
+        return d
+          ? `<div class="punch on ${ui.lastPunch === d ? 'fresh' : ''}"><span>✓</span><i>${+d.slice(5, 7)}/${+d.slice(8)}</i></div>`
+          : `<div class="punch"><span class="text-white/25">${i + 1}</span></div>`;
+      }).join('');
+      let main;
+      if (full) main = `<button onclick="claimReward()" class="w-full py-3.5 rounded-2xl bg-emerald-500 text-black font-semibold text-sm pulse-btn">🎁 Claim: ${esc(P.reward || 'your reward')}</button>`;
+      else if (todayDone) main = `<div class="w-full py-3.5 rounded-2xl glass-subtle text-center text-sm text-emerald-300">Today's punched ✓</div>`;
+      else if (spentToday) main = `<div class="w-full py-3.5 rounded-2xl glass-subtle text-center text-sm text-red-300">You spent today. No punch</div>`;
+      else main = `<button onclick="punch('${t}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">I didn't spend today · Punch</button>`;
+      const missed = !full && !P.days.includes(y) && !spentOn(y);
+      $('punch-card').innerHTML = `
+        <div class="glass-strong rounded-2xl p-4 punch-card">
+          <div class="flex items-center justify-between">
+            <div class="text-[11px] uppercase tracking-wider text-white/40">No-spend punch card</div>
+            <div class="text-sm font-semibold text-amber-300">${n}/10</div>
+          </div>
+          <button onclick="openRewardSheet()" class="w-full text-left mt-1.5 text-sm ${P.reward ? 'text-white/85' : 'text-white/40'}">🎁 ${P.reward ? esc(P.reward) : 'Tap to set what you are working toward'}</button>
+          <div class="punch-grid mt-3.5">${slots}</div>
+          <div class="text-[11px] text-white/40 mt-3 mb-2.5">${full ? 'Card full. You earned it.' : `${10 - n} no-spend day${10 - n === 1 ? '' : 's'} to your reward`}${P.claimed ? ` · ${P.claimed} claimed` : ''}</div>
+          ${main}
+          <div class="flex justify-between mt-2 text-[11px]">
+            ${missed ? `<button onclick="punch('${y}')" class="text-white/45">Forgot yesterday? Punch it</button>` : '<span></span>'}
+            ${n > 0 && !full ? `<button onclick="unpunchLast()" class="text-white/30">Undo last</button>` : ''}
+          </div>
+        </div>`;
+    }
+    function punch(d) {
+      const P = state.punch;
+      if (P.days.length >= 10) { toast('Card is full. Claim your reward'); return; }
+      if (P.days.includes(d)) return;
+      if (spentOn(d)) { toast('You logged spending that day'); return; }
+      P.days.push(d); P.days.sort();
+      ui.lastPunch = d; setTimeout(() => { ui.lastPunch = null; }, 1200);
+      commit(P.days.length >= 10 ? '🎁 Card full! Claim your reward' : `Punched · ${10 - P.days.length} to go`);
+    }
+    function unpunchLast() { state.punch.days.pop(); commit('Punch removed'); }
+    function claimReward() {
+      state.punch.claimed++; state.punch.days = [];
+      commit('Reward claimed 🎉');
+      openRewardSheet(true);
+    }
+    function openRewardSheet(next) {
+      openSheet(`
+        ${sheetHead(next ? 'Next reward' : 'Your reward', next ? 'Fresh card. What are you earning this time?' : '10 no-spend days and you get this')}
+        <div class="space-y-3">
+          <input id="rw-name" type="text" placeholder="New sneakers, game, lunch out…" value="${next ? '' : esc(state.punch.reward)}" class="w-full px-3.5 py-3 text-sm" />
+          <button onclick="saveReward()" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Save</button>
+        </div>`);
+    }
+    function saveReward() {
+      state.punch.reward = $('rw-name').value.trim();
+      closeSheet(); commit('Reward set');
+    }
+
+    // ========== SAVINGS BINGO (new card every 14 days) ==========
+    const BINGO_POOL = [
+      ['☕', 'Skip the coffee run', 'Make it at home instead of buying a coffee out.'],
+      ['🥪', 'Pack your lunch', 'Bring food from home instead of buying lunch.'],
+      ['🚫', 'No-spend day', 'Go a whole day without spending a dollar.'],
+      ['💵', 'Save $5', 'Move $5 into any goal.'],
+      ['💵', 'Save $10', 'Move $10 into any goal.'],
+      ['💰', 'Save $20', 'Move $20 into any goal.'],
+      ['💰', 'Save $50', 'Move $50 into any goal.'],
+      ['🪙', 'Round-up day', 'Round every purchase up to the next dollar and save the difference.'],
+      ['🧾', 'Cancel one sub', 'Look through your subscriptions and cancel one you barely use.'],
+      ['📦', 'Sell something', 'Sell one thing you do not use anymore.'],
+      ['🥫', 'Pantry dinner', 'Cook dinner using only what is already in the house.'],
+      ['🚶', 'Walk it', 'Walk or bike a trip you would normally pay for or drive.'],
+      ['🎬', 'Free fun', 'Do something fun that costs $0.'],
+      ['🛒', 'List only', 'Shop with a list and buy nothing that is not on it.'],
+      ['📞', 'Lower a bill', 'Call a provider and ask for a better rate.'],
+      ['💳', 'Pay extra $10', 'Put an extra $10 toward a bill or debt.'],
+      ['⏳', '24-hour rule', 'Wait 24 hours before any non-essential purchase.'],
+      ['📝', 'Log every dollar', 'Write down everything you spend today.'],
+      ['💧', 'Water only', 'Skip drinks out for the day.'],
+      ['⏱️', 'Extra hour', 'Pick up one extra hour of work and save what it earns.'],
+      ['🎯', 'Feed a goal', 'Add any amount to a savings goal.'],
+      ['📅', 'Plan a paycheck', 'Set up a paycheck plan on one of your goals.'],
+      ['🔍', 'Spending review', 'Look at last week\'s spending and find one thing to cut.'],
+      ['🍳', 'Cook at home', 'Cook at home for every meal today.'],
+      ['📧', 'Unsubscribe', 'Unsubscribe from store emails that tempt you.'],
+      ['🏷️', 'Use a coupon', 'Use a coupon, code or deal on something you needed anyway.'],
+      ['🧴', 'Use it up', 'Finish something you already own before buying more.'],
+      ['📚', 'Borrow it', 'Borrow a book, movie or tool instead of buying it.'],
+      ['🥡', 'Leftovers night', 'Eat leftovers instead of ordering.'],
+      ['🍔', 'Zero fast food', 'No fast food today.'],
+      ['💡', 'Power down', 'Unplug or switch off what you are not using.'],
+      ['📱', 'Price check', 'Compare prices before buying anything today.'],
+      ['🏪', 'Store brand', 'Pick the store brand on one item.'],
+      ['🌅', 'Pay yourself first', 'Move money to savings the same day you get paid.'],
+      ['💬', 'Tell someone', 'Tell a friend what you are saving for.'],
+      ['🧠', 'Money minute', 'Spend 10 minutes going over your budget.'],
+      ['🛍️', 'Skip the impulse', 'Walk away from one thing you almost bought.'],
+      ['🧮', 'Update balances', 'Check your balances and make sure your goals match.'],
+      ['🎁', 'DIY gift', 'Make or find a free gift instead of buying one.'],
+      ['🚗', 'Combine trips', 'Combine errands into one trip to save gas.'],
+      ['🔁', 'Repeat a win', 'Repeat a saving habit that worked for you last time.'],
+      ['🧊', 'Meal prep', 'Prep a few meals ahead for the week.'],
+      ['🎟️', 'Free event', 'Find a free event to go to instead of a paid one.'],
+      ['🪴', 'Fix, don\'t replace', 'Repair something instead of replacing it.'],
+      ['📉', 'Trim one budget', 'Lower one spending plan by $5 or more.'],
+      ['🏁', 'Hit a milestone', 'Reach your next savings milestone.']
+    ];
+    const BINGO_LINES = (() => {
+      const L = [];
+      for (let r = 0; r < 5; r++) L.push([0, 1, 2, 3, 4].map(c => r * 5 + c));
+      for (let c = 0; c < 5; c++) L.push([0, 1, 2, 3, 4].map(r => r * 5 + c));
+      L.push([0, 6, 12, 18, 24], [4, 8, 12, 16, 20]);
+      return L;
+    })();
+    function bingoLines(done) {
+      const s = new Set(done); s.add(12);
+      return BINGO_LINES.filter(l => l.every(i => s.has(i))).length;
+    }
+    function rngSeed(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+    function bingoInfo() {
+      const b = state.bingo, t = today();
+      const cyc = Math.max(0, Math.floor(dayDiff(b.anchor, t) / 14));
+      const start = addDays(b.anchor, cyc * 14);
+      return { cyc, daysLeft: Math.max(1, Math.min(14, 14 - dayDiff(start, t))), done: b.cycles[cyc] || [] };
+    }
+    // Same cycle number always makes the same card; a new 14-day cycle makes a new one.
+    function bingoCard(cyc) {
+      const rnd = rngSeed(cyc * 7919 + 20260101);
+      const pool = BINGO_POOL.slice();
+      for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+      const sq = pool.slice(0, 24);
+      sq.splice(12, 0, ['⭐', 'FREE', 'Free space. Already yours.']);
+      return sq;
+    }
+    function renderBingo() {
+      const { cyc, daysLeft, done } = bingoInfo(), card = bingoCard(cyc);
+      const ds = new Set(done); ds.add(12);
+      const winSq = new Set(); BINGO_LINES.forEach(l => { if (l.every(i => ds.has(i))) l.forEach(i => winSq.add(i)); });
+      const lines = bingoLines(done);
+      $('bingo-card').innerHTML = `
+        <div class="glass-strong rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <div class="text-[11px] uppercase tracking-wider text-white/40">Savings bingo · Card ${cyc + 1}</div>
+            <div class="text-[11px] text-amber-300/90">New card in ${daysLeft} day${daysLeft === 1 ? '' : 's'}</div>
+          </div>
+          <div class="bingo-grid mt-3">${card.map((q, i) => {
+            const on = ds.has(i), free = i === 12;
+            return `<button onclick="openBingoSheet(${i})" class="bingo-sq ${on ? 'on' : ''} ${winSq.has(i) ? 'win' : ''}">
+              <span class="text-[17px] leading-none">${on && !free ? '✓' : q[0]}</span>
+              <span class="bq">${esc(q[1])}</span></button>`;
+          }).join('')}</div>
+          <div class="text-[11px] text-white/40 mt-3">${done.length}/24 squares · ${lines} bingo${lines === 1 ? '' : 's'}${lines ? ' 🎉' : ''}. Tap a square to read it and check it off.</div>
+        </div>`;
+    }
+    function openBingoSheet(i) {
+      if (i === 12) { toast('Free space. Already yours'); return; }
+      const { cyc, done } = bingoInfo(), q = bingoCard(cyc)[i], on = done.includes(i);
+      openSheet(`
+        ${sheetHead('Savings challenge')}
+        <div class="text-center space-y-2 pb-1">
+          <div class="text-5xl">${q[0]}</div>
+          <div class="text-lg font-semibold">${esc(q[1])}</div>
+          <div class="text-sm text-white/55 px-2">${esc(q[2])}</div>
+        </div>
+        <button onclick="toggleBingo(${i})" class="mt-4 w-full py-3.5 rounded-2xl ${on ? 'bg-white/10 text-white/70' : 'bg-amber-500 text-black'} font-semibold text-sm">${on ? 'Undo' : 'Mark done'}</button>`);
+    }
+    function toggleBingo(i) {
+      const { cyc, done } = bingoInfo();
+      const before = bingoLines(done);
+      const next = done.includes(i) ? done.filter(x => x !== i) : [...done, i];
+      state.bingo.cycles[cyc] = next;
+      closeSheet();
+      commit(bingoLines(next) > before ? '🎉 BINGO!' : done.includes(i) ? 'Square cleared' : 'Square done');
+    }
+
+    // ========== EARNINGS POP-UP (after logging hours) ==========
+    let earnTimer;
+    function countUp(el, target, prefix) {
+      if (!el) return;
+      const t0 = performance.now(), dur = 900;
+      (function step(now) {
+        const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        el.textContent = prefix + fmt(target * e);
+        if (k < 1) requestAnimationFrame(step);
+      })(t0);
+    }
+    function hideEarnPop() { clearTimeout(earnTimer); $('earn-pop').classList.remove('show'); }
+    function showEarnPop(e) {
+      const job = jobById(e.jobId), rate = job && job.rate > 0 ? job.rate : 0, pop = $('earn-pop');
+      const head = `<div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style="background:${job ? job.color : '#888'}22">${job ? esc(job.icon) : '⏱️'}</div>
+        <div class="min-w-0 flex-1"><div class="text-[11px] uppercase tracking-wider ${e.actual ? 'text-emerald-300/80' : 'text-amber-300/80'}">${e.actual ? 'Shift worked' : 'Shift scheduled'}</div>
+        <div class="text-sm font-medium truncate">${job ? esc(job.name) : 'Job'} · ${e.hours}h · ${fmtShort(e.date)}</div></div>
+        <button onclick="hideEarnPop()" class="text-white/30 text-lg px-1">✕</button></div>`;
+      let html;
+      clearTimeout(earnTimer);
+      if (!rate) {
+        html = head + `<div class="mt-3 text-sm text-white/70">What does ${job ? esc(job.name) : 'this job'} pay per hour? I'll show what every shift earns.</div>
+          <div class="flex gap-2 mt-2.5"><input id="earn-rate" type="number" inputmode="decimal" step="0.01" placeholder="$ per hour" class="flex-1 min-w-0 px-3.5 py-3 text-sm" />
+          <button onclick="saveEarnRate('${e.id}')" class="px-4 rounded-xl bg-amber-500 text-black font-semibold text-sm">Save</button></div>`;
+      } else {
+        const en = earnings(), T = budgetTotals(), income = state.budget.expectedIncome > 0 ? state.budget.expectedIncome : en.projected;
+        const cov = T.planned > 0 ? Math.min(999, en.earned / T.planned * 100) : 0;
+        html = head + `<div class="mt-3"><div id="earn-amt" class="text-4xl font-semibold ${e.actual ? 'text-emerald-400' : 'text-amber-300'}">${e.actual ? '+' : '~'}$0.00</div>
+          <div class="text-[11px] text-white/40">${e.hours}h × ${fmt(rate)}/hr</div></div>
+          <div class="mt-3 glass-subtle rounded-xl p-3">
+            <div class="flex justify-between text-[11px] text-white/50"><span>Earned this pay period</span><span>On my way to ${fmt(income)}</span></div>
+            <div class="progress-track h-1.5 mt-1.5"><div class="progress-fill bg-emerald-400" style="width:${income > 0 ? Math.min(100, en.earned / income * 100) : 0}%"></div></div>
+            <div class="flex justify-between text-[11px] mt-1.5"><span class="text-emerald-300">${fmt(en.earned)} in</span><span class="text-white/40">payday ${fmtShort(en.end)}</span></div>
+          </div>
+          ${T.planned > 0
+            ? `<div class="mt-2.5 text-[12px] text-white/60">Money in so far covers <b class="${cov >= 100 ? 'text-emerald-300' : 'text-amber-300'}">${Math.round(cov)}%</b> of your ${fmt(T.planned)} plan</div>`
+            : `<button onclick="hideEarnPop();showView('money')" class="mt-2.5 text-[12px] text-amber-300/90">Add your bills in Budget to see what this covers →</button>`}`;
+      }
+      pop.innerHTML = html; pop.classList.add('show');
+      if (rate) { countUp($('earn-amt'), r2(rate * e.hours), e.actual ? '+' : '~'); earnTimer = setTimeout(hideEarnPop, 7000); }
+    }
+    function saveEarnRate(entryId) {
+      const e = state.timeEntries.find(x => x.id === entryId), job = e && jobById(e.jobId);
+      const r = parseFloat($('earn-rate').value);
+      if (!job || !(r > 0)) { toast('Enter a rate'); return; }
+      job.rate = r2(r);
+      commit('Pay rate saved');
+      showEarnPop(e);
+    }
+
+    // ========== SAVINGS MILESTONES ==========
+    const MILESTONES = [[100, 'First $100'], [250, 'Cushion'], [500, 'Half a grand'], [1000, '$1K Club'], [2500, 'Safety net'], [5000, '$5K Strong'], [10000, 'Five figures'], [25000, '$25K'], [50000, '$50K'], [100000, 'Six figures']];
+    function renderMilestones() {
+      const s = Math.max(0, state.progress.totalSaved), box = $('milestone-box');
+      const ni = MILESTONES.findIndex(m => m[0] > s);
+      const got = (ni === -1 ? MILESTONES : MILESTONES.slice(0, ni)).map(m => `<span class="text-[10px] px-2 py-1 rounded-full bg-amber-500/20 text-amber-200">🏅 ${esc(m[1])}</span>`).join('');
+      if (ni === -1) { box.innerHTML = `<div class="mt-4 pt-3 border-t border-white/10 text-sm text-amber-200">👑 Every milestone cleared.</div><div class="flex flex-wrap gap-1.5 mt-3">${got}</div>`; return; }
+      const next = MILESTONES[ni], prev = ni > 0 ? MILESTONES[ni - 1][0] : 0;
+      const pct = Math.max(0, Math.min(100, (s - prev) / (next[0] - prev) * 100));
+      const up = MILESTONES.slice(ni + 1, ni + 3).map(m => `<span class="text-[10px] px-2 py-1 rounded-full bg-white/5 text-white/35">${esc(m[1])} · ${fmt(m[0]).replace('.00', '')}</span>`).join('');
+      box.innerHTML = `
+        <div class="mt-4 pt-3 border-t border-white/10">
+          <div class="flex items-baseline justify-between"><div class="text-[11px] uppercase tracking-wider text-white/40">Next milestone</div><div class="text-[12px] text-amber-300/90 font-medium">${esc(next[1])}</div></div>
+          <div class="text-xl font-semibold mt-0.5">${fmt(r2(next[0] - s))} <span class="text-sm font-normal text-white/45">to go</span></div>
+          <div class="progress-track h-2 mt-2"><div class="progress-fill bg-gradient-to-r from-emerald-400 to-amber-300" style="width:${pct}%"></div></div>
+          <div class="flex justify-between text-[10px] text-white/35 mt-1"><span>${fmt(prev).replace('.00', '')}</span><span>${fmt(next[0]).replace('.00', '')}</span></div>
+          <div class="flex flex-wrap gap-1.5 mt-3">${got}${up}</div>
+        </div>`;
+    }
+
     // ========== INIT ==========
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
     document.addEventListener('focusin', e => {
@@ -1055,7 +1780,7 @@
 
     load();
     window.addEventListener('pagehide', save);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); else { recalc(); render(); } });
     try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
 
     if (!state.onboardingDone && state.jobs.length === 0) {
@@ -1069,8 +1794,8 @@
     recalc();
     save();
 
-    $('splash-mascot').innerHTML = mascot();
-    $('home-mascot').innerHTML = mascot();
+    buildDefs();
+    { const st0 = streakStage(state.progress.currentStreak); $('splash-mascot').innerHTML = mascot('', st0); $('splash-mascot').style.filter = `drop-shadow(0 0 40px ${STAGE_PAL[Math.max(1, st0)].glow})`; }
     $('log-date').value = today();
 
     render();
