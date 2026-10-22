@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>Forge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            glass: {
+              50: 'rgba(255,255,255,0.05)',
+              100: 'rgba(255,255,255,0.08)',
+              200: 'rgba(255,255,255,0.12)',
+              300: 'rgba(255,255,255,0.18)',
+            }
+          },
+          boxShadow: {
+            'spatial': '0 8px 32px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)',
+            'spatial-lg': '0 20px 60px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)',
+            'glow-amber': '0 0 40px rgba(245,158,11,0.25)',
+            'glow-green': '0 0 30px rgba(34,197,94,0.2)',
+          },
+          backdropBlur: {
+            xs: '2px',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    * { -webkit-tap-highlight-color: transparent; }
+    
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: #07070a;
+      color: #f0f0f5;
+    }
+
+    /* Ambient background */
+    .spatial-bg {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(245,158,11,0.12), transparent 50%),
+        radial-gradient(ellipse 60% 40% at 90% 10%, rgba(99,102,241,0.1), transparent 45%),
+        radial-gradient(ellipse 50% 30% at 50% 100%, rgba(34,197,94,0.06), transparent 40%),
+        #07070a;
+    }
+
+    /* Glass panels */
+    .glass {
+      background: linear-gradient(145deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 100%);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .glass-strong {
+      background: linear-gradient(160deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.05) 100%);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+
+    .glass-subtle {
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* Floating depth */
+    .float {
+      transform: translateZ(0);
+      transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.25s ease;
+    }
+    .float:active {
+      transform: scale(0.97);
+    }
+
+    /* Soft progress */
+    .progress-track {
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Safe areas */
+    .safe-top { padding-top: max(env(safe-area-inset-top), 12px); }
+    .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 12px); }
+
+    /* Scroll areas */
+    .scroll-y {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .scroll-y::-webkit-scrollbar { display: none; }
+
+    /* Input glass */
+    input, select, textarea {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #f0f0f5;
+      border-radius: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(245,158,11,0.5);
+    }
+    input::placeholder { color: rgba(255,255,255,0.3); }
+
+    /* Tab bar glass */
+    .tab-bar {
+      background: linear-gradient(to top, rgba(10,10,15,0.92), rgba(10,10,15,0.75));
+      backdrop-filter: blur(30px) saturate(150%);
+      -webkit-backdrop-filter: blur(30px) saturate(150%);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* Level badge */
+    .level-badge {
+      background: linear-gradient(135deg, rgba(245,158,11,0.25), rgba(245,158,11,0.08));
+      border: 1px solid rgba(245,158,11,0.3);
+    }
+
+    /* Subtle animation */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.4s ease-out forwards; }
+
+    @keyframes pulse-soft {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+  </style>
+</head>
+<body class="spatial-bg h-full flex flex-col">
+
+  <!-- Main App Shell -->
+  <div id="app" class="flex-1 flex flex-col h-full relative overflow-hidden">
+
+    <!-- Views Container -->
+    <div id="views" class="flex-1 relative overflow-hidden">
+
+      <!-- HOME VIEW -->
+      <div id="view-home" class="view absolute inset-0 flex flex-col safe-top">
+        <div class="px-5 pt-3 pb-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-medium">Forge</p>
+              <h1 class="text-[28px] font-semibold tracking-tight leading-tight">Momentum</h1>
+            </div>
+            <div id="level-badge" class="level-badge px-3.5 py-1.5 rounded-full text-center">
+              <div class="text-[10px] text-amber-300/80 uppercase tracking-wider">Level</div>
+              <div class="text-sm font-semibold text-amber-200" id="level-num">1</div>
+            </div>
+          </div>
+
+          <!-- XP Bar -->
+          <div class="mt-4 glass-subtle rounded-2xl px-4 py-3">
+            <div class="flex justify-between text-[11px] text-white/50 mb-1.5">
+              <span id="xp-current">0 XP</span>
+              <span id="xp-needed">100 to next</span>
+            </div>
+            <div class="progress-track h-1.5">
+              <div id="xp-bar" class="progress-fill bg-gradient-to-r from-amber-500 to-amber-300" style="width:0%"></div>
+            </div>
+            <div class="mt-1.5 text-[11px] text-amber-200/70 font-medium" id="level-title">Spark</div>
+          </div>
+        </div>
+
+        <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
+          <!-- Stats -->
+          <div class="grid grid-cols-3 gap-3">
+            <div class="glass rounded-2xl p-3.5 text-center float">
+              <div class="text-2xl font-semibold text-amber-300" id="stat-streak">0</div>
+              <div class="text-[10px] text-white/40 mt-0.5 uppercase tracking-wide">Streak</div>
+            </div>
+            <div class="glass rounded-2xl p-3.5 text-center float">
+              <div class="text-2xl font-semibold" id="stat-hours">0</div>
+              <div class="text-[10px] text-white/40 mt-0.5 uppercase tracking-wide">Hours</div>
+            </div>
+            <div class="glass rounded-2xl p-3.5 text-center float">
+              <div class="text-2xl font-semibold text-emerald-400" id="stat-saved">$0</div>
+              <div class="text-[10px] text-white/40 mt-0.5 uppercase tracking-wide">Saved</div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="showView('log')" class="glass-strong rounded-2xl p-4 text-left float active:scale-[0.97] transition">
+              <div class="text-2xl mb-1">⏱️</div>
+              <div class="text-sm font-medium">Log Hours</div>
+              <div class="text-[11px] text-white/40">Worked or scheduled</div>
+            </button>
+            <button onclick="showView('money')" class="glass-strong rounded-2xl p-4 text-left float active:scale-[0.97] transition">
+              <div class="text-2xl mb-1">💵</div>
+              <div class="text-sm font-medium">Paycheck</div>
+              <div class="text-[11px] text-white/40">Record & allocate</div>
+            </button>
+          </div>
+
+          <!-- Data backup controls -->
+          <div class="glass-subtle rounded-2xl p-3.5">
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-sm font-medium">Your data</div>
+                <div class="text-[11px] text-white/40 mt-0.5">Export a backup before changing devices or clearing browser data.</div>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <button onclick="exportBackup()" class="px-3 py-2 rounded-xl bg-white/10 text-xs font-medium">Backup</button>
+                <button onclick="document.getElementById('backup-file').click()" class="px-3 py-2 rounded-xl bg-white/10 text-xs font-medium">Restore</button>
+              </div>
+            </div>
+            <input id="backup-file" type="file" accept="application/json,.json" class="hidden" onchange="importBackup(event)" />
+          </div>
+
+          <!-- Active Jobs -->
+          <div>
+            <div class="flex items-center justify-between mb-2 px-1">
+              <h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Active Jobs</h2>
+              <button onclick="showView('jobs')" class="text-[11px] text-amber-300/80">Manage</button>
+            </div>
+            <div id="home-jobs" class="space-y-2"></div>
+          </div>
+
+          <!-- Goals Snapshot -->
+          <div id="home-goals-section" class="hidden">
+            <div class="flex items-center justify-between mb-2 px-1">
+              <h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Savings</h2>
+              <button onclick="showView('goals')" class="text-[11px] text-amber-300/80">View all</button>
+            </div>
+            <div id="home-goals" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- JOBS VIEW -->
+      <div id="view-jobs" class="view absolute inset-0 flex flex-col safe-top hidden">
+        <div class="px-5 pt-3 pb-2">
+          <h1 class="text-[28px] font-semibold tracking-tight">Jobs</h1>
+          <p class="text-sm text-white/40 mt-0.5">Day job, side hustles, everything.</p>
+        </div>
+        <div class="flex-1 scroll-y px-5 pb-28 space-y-3">
+          <div id="jobs-list" class="space-y-3"></div>
+          <button onclick="toggleJobForm()" id="btn-add-job" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm hover:border-amber-400/40 hover:text-amber-300 transition">
+            + Add job
+          </button>
+          <div id="job-form" class="glass-strong rounded-2xl p-4 space-y-3 hidden">
+            <input id="job-name" type="text" placeholder="Job name (Walmart, Uber Eats…)" class="w-full px-3.5 py-3 text-sm" />
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" data-type="hourly" class="job-type-btn py-2 rounded-xl text-xs font-medium bg-amber-500 text-black">Hourly</button>
+              <button type="button" data-type="gig" class="job-type-btn py-2 rounded-xl text-xs font-medium glass-subtle">Gig</button>
+              <button type="button" data-type="other" class="job-type-btn py-2 rounded-xl text-xs font-medium glass-subtle">Other</button>
+            </div>
+            <input id="job-rate" type="number" step="0.01" placeholder="Hourly rate (optional)" class="w-full px-3.5 py-3 text-sm" />
+            <div class="flex flex-wrap gap-2" id="job-icons">
+              <button type="button" data-icon="🛒" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">🛒</button>
+              <button type="button" data-icon="🚗" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">🚗</button>
+              <button type="button" data-icon="💼" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">💼</button>
+              <button type="button" data-icon="🍕" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">🍕</button>
+              <button type="button" data-icon="💻" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">💻</button>
+              <button type="button" data-icon="📦" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">📦</button>
+              <button type="button" data-icon="🛠️" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">🛠️</button>
+              <button type="button" data-icon="☕" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">☕</button>
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button onclick="toggleJobForm()" class="flex-1 py-3 rounded-xl glass-subtle text-sm">Cancel</button>
+              <button onclick="saveJob()" class="flex-1 py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm">Add Job</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOG VIEW -->
+      <div id="view-log" class="view absolute inset-0 flex flex-col safe-top hidden">
+        <div class="px-5 pt-3 pb-2">
+          <h1 class="text-[28px] font-semibold tracking-tight">Log Hours</h1>
+          <p class="text-sm text-white/40 mt-0.5">Actual or scheduled — both count.</p>
+        </div>
+        <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
+          <div class="glass-strong rounded-2xl p-4 space-y-3">
+            <div>
+              <label class="text-[11px] text-white/40 uppercase tracking-wider">Job</label>
+              <select id="log-job" class="w-full mt-1 px-3.5 py-3 text-sm"></select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-[11px] text-white/40 uppercase tracking-wider">Date</label>
+                <input id="log-date" type="date" class="w-full mt-1 px-3.5 py-3 text-sm" />
+              </div>
+              <div>
+                <label class="text-[11px] text-white/40 uppercase tracking-wider">Hours</label>
+                <input id="log-hours" type="number" step="0.25" min="0.25" placeholder="8" class="w-full mt-1 px-3.5 py-3 text-sm" />
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" id="btn-worked" onclick="setLogType(true)" class="flex-1 py-2.5 rounded-xl text-sm font-medium bg-amber-500 text-black">Worked</button>
+              <button type="button" id="btn-scheduled" onclick="setLogType(false)" class="flex-1 py-2.5 rounded-xl text-sm font-medium glass-subtle">Scheduled</button>
+            </div>
+            <input id="log-notes" type="text" placeholder="Notes (optional)" class="w-full px-3.5 py-3 text-sm" />
+            <button onclick="submitLog()" id="btn-log" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm active:scale-[0.98] transition">
+              Log Hours
+            </button>
+          </div>
+          <div>
+            <h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium mb-2 px-1">Recent</h2>
+            <div id="log-recent" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONEY VIEW -->
+      <div id="view-money" class="view absolute inset-0 flex flex-col safe-top hidden">
+        <div class="px-5 pt-3 pb-2">
+          <h1 class="text-[28px] font-semibold tracking-tight">Money</h1>
+          <p class="text-sm text-white/40 mt-0.5">Checks in. Money into goals.</p>
+        </div>
+        <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
+          <button onclick="toggleCheckForm()" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm active:scale-[0.98] transition">
+            + Record Paycheck
+          </button>
+          <div id="check-form" class="glass-strong rounded-2xl p-4 space-y-3 hidden">
+            <div>
+              <label class="text-[11px] text-white/40 uppercase tracking-wider">From job</label>
+              <select id="check-job" class="w-full mt-1 px-3.5 py-3 text-sm"></select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label>
+                <input id="check-amount" type="number" step="0.01" placeholder="842.50" class="w-full mt-1 px-3.5 py-3 text-sm" />
+              </div>
+              <div>
+                <label class="text-[11px] text-white/40 uppercase tracking-wider">Expected</label>
+                <input id="check-expected" type="number" step="0.01" placeholder="Optional" class="w-full mt-1 px-3.5 py-3 text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="text-[11px] text-white/40 uppercase tracking-wider">Date received</label>
+              <input id="check-date" type="date" class="w-full mt-1 px-3.5 py-3 text-sm" />
+            </div>
+            <div class="flex gap-2">
+              <button onclick="toggleCheckForm()" class="flex-1 py-3 rounded-xl glass-subtle text-sm">Cancel</button>
+              <button onclick="saveCheck()" class="flex-1 py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm">Save</button>
+            </div>
+          </div>
+          <div id="checks-list" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- GOALS VIEW -->
+      <div id="view-goals" class="view absolute inset-0 flex flex-col safe-top hidden">
+        <div class="px-5 pt-3 pb-2">
+          <h1 class="text-[28px] font-semibold tracking-tight">Goals</h1>
+          <p class="text-sm text-white/40 mt-0.5">Where the money goes.</p>
+        </div>
+        <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
+          <div class="glass-strong rounded-2xl p-4 border border-emerald-500/20 shadow-glow-green">
+            <div class="text-[11px] text-white/40 uppercase tracking-wider">Lifetime Saved</div>
+            <div class="text-3xl font-semibold text-emerald-400 mt-1" id="lifetime-saved">$0.00</div>
+          </div>
+          <div id="goals-list" class="space-y-3"></div>
+          <button onclick="toggleGoalForm()" id="btn-add-goal" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">
+            + Add goal
+          </button>
+          <div id="goal-form" class="glass-strong rounded-2xl p-4 space-y-3 hidden">
+            <input id="goal-name" type="text" placeholder="Emergency fund, New gear…" class="w-full px-3.5 py-3 text-sm" />
+            <input id="goal-target" type="number" step="1" placeholder="Target amount" class="w-full px-3.5 py-3 text-sm" />
+            <div class="flex gap-2">
+              <button onclick="toggleGoalForm()" class="flex-1 py-3 rounded-xl glass-subtle text-sm">Cancel</button>
+              <button onclick="saveGoal()" class="flex-1 py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm">Create</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Tab Bar -->
+    <div class="tab-bar absolute bottom-0 left-0 right-0 safe-bottom z-50">
+      <div class="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
+        <button onclick="showView('home')" data-view="home" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-amber-300">
+          <span class="text-xl">🏠</span>
+          <span class="text-[10px] font-medium">Home</span>
+        </button>
+        <button onclick="showView('jobs')" data-view="jobs" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40">
+          <span class="text-xl">💼</span>
+          <span class="text-[10px] font-medium">Jobs</span>
+        </button>
+        <button onclick="showView('log')" data-view="log" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40">
+          <span class="text-xl">⏱️</span>
+          <span class="text-[10px] font-medium">Log</span>
+        </button>
+        <button onclick="showView('money')" data-view="money" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40">
+          <span class="text-xl">💰</span>
+          <span class="text-[10px] font-medium">Money</span>
+        </button>
+        <button onclick="showView('goals')" data-view="goals" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40">
+          <span class="text-xl">🎯</span>
+          <span class="text-[10px] font-medium">Goals</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Allocate Modal -->
+  <div id="alloc-modal" class="fixed inset-0 z-[100] hidden items-end justify-center bg-black/60 backdrop-blur-sm">
+    <div class="glass-strong w-full max-w-md rounded-t-3xl p-5 pb-8 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Allocate to Goal</h3>
+        <button onclick="closeAlloc()" class="text-white/40 text-sm">Close</button>
+      </div>
+      <div>
+        <label class="text-[11px] text-white/40 uppercase tracking-wider">Goal</label>
+        <select id="alloc-goal" class="w-full mt-1 px-3.5 py-3 text-sm"></select>
+      </div>
+      <div>
+        <label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label>
+        <input id="alloc-amount" type="number" step="0.01" placeholder="100" class="w-full mt-1 px-3.5 py-3 text-sm" />
+      </div>
+      <button onclick="confirmAlloc()" class="w-full py-3.5 rounded-2xl bg-emerald-500 text-black font-semibold">
+        Move Money
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ========== STATE ==========
+    const STORAGE_KEY = 'forge-v1';
+    const LEVEL_TITLES = {
+      1: 'Spark', 2: 'Apprentice', 3: 'Operator', 4: 'Forgeman',
+      5: 'Architect', 6: 'Strategist', 7: 'Master', 8: 'Legend', 9: 'Mythic', 10: 'Eternal'
+    };
+
+    let state = {
+      jobs: [],
+      timeEntries: [],
+      paychecks: [],
+      goals: [],
+      progress: { xp: 0, level: 1, currentStreak: 0, longestStreak: 0, lastLogDate: null, totalHours: 0, totalSaved: 0 },
+      onboardingDone: false
+    };
+
+    let ui = {
+      jobType: 'hourly',
+      jobIcon: '🛒',
+      logIsActual: true,
+      allocatingCheckId: null
+    };
+
+    // ========== HELPERS ==========
+    function uid() { return crypto.randomUUID(); }
+    function today() { return new Date().toISOString().slice(0, 10); }
+    function xpNeeded(level) { return Math.floor(100 * Math.pow(1.35, level - 1)); }
+    function levelTitle(l) { return LEVEL_TITLES[Math.min(l, 10)] || `Level ${l}`; }
+
+    // Persistent storage: works on a stable website origin (HTTPS recommended).
+    // Some online HTML preview tools use temporary/isolated frames where storage
+    // is blocked. In that case, show a clear warning instead of failing silently.
+    let storageWarningShown = false;
+
+    function showStorageWarning(message) {
+      let notice = document.getElementById('storage-warning');
+      if (!notice) {
+        notice = document.createElement('div');
+        notice.id = 'storage-warning';
+        notice.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:9999;padding:12px 14px;border-radius:14px;background:#7f1d1d;color:#fff;border:1px solid #f87171;font:13px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 30px #0008;';
+        document.body.appendChild(notice);
+      }
+      notice.textContent = message;
+      notice.style.display = 'block';
+    }
+
+    function clearStorageWarning() {
+      const notice = document.getElementById('storage-warning');
+      if (notice) notice.style.display = 'none';
+    }
+
+    function save() {
+      try {
+        const serialized = JSON.stringify(state);
+        localStorage.setItem(STORAGE_KEY, serialized);
+
+        // Verify that the write really succeeded.
+        const verification = localStorage.getItem(STORAGE_KEY);
+        if (verification !== serialized) throw new Error('Storage verification failed');
+
+        clearStorageWarning();
+        storageWarningShown = false;
+        return true;
+      } catch (e) {
+        showStorageWarning('Forge could not save your data in this preview. Your latest changes may be lost. Open Forge from a permanent HTTPS website, then use Backup to protect your records.');
+        storageWarningShown = true;
+        console.error('Forge save failed:', e);
+        return false;
+      }
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== 'object') throw new Error('Invalid saved data');
+          state = {
+            ...state,
+            ...parsed,
+            jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
+            timeEntries: Array.isArray(parsed.timeEntries) ? parsed.timeEntries : [],
+            paychecks: Array.isArray(parsed.paychecks) ? parsed.paychecks : [],
+            goals: Array.isArray(parsed.goals) ? parsed.goals : [],
+            progress: { ...state.progress, ...(parsed.progress || {}) }
+          };
+        }
+        // Probe storage access early so blocked preview storage is identified.
+        const probeKey = STORAGE_KEY + '-probe';
+        localStorage.setItem(probeKey, 'ok');
+        localStorage.removeItem(probeKey);
+      } catch (e) {
+        console.error('Forge load/storage check failed:', e);
+        showStorageWarning('Forge cannot access persistent storage in this preview. Use a permanent HTTPS website for reliable saving, and export a backup before closing this page.');
+        storageWarningShown = true;
+      }
+    }
+
+    function exportBackup() {
+      const backup = {
+        app: 'Forge',
+        formatVersion: 1,
+        exportedAt: new Date().toISOString(),
+        state
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'forge-backup-' + today() + '.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function importBackup(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const backup = JSON.parse(reader.result);
+          const imported = backup && backup.state ? backup.state : backup;
+          if (!imported || typeof imported !== 'object' ||
+              !Array.isArray(imported.jobs) ||
+              !Array.isArray(imported.timeEntries) ||
+              !Array.isArray(imported.paychecks) ||
+              !Array.isArray(imported.goals) ||
+              !imported.progress) {
+            throw new Error('This file does not look like a Forge backup.');
+          }
+          if (!confirm('Restore this backup? Your current Forge data will be replaced. Export a backup first if you want to keep the current data.')) return;
+          state = {
+            ...state,
+            ...imported,
+            progress: { ...state.progress, ...imported.progress }
+          };
+          if (!save()) return;
+          render();
+          alert('Forge backup restored.');
+        } catch (err) {
+          alert('Could not restore this backup. Please choose a valid Forge JSON backup.');
+          console.error('Forge import failed:', err);
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Ask the browser to persist the site's storage where supported.
+    async function requestPersistentStorage() {
+      try {
+        if (navigator.storage && navigator.storage.persist) {
+          await navigator.storage.persist();
+        }
+      } catch (e) {
+        console.warn('Persistent storage request was unavailable:', e);
+      }
+    }
+
+    function addXp(amount) {
+      let { xp, level } = state.progress;
+      xp += amount;
+      let needed = xpNeeded(level);
+      while (xp >= needed) {
+        xp -= needed;
+        level += 1;
+        needed = xpNeeded(level);
+      }
+      state.progress.xp = xp;
+      state.progress.level = level;
+    }
+
+    // ========== VIEWS ==========
+    function showView(name) {
+      document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+      document.getElementById('view-' + name).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.toggle('text-amber-300', b.dataset.view === name);
+        b.classList.toggle('text-white/40', b.dataset.view !== name);
+      });
+      render();
+    }
+
+    // ========== RENDER ==========
+    function render() {
+      // Level / XP
+      document.getElementById('level-num').textContent = state.progress.level;
+      document.getElementById('level-title').textContent = levelTitle(state.progress.level);
+      document.getElementById('xp-current').textContent = state.progress.xp + ' XP';
+      const needed = xpNeeded(state.progress.level);
+      document.getElementById('xp-needed').textContent = needed + ' to next';
+      document.getElementById('xp-bar').style.width = Math.min(100, (state.progress.xp / needed) * 100) + '%';
+
+      // Stats
+      document.getElementById('stat-streak').textContent = state.progress.currentStreak;
+      document.getElementById('stat-hours').textContent = Math.round(state.progress.totalHours);
+      document.getElementById('stat-saved').textContent = '$' + Math.round(state.progress.totalSaved);
+      document.getElementById('lifetime-saved').textContent = '$' + state.progress.totalSaved.toFixed(2);
+
+      // Home jobs
+      const homeJobs = document.getElementById('home-jobs');
+      const active = state.jobs.filter(j => j.active !== false);
+      if (active.length === 0) {
+        homeJobs.innerHTML = `<div class="glass rounded-2xl p-4 text-center text-sm text-white/40">No jobs yet. <button onclick="showView('jobs')" class="text-amber-300">Add one</button></div>`;
+      } else {
+        homeJobs.innerHTML = active.map(j => `
+          <div class="glass rounded-2xl p-3.5 flex items-center gap-3 float">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style="background:${j.color}22">${j.icon}</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium truncate">${j.name}</div>
+              <div class="text-[11px] text-white/40">${j.type === 'hourly' && j.rate ? '$' + j.rate + '/hr' : j.type === 'gig' ? 'Gig / Variable' : 'Other'}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Home goals
+      const goalsSec = document.getElementById('home-goals-section');
+      const homeGoals = document.getElementById('home-goals');
+      if (state.goals.length) {
+        goalsSec.classList.remove('hidden');
+        homeGoals.innerHTML = state.goals.slice(0, 2).map(g => {
+          const pct = Math.min(100, (g.current / g.target) * 100);
+          return `
+            <div class="glass rounded-2xl p-3.5">
+              <div class="flex justify-between text-sm mb-1.5">
+                <span class="font-medium">${g.name}</span>
+                <span class="text-white/50">$${g.current.toFixed(0)} / $${g.target}</span>
+              </div>
+              <div class="progress-track h-1.5"><div class="progress-fill bg-emerald-400" style="width:${pct}%"></div></div>
+            </div>`;
+        }).join('');
+      } else {
+        goalsSec.classList.add('hidden');
+      }
+
+      // Jobs list
+      const jobsList = document.getElementById('jobs-list');
+      jobsList.innerHTML = state.jobs.map(j => `
+        <div class="glass rounded-2xl p-3.5 flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl" style="background:${j.color}22">${j.icon}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium truncate">${j.name}</div>
+            <div class="text-[11px] text-white/40">${j.type === 'hourly' ? (j.rate ? '$' + j.rate + '/hr' : 'Hourly') : j.type === 'gig' ? 'Gig' : 'Other'}</div>
+          </div>
+          <button onclick="toggleJobActive('${j.id}')" class="text-[11px] px-2.5 py-1 rounded-full ${j.active !== false ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white/40'}">
+            ${j.active !== false ? 'Active' : 'Paused'}
+          </button>
+        </div>
+      `).join('');
+
+      // Log job select
+      const logJob = document.getElementById('log-job');
+      const checkJob = document.getElementById('check-job');
+      const opts = active.map(j => `<option value="${j.id}">${j.icon} ${j.name}</option>`).join('');
+      logJob.innerHTML = opts || '<option value="">Add a job first</option>';
+      checkJob.innerHTML = '<option value="">Combined / Multiple</option>' + opts;
+
+      // Log recent
+      const recent = [...state.timeEntries].sort((a,b) => b.created.localeCompare(a.created)).slice(0, 8);
+      document.getElementById('log-recent').innerHTML = recent.length ? recent.map(e => {
+        const job = state.jobs.find(j => j.id === e.jobId);
+        return `
+          <div class="glass rounded-2xl p-3 flex items-center gap-3">
+            <div class="text-lg">${job?.icon || '⏱️'}</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium">${e.hours}h · ${job?.name || '—'}</div>
+              <div class="text-[11px] text-white/40">${e.date}${e.notes ? ' · ' + e.notes : ''}</div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${e.actual ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white/40'}">${e.actual ? 'Worked' : 'Planned'}</span>
+          </div>`;
+      }).join('') : '<div class="text-sm text-white/30 text-center py-4">No logs yet</div>';
+
+      // Checks
+      const checks = [...state.paychecks].sort((a,b) => b.date.localeCompare(a.date));
+      document.getElementById('checks-list').innerHTML = checks.length ? checks.map(c => {
+        const job = state.jobs.find(j => j.id === c.jobId);
+        return `
+          <div class="glass rounded-2xl p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-xl font-semibold">$${c.amount.toFixed(2)}</div>
+                <div class="text-[11px] text-white/40 mt-0.5">${job ? job.icon + ' ' + job.name : 'Multiple'} · ${c.date}</div>
+                ${c.expected ? `<div class="text-[11px] text-white/30 mt-0.5">Expected $${c.expected.toFixed(2)}</div>` : ''}
+              </div>
+              <button onclick="openAlloc('${c.id}')" class="text-[11px] px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">Allocate</button>
+            </div>
+          </div>`;
+      }).join('') : '<div class="text-sm text-white/30 text-center py-6">No paychecks yet</div>';
+
+      // Goals
+      document.getElementById('goals-list').innerHTML = state.goals.map(g => {
+        const pct = Math.min(100, (g.current / g.target) * 100);
+        return `
+          <div class="glass rounded-2xl p-4">
+            <div class="flex justify-between mb-2">
+              <div class="font-medium">${g.name}</div>
+              <div class="text-sm text-emerald-400 font-medium">${Math.round(pct)}%</div>
+            </div>
+            <div class="text-[11px] text-white/40 mb-2">$${g.current.toFixed(2)} of $${g.target.toFixed(2)}</div>
+            <div class="progress-track h-2"><div class="progress-fill bg-emerald-400" style="width:${pct}%"></div></div>
+          </div>`;
+      }).join('') || '';
+
+      // Alloc goals select
+      document.getElementById('alloc-goal').innerHTML = state.goals.map(g =>
+        `<option value="${g.id}">${g.name} ($${g.current.toFixed(0)} / $${g.target})</option>`
+      ).join('') || '<option value="">No goals yet</option>';
+    }
+
+    // ========== ACTIONS ==========
+    function toggleJobForm() {
+      document.getElementById('job-form').classList.toggle('hidden');
+    }
+    function toggleCheckForm() {
+      document.getElementById('check-form').classList.toggle('hidden');
+      if (!document.getElementById('check-date').value) document.getElementById('check-date').value = today();
+    }
+    function toggleGoalForm() {
+      document.getElementById('goal-form').classList.toggle('hidden');
+    }
+
+    // Job form helpers
+    document.querySelectorAll('.job-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        ui.jobType = btn.dataset.type;
+        document.querySelectorAll('.job-type-btn').forEach(b => {
+          b.classList.toggle('bg-amber-500', b.dataset.type === ui.jobType);
+          b.classList.toggle('text-black', b.dataset.type === ui.jobType);
+          b.classList.toggle('glass-subtle', b.dataset.type !== ui.jobType);
+        });
+      });
+    });
+    document.querySelectorAll('.job-icon').forEach(btn => {
+      btn.addEventListener('click', () => {
+        ui.jobIcon = btn.dataset.icon;
+        document.querySelectorAll('.job-icon').forEach(b => {
+          b.classList.toggle('ring-2', b.dataset.icon === ui.jobIcon);
+          b.classList.toggle('ring-amber-400', b.dataset.icon === ui.jobIcon);
+        });
+      });
+    });
+
+    function saveJob() {
+      const name = document.getElementById('job-name').value.trim();
+      if (!name) return;
+      const rate = parseFloat(document.getElementById('job-rate').value) || null;
+      const colors = ['#f59e0b','#0071ce','#06c167','#8b5cf6','#ef4444','#06b6d4','#ec4899'];
+      state.jobs.push({
+        id: uid(),
+        name,
+        type: ui.jobType,
+        rate: ui.jobType === 'hourly' ? rate : null,
+        icon: ui.jobIcon,
+        color: colors[state.jobs.length % colors.length],
+        active: true,
+        created: new Date().toISOString()
+      });
+      addXp(25);
+      save();
+      document.getElementById('job-name').value = '';
+      document.getElementById('job-rate').value = '';
+      toggleJobForm();
+      render();
+    }
+
+    function toggleJobActive(id) {
+      const j = state.jobs.find(x => x.id === id);
+      if (j) { j.active = j.active === false ? true : false; save(); render(); }
+    }
+
+    function setLogType(actual) {
+      ui.logIsActual = actual;
+      document.getElementById('btn-worked').className = actual
+        ? 'flex-1 py-2.5 rounded-xl text-sm font-medium bg-amber-500 text-black'
+        : 'flex-1 py-2.5 rounded-xl text-sm font-medium glass-subtle';
+      document.getElementById('btn-scheduled').className = !actual
+        ? 'flex-1 py-2.5 rounded-xl text-sm font-medium bg-amber-500 text-black'
+        : 'flex-1 py-2.5 rounded-xl text-sm font-medium glass-subtle';
+    }
+
+    function submitLog() {
+      const jobId = document.getElementById('log-job').value;
+      const hours = parseFloat(document.getElementById('log-hours').value);
+      const date = document.getElementById('log-date').value || today();
+      const notes = document.getElementById('log-notes').value.trim();
+      if (!jobId || !hours || hours <= 0) return;
+
+      state.timeEntries.push({
+        id: uid(), jobId, date, hours, actual: ui.logIsActual, notes: notes || undefined,
+        created: new Date().toISOString()
+      });
+
+      // Streak
+      const last = state.progress.lastLogDate;
+      let streak = state.progress.currentStreak;
+      if (last) {
+        const diff = Math.floor((new Date(date) - new Date(last)) / 86400000);
+        if (diff === 1) streak += 1;
+        else if (diff > 1) streak = 1;
+      } else streak = 1;
+      state.progress.currentStreak = streak;
+      if (streak > state.progress.longestStreak) state.progress.longestStreak = streak;
+      state.progress.lastLogDate = date;
+      state.progress.totalHours += hours;
+
+      addXp(Math.round(hours * 8) + (ui.logIsActual ? 10 : 5));
+      save();
+
+      document.getElementById('log-hours').value = '';
+      document.getElementById('log-notes').value = '';
+      const btn = document.getElementById('btn-log');
+      btn.textContent = '✓ Logged + XP';
+      setTimeout(() => { btn.textContent = 'Log Hours'; }, 2000);
+      render();
+    }
+
+    function saveCheck() {
+      const amount = parseFloat(document.getElementById('check-amount').value);
+      if (!amount || amount <= 0) return;
+      const expected = parseFloat(document.getElementById('check-expected').value) || null;
+      const jobId = document.getElementById('check-job').value || null;
+      const date = document.getElementById('check-date').value || today();
+
+      state.paychecks.push({
+        id: uid(), jobId, amount, expected, date, created: new Date().toISOString()
+      });
+      addXp(40);
+      save();
+      document.getElementById('check-amount').value = '';
+      document.getElementById('check-expected').value = '';
+      toggleCheckForm();
+      render();
+    }
+
+    function openAlloc(checkId) {
+      if (!state.goals.length) {
+        alert('Create a savings goal first.');
+        showView('goals');
+        return;
+      }
+      ui.allocatingCheckId = checkId;
+      document.getElementById('alloc-modal').classList.remove('hidden');
+      document.getElementById('alloc-modal').classList.add('flex');
+      document.getElementById('alloc-amount').value = '';
+    }
+    function closeAlloc() {
+      document.getElementById('alloc-modal').classList.add('hidden');
+      document.getElementById('alloc-modal').classList.remove('flex');
+      ui.allocatingCheckId = null;
+    }
+    function confirmAlloc() {
+      const goalId = document.getElementById('alloc-goal').value;
+      const amount = parseFloat(document.getElementById('alloc-amount').value);
+      if (!goalId || !amount || amount <= 0) return;
+      const goal = state.goals.find(g => g.id === goalId);
+      if (goal) {
+        goal.current += amount;
+        state.progress.totalSaved += amount;
+        addXp(Math.round(amount / 5));
+        save();
+      }
+      closeAlloc();
+      render();
+    }
+
+    function saveGoal() {
+      const name = document.getElementById('goal-name').value.trim();
+      const target = parseFloat(document.getElementById('goal-target').value);
+      if (!name || !target || target <= 0) return;
+      state.goals.push({
+        id: uid(), name, target, current: 0, created: new Date().toISOString()
+      });
+      addXp(20);
+      save();
+      document.getElementById('goal-name').value = '';
+      document.getElementById('goal-target').value = '';
+      toggleGoalForm();
+      render();
+    }
+
+    // ========== INIT ==========
+    load();
+    requestPersistentStorage();
+    window.addEventListener('pagehide', () => { save(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') save();
+    });
+    document.getElementById('log-date').value = today();
+    document.getElementById('check-date').value = today();
+
+    // First-run quick start
+    if (!state.onboardingDone && state.jobs.length === 0) {
+      state.jobs = [
+        { id: uid(), name: 'Walmart', type: 'hourly', rate: null, icon: '🛒', color: '#0071ce', active: true, created: new Date().toISOString() },
+        { id: uid(), name: 'Uber Eats', type: 'gig', rate: null, icon: '🚗', color: '#06c167', active: true, created: new Date().toISOString() }
+      ];
+      state.onboardingDone = true;
+      save();
+    }
+
+    render();
+    showView('home');
+  </script>
+</body>
+</html>
