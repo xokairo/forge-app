@@ -12,22 +12,8 @@
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            glass: {
-              50: 'rgba(255,255,255,0.05)',
-              100: 'rgba(255,255,255,0.08)',
-              200: 'rgba(255,255,255,0.12)',
-              300: 'rgba(255,255,255,0.18)',
-            }
-          },
           boxShadow: {
-            'spatial': '0 8px 32px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)',
-            'spatial-lg': '0 20px 60px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)',
-            'glow-amber': '0 0 40px rgba(245,158,11,0.25)',
             'glow-green': '0 0 30px rgba(34,197,94,0.2)',
-          },
-          backdropBlur: {
-            xs: '2px',
           }
         }
       }
@@ -35,9 +21,9 @@
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    
+
     * { -webkit-tap-highlight-color: transparent; }
-    
+
     html, body {
       height: 100%;
       overflow: hidden;
@@ -45,8 +31,9 @@
       background: #07070a;
       color: #f0f0f5;
     }
+    @supports (height: 100dvh) { html, body { height: 100dvh; } }
 
-    /* Ambient background */
+    /* ===== Ambient background ===== */
     .spatial-bg {
       background:
         radial-gradient(ellipse 80% 50% at 20% -10%, rgba(245,158,11,0.12), transparent 50%),
@@ -54,8 +41,15 @@
         radial-gradient(ellipse 50% 30% at 50% 100%, rgba(34,197,94,0.06), transparent 40%),
         #07070a;
     }
+    .orb { position: fixed; border-radius: 50%; filter: blur(70px); pointer-events: none; z-index: 0; will-change: transform; }
+    .orb.a { width: 280px; height: 280px; background: rgba(245,158,11,.26); top: -90px; left: -70px; animation: drift1 16s ease-in-out infinite alternate; }
+    .orb.b { width: 260px; height: 260px; background: rgba(99,102,241,.24); top: 32%; right: -110px; animation: drift2 21s ease-in-out infinite alternate; }
+    .orb.c { width: 300px; height: 300px; background: rgba(34,197,94,.13); bottom: -130px; left: 15%; animation: drift3 25s ease-in-out infinite alternate; }
+    @keyframes drift1 { to { transform: translate(90px, 140px) scale(1.15); } }
+    @keyframes drift2 { to { transform: translate(-120px, -90px) scale(1.2); } }
+    @keyframes drift3 { to { transform: translate(110px, -70px) scale(1.1); } }
 
-    /* Glass panels */
+    /* ===== Glass ===== */
     .glass {
       background: linear-gradient(145deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 100%);
       backdrop-filter: blur(24px) saturate(160%);
@@ -63,7 +57,6 @@
       border: 1px solid rgba(255,255,255,0.12);
       box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
     }
-
     .glass-strong {
       background: linear-gradient(160deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.05) 100%);
       backdrop-filter: blur(40px) saturate(180%);
@@ -71,7 +64,6 @@
       border: 1px solid rgba(255,255,255,0.16);
       box-shadow: 0 20px 50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
     }
-
     .glass-subtle {
       background: rgba(255,255,255,0.04);
       backdrop-filter: blur(12px);
@@ -79,103 +71,169 @@
       border: 1px solid rgba(255,255,255,0.07);
     }
 
-    /* Floating depth */
-    .float {
-      transform: translateZ(0);
-      transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.25s ease;
-    }
-    .float:active {
-      transform: scale(0.97);
-    }
+    /* ===== Touch feedback ===== */
+    .tap, .float, button { transition: transform .2s cubic-bezier(.25,.8,.25,1), background-color .2s, opacity .2s, border-color .2s; }
+    .tap:active, .float:active, button:active:not(:disabled) { transform: scale(0.97); }
 
-    /* Soft progress */
-    .progress-track {
-      background: rgba(255,255,255,0.08);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      border-radius: 999px;
-      transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-    }
+    /* ===== Progress ===== */
+    .progress-track { background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 999px; transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1); animation: grow 1s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+    @keyframes grow { from { width: 0; } }
 
-    /* Safe areas */
     .safe-top { padding-top: max(env(safe-area-inset-top), 12px); }
     .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 12px); }
 
-    /* Scroll areas */
-    .scroll-y {
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
+    .scroll-y { overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .scroll-y::-webkit-scrollbar { display: none; }
 
-    /* Input glass */
     input, select, textarea {
       background: rgba(0,0,0,0.25);
       border: 1px solid rgba(255,255,255,0.1);
       color: #f0f0f5;
       border-radius: 14px;
       outline: none;
-      transition: border-color 0.2s;
+      font-size: 16px !important; /* stops iOS zoom-on-focus */
+      transition: border-color 0.2s, box-shadow .2s;
     }
-    input:focus, select:focus, textarea:focus {
-      border-color: rgba(245,158,11,0.5);
-    }
+    input:focus, select:focus, textarea:focus { border-color: rgba(245,158,11,0.55); box-shadow: 0 0 0 3px rgba(245,158,11,.12); }
     input::placeholder { color: rgba(255,255,255,0.3); }
+    input[type=date] { min-height: 48px; }
 
-    /* Tab bar glass */
+    /* ===== Tab bar ===== */
     .tab-bar {
       background: linear-gradient(to top, rgba(10,10,15,0.92), rgba(10,10,15,0.75));
       backdrop-filter: blur(30px) saturate(150%);
       -webkit-backdrop-filter: blur(30px) saturate(150%);
       border-top: 1px solid rgba(255,255,255,0.08);
     }
-
-    /* Level badge */
-    .level-badge {
-      background: linear-gradient(135deg, rgba(245,158,11,0.25), rgba(245,158,11,0.08));
-      border: 1px solid rgba(245,158,11,0.3);
+    .tab-pill {
+      position: absolute; top: 8px; bottom: 8px; left: 8px;
+      width: calc((100% - 16px) / 5);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(245,158,11,.2), rgba(245,158,11,.06));
+      border: 1px solid rgba(245,158,11,.25);
+      transition: transform .5s cubic-bezier(.32,.72,0,1);
     }
+    .tab-btn { position: relative; z-index: 1; }
+    .tab-btn .ico { display: inline-block; transition: transform .45s cubic-bezier(.34,1.56,.64,1); }
+    .tab-btn.on .ico { transform: translateY(-2px) scale(1.18); }
 
-    /* Subtle animation */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .fade-up { animation: fadeUp 0.4s ease-out forwards; }
+    .level-badge { background: linear-gradient(135deg, rgba(245,158,11,0.25), rgba(245,158,11,0.08)); border: 1px solid rgba(245,158,11,0.3); }
+    .bump { animation: bump .8s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.35) rotate(-4deg); } 100% { transform: scale(1); } }
 
-    @keyframes pulse-soft {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
+    /* ===== Segmented / pick buttons ===== */
+    .seg { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+    .seg.on { background: #f59e0b; color: #000; border-color: #f59e0b; }
+    .seg-icon.on { background: rgba(245,158,11,.25); color: inherit; border-color: #f59e0b; transform: scale(1.08); }
+
+    .armed { background: rgba(239,68,68,.9) !important; color: #fff !important; border-color: transparent !important; }
+
+    /* ===== Bottom sheet ===== */
+    #sheet-root { position: fixed; inset: 0; z-index: 100; visibility: hidden; pointer-events: none; transition: visibility 0s linear .5s; }
+    #sheet-root.open { visibility: visible; pointer-events: auto; transition-delay: 0s; }
+    #sheet-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); opacity: 0; transition: opacity .4s ease; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    #sheet-root.open #sheet-backdrop { opacity: 1; }
+    #sheet {
+      position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 28rem; max-height: 90%;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      border-radius: 28px 28px 0 0; padding: 10px 20px calc(24px + env(safe-area-inset-bottom));
+      background: linear-gradient(160deg, rgba(40,40,52,.92), rgba(18,18,26,.95));
+      transform: translateY(105%);
+      transition: transform .55s cubic-bezier(.32,.72,0,1);
     }
+    #sheet-root.open #sheet { transform: translateY(0); }
+    .grabber { width: 40px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.2); margin: 0 auto 14px; }
+    .sheet-in { animation: sheetIn .35s cubic-bezier(.22,1,.36,1); }
+    @keyframes sheetIn { from { opacity: 0; transform: translateY(10px); } }
+
+    /* ===== Toast ===== */
+    #toast {
+      position: fixed; left: 50%; top: max(env(safe-area-inset-top), 12px); z-index: 300;
+      transform: translate(-50%, -140%); opacity: 0;
+      transition: transform .5s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+      padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 500; white-space: nowrap;
+      background: rgba(30,30,40,.9); border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.5); pointer-events: none;
+    }
+    #toast.show { transform: translate(-50%, 8px); opacity: 1; }
+
+    /* ===== Mascot ===== */
+    .mascot { display: block; overflow: visible; width: 100%; height: 100%; }
+    .mascot .m-body { transform-origin: 60px 112px; animation: sway 4.5s ease-in-out infinite; }
+    .mascot .m-eyes { transform-origin: 60px 76px; animation: blink 5s infinite; }
+    .mascot .m-shadow { transform-origin: 60px 116px; animation: shadow 3.2s ease-in-out infinite; }
+    @keyframes sway { 0%,100% { transform: rotate(-2deg) scaleY(1); } 50% { transform: rotate(2deg) scaleY(1.03); } }
+    @keyframes blink { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+    @keyframes shadow { 0%,100% { transform: scaleX(1); } 50% { transform: scaleX(.88); } }
+    #home-mascot { width: 44px; height: 46px; flex-shrink: 0; }
+    .bob { animation: bob 3.2s ease-in-out infinite; }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+    /* ===== Splash ===== */
+    #splash {
+      position: fixed; inset: 0; z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse 70% 50% at 50% 42%, rgba(245,158,11,.22), transparent 60%), #07070a;
+      transition: opacity .7s ease, transform .7s cubic-bezier(.22,1,.36,1);
+    }
+    #splash.leave { opacity: 0; transform: scale(1.12); pointer-events: none; }
+    #splash .ring { position: absolute; width: 190px; height: 190px; border-radius: 50%; border: 1px solid rgba(245,158,11,.35); animation: ring 2s cubic-bezier(.22,1,.36,1) infinite; }
+    #splash .ring.r2 { animation-delay: .6s; }
+    @keyframes ring { from { transform: scale(.5); opacity: .8; } to { transform: scale(2.2); opacity: 0; } }
+    #splash .m-wrap { width: 112px; height: 117px; animation: pop 1s cubic-bezier(.34,1.56,.64,1) backwards; filter: drop-shadow(0 0 40px rgba(245,158,11,.45)); }
+    @keyframes pop { from { transform: scale(.3) translateY(30px); opacity: 0; } }
+    #splash .word { margin-top: 22px; font-size: 30px; font-weight: 700; letter-spacing: .32em; text-indent: .32em; animation: word 1s .35s cubic-bezier(.22,1,.36,1) backwards; }
+    @keyframes word { from { opacity: 0; letter-spacing: .6em; filter: blur(6px); } }
+    #splash .tag { margin-top: 6px; font-size: 12px; color: rgba(255,255,255,.4); letter-spacing: .18em; text-transform: uppercase; animation: word 1s .6s cubic-bezier(.22,1,.36,1) backwards; }
+    #splash .bar { margin-top: 34px; width: 120px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+    #splash .bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #f59e0b, #fcd34d); transform-origin: left; animation: load 1.6s .2s cubic-bezier(.65,0,.35,1) backwards; border-radius: 3px; }
+    @keyframes load { from { transform: scaleX(0); } }
+
+    .view { will-change: transform, opacity; }
   </style>
 </head>
 <body class="spatial-bg h-full flex flex-col">
 
-  <!-- Main App Shell -->
-  <div id="app" class="flex-1 flex flex-col h-full relative overflow-hidden">
+  <!-- shared mascot gradients -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde68a"/><stop offset=".45" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/></linearGradient>
+      <linearGradient id="mg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbeb"/><stop offset="1" stop-color="#fcd34d"/></linearGradient>
+    </defs>
+  </svg>
 
-    <!-- Views Container -->
+  <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+
+  <!-- Splash -->
+  <div id="splash">
+    <div class="ring"></div><div class="ring r2"></div>
+    <div class="m-wrap" id="splash-mascot"></div>
+    <div class="word">FORGE</div>
+    <div class="tag">Work. Earn. Build.</div>
+    <div class="bar"><i></i></div>
+  </div>
+
+  <!-- Main App Shell -->
+  <div id="app" class="flex-1 flex flex-col h-full relative overflow-hidden" style="z-index:1">
     <div id="views" class="flex-1 relative overflow-hidden">
 
-      <!-- HOME VIEW -->
-      <div id="view-home" class="view absolute inset-0 flex flex-col safe-top">
+      <!-- HOME -->
+      <div id="view-home" class="view absolute inset-0 flex flex-col safe-top hidden">
         <div class="px-5 pt-3 pb-2">
           <div class="flex items-center justify-between">
-            <div>
-              <p class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-medium">Forge</p>
-              <h1 class="text-[28px] font-semibold tracking-tight leading-tight">Momentum</h1>
+            <div class="flex items-center gap-3">
+              <div id="home-mascot" class="w-11 h-11 bob"></div>
+              <div>
+                <p class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-medium">Forge</p>
+                <h1 class="text-[28px] font-semibold tracking-tight leading-tight">Momentum</h1>
+              </div>
             </div>
             <div id="level-badge" class="level-badge px-3.5 py-1.5 rounded-full text-center">
               <div class="text-[10px] text-amber-300/80 uppercase tracking-wider">Level</div>
               <div class="text-sm font-semibold text-amber-200" id="level-num">1</div>
             </div>
           </div>
-
-          <!-- XP Bar -->
           <div class="mt-4 glass-subtle rounded-2xl px-4 py-3">
             <div class="flex justify-between text-[11px] text-white/50 mb-1.5">
               <span id="xp-current">0 XP</span>
@@ -189,7 +247,6 @@
         </div>
 
         <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
-          <!-- Stats -->
           <div class="grid grid-cols-3 gap-3">
             <div class="glass rounded-2xl p-3.5 text-center float">
               <div class="text-2xl font-semibold text-amber-300" id="stat-streak">0</div>
@@ -205,36 +262,19 @@
             </div>
           </div>
 
-          <!-- Quick Actions -->
           <div class="grid grid-cols-2 gap-3">
-            <button onclick="showView('log')" class="glass-strong rounded-2xl p-4 text-left float active:scale-[0.97] transition">
+            <button onclick="showView('log')" class="glass-strong rounded-2xl p-4 text-left float">
               <div class="text-2xl mb-1">⏱️</div>
               <div class="text-sm font-medium">Log Hours</div>
               <div class="text-[11px] text-white/40">Worked or scheduled</div>
             </button>
-            <button onclick="showView('money')" class="glass-strong rounded-2xl p-4 text-left float active:scale-[0.97] transition">
+            <button onclick="showView('money')" class="glass-strong rounded-2xl p-4 text-left float">
               <div class="text-2xl mb-1">💵</div>
               <div class="text-sm font-medium">Paycheck</div>
               <div class="text-[11px] text-white/40">Record & allocate</div>
             </button>
           </div>
 
-          <!-- Data backup controls -->
-          <div class="glass-subtle rounded-2xl p-3.5">
-            <div class="flex items-center justify-between gap-3">
-              <div class="min-w-0">
-                <div class="text-sm font-medium">Your data</div>
-                <div class="text-[11px] text-white/40 mt-0.5">Export a backup before changing devices or clearing browser data.</div>
-              </div>
-              <div class="flex gap-2 shrink-0">
-                <button onclick="exportBackup()" class="px-3 py-2 rounded-xl bg-white/10 text-xs font-medium">Backup</button>
-                <button onclick="document.getElementById('backup-file').click()" class="px-3 py-2 rounded-xl bg-white/10 text-xs font-medium">Restore</button>
-              </div>
-            </div>
-            <input id="backup-file" type="file" accept="application/json,.json" class="hidden" onchange="importBackup(event)" />
-          </div>
-
-          <!-- Active Jobs -->
           <div>
             <div class="flex items-center justify-between mb-2 px-1">
               <h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Active Jobs</h2>
@@ -243,7 +283,6 @@
             <div id="home-jobs" class="space-y-2"></div>
           </div>
 
-          <!-- Goals Snapshot -->
           <div id="home-goals-section" class="hidden">
             <div class="flex items-center justify-between mb-2 px-1">
               <h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Savings</h2>
@@ -251,51 +290,40 @@
             </div>
             <div id="home-goals" class="space-y-2"></div>
           </div>
-        </div>
-      </div>
 
-      <!-- JOBS VIEW -->
-      <div id="view-jobs" class="view absolute inset-0 flex flex-col safe-top hidden">
-        <div class="px-5 pt-3 pb-2">
-          <h1 class="text-[28px] font-semibold tracking-tight">Jobs</h1>
-          <p class="text-sm text-white/40 mt-0.5">Day job, side hustles, everything.</p>
-        </div>
-        <div class="flex-1 scroll-y px-5 pb-28 space-y-3">
-          <div id="jobs-list" class="space-y-3"></div>
-          <button onclick="toggleJobForm()" id="btn-add-job" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm hover:border-amber-400/40 hover:text-amber-300 transition">
-            + Add job
-          </button>
-          <div id="job-form" class="glass-strong rounded-2xl p-4 space-y-3 hidden">
-            <input id="job-name" type="text" placeholder="Job name (Walmart, Uber Eats…)" class="w-full px-3.5 py-3 text-sm" />
-            <div class="grid grid-cols-3 gap-2">
-              <button type="button" data-type="hourly" class="job-type-btn py-2 rounded-xl text-xs font-medium bg-amber-500 text-black">Hourly</button>
-              <button type="button" data-type="gig" class="job-type-btn py-2 rounded-xl text-xs font-medium glass-subtle">Gig</button>
-              <button type="button" data-type="other" class="job-type-btn py-2 rounded-xl text-xs font-medium glass-subtle">Other</button>
+          <div class="glass-subtle rounded-2xl p-3.5">
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-sm font-medium">Your data</div>
+                <div class="text-[11px] text-white/40 mt-0.5">Saved on this device automatically. Back up before switching phones or clearing browser data.</div>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <button onclick="exportBackup()" class="px-3 py-2 rounded-xl bg-white/10 text-xs font-medium">Backup</button>
+                <button onclick="document.getElementById('backup-file').click()" class="px-3 py-2 rounded-xl bg-white/10 text-xs font-medium">Restore</button>
+              </div>
             </div>
-            <input id="job-rate" type="number" step="0.01" placeholder="Hourly rate (optional)" class="w-full px-3.5 py-3 text-sm" />
-            <div class="flex flex-wrap gap-2" id="job-icons">
-              <button type="button" data-icon="🛒" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">🛒</button>
-              <button type="button" data-icon="🚗" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">🚗</button>
-              <button type="button" data-icon="💼" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">💼</button>
-              <button type="button" data-icon="🍕" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">🍕</button>
-              <button type="button" data-icon="💻" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">💻</button>
-              <button type="button" data-icon="📦" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">📦</button>
-              <button type="button" data-icon="🛠️" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">🛠️</button>
-              <button type="button" data-icon="☕" class="job-icon w-10 h-10 rounded-xl text-lg glass-subtle">☕</button>
-            </div>
-            <div class="flex gap-2 pt-1">
-              <button onclick="toggleJobForm()" class="flex-1 py-3 rounded-xl glass-subtle text-sm">Cancel</button>
-              <button onclick="saveJob()" class="flex-1 py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm">Add Job</button>
-            </div>
+            <input id="backup-file" type="file" accept="application/json,.json" class="hidden" onchange="importBackup(event)" />
           </div>
         </div>
       </div>
 
-      <!-- LOG VIEW -->
+      <!-- JOBS -->
+      <div id="view-jobs" class="view absolute inset-0 flex flex-col safe-top hidden">
+        <div class="px-5 pt-3 pb-2">
+          <h1 class="text-[28px] font-semibold tracking-tight">Jobs</h1>
+          <p class="text-sm text-white/40 mt-0.5">Day job, side hustles, everything. Tap one to edit.</p>
+        </div>
+        <div class="flex-1 scroll-y px-5 pb-28 space-y-3">
+          <div id="jobs-list" class="space-y-3"></div>
+          <button onclick="openJobSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add job</button>
+        </div>
+      </div>
+
+      <!-- LOG -->
       <div id="view-log" class="view absolute inset-0 flex flex-col safe-top hidden">
         <div class="px-5 pt-3 pb-2">
           <h1 class="text-[28px] font-semibold tracking-tight">Log Hours</h1>
-          <p class="text-sm text-white/40 mt-0.5">Actual or scheduled — both count.</p>
+          <p class="text-sm text-white/40 mt-0.5">Actual or scheduled — both count. Tap a log to edit.</p>
         </div>
         <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
           <div class="glass-strong rounded-2xl p-4 space-y-3">
@@ -310,17 +338,15 @@
               </div>
               <div>
                 <label class="text-[11px] text-white/40 uppercase tracking-wider">Hours</label>
-                <input id="log-hours" type="number" step="0.25" min="0.25" placeholder="8" class="w-full mt-1 px-3.5 py-3 text-sm" />
+                <input id="log-hours" type="number" inputmode="decimal" step="0.25" min="0.25" placeholder="8" class="w-full mt-1 px-3.5 py-3 text-sm" />
               </div>
             </div>
             <div class="flex gap-2">
-              <button type="button" id="btn-worked" onclick="setLogType(true)" class="flex-1 py-2.5 rounded-xl text-sm font-medium bg-amber-500 text-black">Worked</button>
-              <button type="button" id="btn-scheduled" onclick="setLogType(false)" class="flex-1 py-2.5 rounded-xl text-sm font-medium glass-subtle">Scheduled</button>
+              <button type="button" data-group="logType" data-val="worked" onclick="pick('logType','worked')" class="seg on flex-1 py-2.5 rounded-xl text-sm font-medium">Worked</button>
+              <button type="button" data-group="logType" data-val="scheduled" onclick="pick('logType','scheduled')" class="seg flex-1 py-2.5 rounded-xl text-sm font-medium">Scheduled</button>
             </div>
             <input id="log-notes" type="text" placeholder="Notes (optional)" class="w-full px-3.5 py-3 text-sm" />
-            <button onclick="submitLog()" id="btn-log" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm active:scale-[0.98] transition">
-              Log Hours
-            </button>
+            <button onclick="submitLog()" id="btn-log" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Log Hours</button>
           </div>
           <div>
             <h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium mb-2 px-1">Recent</h2>
@@ -329,49 +355,33 @@
         </div>
       </div>
 
-      <!-- MONEY VIEW -->
+      <!-- MONEY -->
       <div id="view-money" class="view absolute inset-0 flex flex-col safe-top hidden">
         <div class="px-5 pt-3 pb-2">
           <h1 class="text-[28px] font-semibold tracking-tight">Money</h1>
-          <p class="text-sm text-white/40 mt-0.5">Checks in. Money into goals.</p>
+          <p class="text-sm text-white/40 mt-0.5">Checks in. Money into goals. Tap a check to edit.</p>
         </div>
         <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
-          <button onclick="toggleCheckForm()" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm active:scale-[0.98] transition">
-            + Record Paycheck
-          </button>
-          <div id="check-form" class="glass-strong rounded-2xl p-4 space-y-3 hidden">
-            <div>
-              <label class="text-[11px] text-white/40 uppercase tracking-wider">From job</label>
-              <select id="check-job" class="w-full mt-1 px-3.5 py-3 text-sm"></select>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="glass rounded-2xl p-3.5">
+              <div class="text-[10px] text-white/40 uppercase tracking-wide">Received</div>
+              <div class="text-xl font-semibold mt-0.5" id="money-total">$0.00</div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label>
-                <input id="check-amount" type="number" step="0.01" placeholder="842.50" class="w-full mt-1 px-3.5 py-3 text-sm" />
-              </div>
-              <div>
-                <label class="text-[11px] text-white/40 uppercase tracking-wider">Expected</label>
-                <input id="check-expected" type="number" step="0.01" placeholder="Optional" class="w-full mt-1 px-3.5 py-3 text-sm" />
-              </div>
-            </div>
-            <div>
-              <label class="text-[11px] text-white/40 uppercase tracking-wider">Date received</label>
-              <input id="check-date" type="date" class="w-full mt-1 px-3.5 py-3 text-sm" />
-            </div>
-            <div class="flex gap-2">
-              <button onclick="toggleCheckForm()" class="flex-1 py-3 rounded-xl glass-subtle text-sm">Cancel</button>
-              <button onclick="saveCheck()" class="flex-1 py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm">Save</button>
+            <div class="glass rounded-2xl p-3.5">
+              <div class="text-[10px] text-white/40 uppercase tracking-wide">Unallocated</div>
+              <div class="text-xl font-semibold mt-0.5 text-amber-300" id="money-unalloc">$0.00</div>
             </div>
           </div>
+          <button onclick="openCheckSheet()" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">+ Record Paycheck</button>
           <div id="checks-list" class="space-y-3"></div>
         </div>
       </div>
 
-      <!-- GOALS VIEW -->
+      <!-- GOALS -->
       <div id="view-goals" class="view absolute inset-0 flex flex-col safe-top hidden">
         <div class="px-5 pt-3 pb-2">
           <h1 class="text-[28px] font-semibold tracking-tight">Goals</h1>
-          <p class="text-sm text-white/40 mt-0.5">Where the money goes.</p>
+          <p class="text-sm text-white/40 mt-0.5">Where the money goes. Tap a goal to edit.</p>
         </div>
         <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
           <div class="glass-strong rounded-2xl p-4 border border-emerald-500/20 shadow-glow-green">
@@ -379,185 +389,159 @@
             <div class="text-3xl font-semibold text-emerald-400 mt-1" id="lifetime-saved">$0.00</div>
           </div>
           <div id="goals-list" class="space-y-3"></div>
-          <button onclick="toggleGoalForm()" id="btn-add-goal" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">
-            + Add goal
-          </button>
-          <div id="goal-form" class="glass-strong rounded-2xl p-4 space-y-3 hidden">
-            <input id="goal-name" type="text" placeholder="Emergency fund, New gear…" class="w-full px-3.5 py-3 text-sm" />
-            <input id="goal-target" type="number" step="1" placeholder="Target amount" class="w-full px-3.5 py-3 text-sm" />
-            <div class="flex gap-2">
-              <button onclick="toggleGoalForm()" class="flex-1 py-3 rounded-xl glass-subtle text-sm">Cancel</button>
-              <button onclick="saveGoal()" class="flex-1 py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm">Create</button>
-            </div>
-          </div>
+          <button onclick="openGoalSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add goal</button>
         </div>
       </div>
-
     </div>
 
-    <!-- Bottom Tab Bar -->
+    <!-- Tab bar -->
     <div class="tab-bar absolute bottom-0 left-0 right-0 safe-bottom z-50">
-      <div class="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
-        <button onclick="showView('home')" data-view="home" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-amber-300">
-          <span class="text-xl">🏠</span>
-          <span class="text-[10px] font-medium">Home</span>
-        </button>
-        <button onclick="showView('jobs')" data-view="jobs" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40">
-          <span class="text-xl">💼</span>
-          <span class="text-[10px] font-medium">Jobs</span>
-        </button>
-        <button onclick="showView('log')" data-view="log" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40">
-          <span class="text-xl">⏱️</span>
-          <span class="text-[10px] font-medium">Log</span>
-        </button>
-        <button onclick="showView('money')" data-view="money" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40">
-          <span class="text-xl">💰</span>
-          <span class="text-[10px] font-medium">Money</span>
-        </button>
-        <button onclick="showView('goals')" data-view="goals" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40">
-          <span class="text-xl">🎯</span>
-          <span class="text-[10px] font-medium">Goals</span>
-        </button>
+      <div class="relative flex justify-around items-center h-16 max-w-lg mx-auto px-2">
+        <div class="tab-pill" id="tab-pill"></div>
+        <button onclick="showView('home')" data-view="home" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">🏠</span><span class="text-[10px] font-medium">Home</span></button>
+        <button onclick="showView('jobs')" data-view="jobs" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">💼</span><span class="text-[10px] font-medium">Jobs</span></button>
+        <button onclick="showView('log')" data-view="log" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">⏱️</span><span class="text-[10px] font-medium">Log</span></button>
+        <button onclick="showView('money')" data-view="money" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">💰</span><span class="text-[10px] font-medium">Money</span></button>
+        <button onclick="showView('goals')" data-view="goals" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">🎯</span><span class="text-[10px] font-medium">Goals</span></button>
       </div>
     </div>
-
   </div>
 
-  <!-- Allocate Modal -->
-  <div id="alloc-modal" class="fixed inset-0 z-[100] hidden items-end justify-center bg-black/60 backdrop-blur-sm">
-    <div class="glass-strong w-full max-w-md rounded-t-3xl p-5 pb-8 space-y-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold">Allocate to Goal</h3>
-        <button onclick="closeAlloc()" class="text-white/40 text-sm">Close</button>
-      </div>
-      <div>
-        <label class="text-[11px] text-white/40 uppercase tracking-wider">Goal</label>
-        <select id="alloc-goal" class="w-full mt-1 px-3.5 py-3 text-sm"></select>
-      </div>
-      <div>
-        <label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label>
-        <input id="alloc-amount" type="number" step="0.01" placeholder="100" class="w-full mt-1 px-3.5 py-3 text-sm" />
-      </div>
-      <button onclick="confirmAlloc()" class="w-full py-3.5 rounded-2xl bg-emerald-500 text-black font-semibold">
-        Move Money
-      </button>
-    </div>
+  <!-- Bottom sheet (all add / edit / delete forms live here) -->
+  <div id="sheet-root">
+    <div id="sheet-backdrop" onclick="closeSheet()"></div>
+    <div id="sheet" class="glass-strong"><div id="sheet-body"></div></div>
   </div>
+
+  <div id="toast"></div>
 
   <script>
-    // ========== STATE ==========
+    // ========== CONSTANTS / STATE ==========
     const STORAGE_KEY = 'forge-v1';
-    const LEVEL_TITLES = {
-      1: 'Spark', 2: 'Apprentice', 3: 'Operator', 4: 'Forgeman',
-      5: 'Architect', 6: 'Strategist', 7: 'Master', 8: 'Legend', 9: 'Mythic', 10: 'Eternal'
-    };
+    const LEVEL_TITLES = { 1:'Spark', 2:'Apprentice', 3:'Operator', 4:'Forgeman', 5:'Architect', 6:'Strategist', 7:'Master', 8:'Legend', 9:'Mythic', 10:'Eternal' };
+    const VIEW_ORDER = ['home','jobs','log','money','goals'];
+    const JOB_COLORS = ['#f59e0b','#0071ce','#06c167','#8b5cf6','#ef4444','#06b6d4','#ec4899'];
+    const JOB_ICONS = ['🛒','🚗','💼','🍕','💻','📦','🛠️','☕'];
 
     let state = {
-      jobs: [],
-      timeEntries: [],
-      paychecks: [],
-      goals: [],
-      progress: { xp: 0, level: 1, currentStreak: 0, longestStreak: 0, lastLogDate: null, totalHours: 0, totalSaved: 0 },
+      jobs: [], timeEntries: [], paychecks: [], goals: [],
+      progress: { xp: 0, level: 1, totalXp: 0, currentStreak: 0, longestStreak: 0, lastLogDate: null, totalHours: 0, totalSaved: 0 },
       onboardingDone: false
     };
-
-    let ui = {
-      jobType: 'hourly',
-      jobIcon: '🛒',
-      logIsActual: true,
-      allocatingCheckId: null
-    };
+    let ui = { pick: { logType: 'worked' }, showAllLogs: false };
+    let currentView = null;
 
     // ========== HELPERS ==========
-    function uid() { return crypto.randomUUID(); }
-    function today() { return new Date().toISOString().slice(0, 10); }
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+    const r2 = n => Math.round(n * 100) / 100;
+    const fmt = n => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    function today() { // local date, not UTC
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function fmtDate(s) {
+      const d = new Date((s || '') + 'T00:00:00');
+      return isNaN(d) ? (s || '') : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    function dayDiff(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000); }
     function xpNeeded(level) { return Math.floor(100 * Math.pow(1.35, level - 1)); }
     function levelTitle(l) { return LEVEL_TITLES[Math.min(l, 10)] || `Level ${l}`; }
+    function goalCurrent(g) { return r2((g.contributions || []).reduce((s, c) => s + c.amount, 0)); }
+    function checkAllocated(id) { return r2(state.goals.reduce((s, g) => s + g.contributions.filter(c => c.checkId === id).reduce((a, c) => a + c.amount, 0), 0)); }
+    function checkRemaining(c) { return r2(c.amount - checkAllocated(c.id)); }
+    function jobById(id) { return state.jobs.find(j => j.id === id); }
+    function jobLabel(id) { const j = jobById(id); return j ? `${j.icon} ${esc(j.name)}` : '— Deleted job'; }
 
-    // Persistent storage: works on a stable website origin (HTTPS recommended).
-    // Some online HTML preview tools use temporary/isolated frames where storage
-    // is blocked. In that case, show a clear warning instead of failing silently.
-    let storageWarningShown = false;
+    function mascot(cls = '') {
+      return `<svg viewBox="0 0 120 124" class="mascot ${cls}" aria-hidden="true">
+        <ellipse class="m-shadow" cx="60" cy="116" rx="26" ry="4.5" fill="#000" opacity=".4"/>
+        <g class="m-body">
+          <path d="M60 6c5 22 34 34 34 68 0 22-15 38-34 38S26 96 26 74c0-18 11-26 17-40 4 7 9 9 17-28z" fill="url(#mg)"/>
+          <path d="M60 42c3 12 20 20 20 38 0 14-9 24-20 24s-20-10-20-24c0-10 6-15 10-24 3 4 7 6 10-14z" fill="url(#mg2)" opacity=".65"/>
+          <g class="m-eyes">
+            <path d="M42 73h14a7 7 0 0 1-14 0z" fill="#1b1208"/><path d="M64 73h14a7 7 0 0 1-14 0z" fill="#1b1208"/>
+            <circle cx="52" cy="77" r="1.6" fill="#fff" opacity=".85"/><circle cx="74" cy="77" r="1.6" fill="#fff" opacity=".85"/>
+          </g>
+          <path d="M53 90q7 4.5 14 0" fill="none" stroke="#1b1208" stroke-width="3" stroke-linecap="round"/>
+        </g></svg>`;
+    }
+    function empty(msg) {
+      return `<div class="py-6 flex flex-col items-center gap-2 text-sm text-white/35 text-center"><div class="w-14 h-14 opacity-80">${mascot()}</div>${msg}</div>`;
+    }
 
+    // ========== STORAGE ==========
     function showStorageWarning(message) {
-      let notice = document.getElementById('storage-warning');
-      if (!notice) {
-        notice = document.createElement('div');
-        notice.id = 'storage-warning';
-        notice.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:9999;padding:12px 14px;border-radius:14px;background:#7f1d1d;color:#fff;border:1px solid #f87171;font:13px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 30px #0008;';
-        document.body.appendChild(notice);
+      let n = $('storage-warning');
+      if (!n) {
+        n = document.createElement('div');
+        n.id = 'storage-warning';
+        n.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:9999;padding:12px 14px;border-radius:14px;background:#7f1d1d;color:#fff;border:1px solid #f87171;font:13px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 30px #0008;';
+        document.body.appendChild(n);
       }
-      notice.textContent = message;
-      notice.style.display = 'block';
+      n.textContent = message;
+      n.style.display = 'block';
     }
-
-    function clearStorageWarning() {
-      const notice = document.getElementById('storage-warning');
-      if (notice) notice.style.display = 'none';
-    }
+    function clearStorageWarning() { const n = $('storage-warning'); if (n) n.style.display = 'none'; }
 
     function save() {
       try {
-        const serialized = JSON.stringify(state);
-        localStorage.setItem(STORAGE_KEY, serialized);
-
-        // Verify that the write really succeeded.
-        const verification = localStorage.getItem(STORAGE_KEY);
-        if (verification !== serialized) throw new Error('Storage verification failed');
-
+        const s = JSON.stringify(state);
+        localStorage.setItem(STORAGE_KEY, s);
+        if (localStorage.getItem(STORAGE_KEY) !== s) throw new Error('verify failed');
         clearStorageWarning();
-        storageWarningShown = false;
         return true;
       } catch (e) {
-        showStorageWarning('Forge could not save your data in this preview. Your latest changes may be lost. Open Forge from a permanent HTTPS website, then use Backup to protect your records.');
-        storageWarningShown = true;
+        showStorageWarning('Forge could not save your data here. Open it from a permanent HTTPS site (or add it to your Home Screen) and use Backup to protect your records.');
         console.error('Forge save failed:', e);
         return false;
       }
+    }
+
+    function migrate() {
+      // Old goals stored a running "current" number. Convert to a contribution history so money can be edited/removed.
+      state.goals = state.goals.map(g => {
+        if (!Array.isArray(g.contributions)) {
+          const cur = Number(g.current) || 0;
+          g.contributions = cur ? [{ id: uid(), amount: cur, date: (g.created || '').slice(0, 10) || today(), note: 'Previous balance', checkId: null, created: g.created || new Date().toISOString() }] : [];
+        }
+        delete g.current;
+        return g;
+      });
     }
 
     function load() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
-          const parsed = JSON.parse(raw);
-          if (!parsed || typeof parsed !== 'object') throw new Error('Invalid saved data');
+          const p = JSON.parse(raw);
+          if (!p || typeof p !== 'object') throw new Error('Invalid saved data');
           state = {
-            ...state,
-            ...parsed,
-            jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
-            timeEntries: Array.isArray(parsed.timeEntries) ? parsed.timeEntries : [],
-            paychecks: Array.isArray(parsed.paychecks) ? parsed.paychecks : [],
-            goals: Array.isArray(parsed.goals) ? parsed.goals : [],
-            progress: { ...state.progress, ...(parsed.progress || {}) }
+            ...state, ...p,
+            jobs: Array.isArray(p.jobs) ? p.jobs : [],
+            timeEntries: Array.isArray(p.timeEntries) ? p.timeEntries : [],
+            paychecks: Array.isArray(p.paychecks) ? p.paychecks : [],
+            goals: Array.isArray(p.goals) ? p.goals : [],
+            progress: { ...state.progress, ...(p.progress || {}) }
           };
         }
-        // Probe storage access early so blocked preview storage is identified.
-        const probeKey = STORAGE_KEY + '-probe';
-        localStorage.setItem(probeKey, 'ok');
-        localStorage.removeItem(probeKey);
+        localStorage.setItem(STORAGE_KEY + '-probe', 'ok');
+        localStorage.removeItem(STORAGE_KEY + '-probe');
       } catch (e) {
-        console.error('Forge load/storage check failed:', e);
-        showStorageWarning('Forge cannot access persistent storage in this preview. Use a permanent HTTPS website for reliable saving, and export a backup before closing this page.');
-        storageWarningShown = true;
+        console.error('Forge load failed:', e);
+        showStorageWarning('Forge cannot access storage here, so nothing will be kept. Open it from a permanent HTTPS site and use Backup.');
       }
+      migrate();
     }
 
     function exportBackup() {
-      const backup = {
-        app: 'Forge',
-        formatVersion: 1,
-        exportedAt: new Date().toISOString(),
-        state
-      };
+      const backup = { app: 'Forge', formatVersion: 2, exportedAt: new Date().toISOString(), state };
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'forge-backup-' + today() + '.json';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const a = document.createElement('a');
+      a.href = url; a.download = 'forge-backup-' + today() + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
@@ -567,390 +551,540 @@
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const backup = JSON.parse(reader.result);
-          const imported = backup && backup.state ? backup.state : backup;
-          if (!imported || typeof imported !== 'object' ||
-              !Array.isArray(imported.jobs) ||
-              !Array.isArray(imported.timeEntries) ||
-              !Array.isArray(imported.paychecks) ||
-              !Array.isArray(imported.goals) ||
-              !imported.progress) {
-            throw new Error('This file does not look like a Forge backup.');
-          }
-          if (!confirm('Restore this backup? Your current Forge data will be replaced. Export a backup first if you want to keep the current data.')) return;
-          state = {
-            ...state,
-            ...imported,
-            progress: { ...state.progress, ...imported.progress }
-          };
+          const b = JSON.parse(reader.result);
+          const im = b && b.state ? b.state : b;
+          if (!im || typeof im !== 'object' || !Array.isArray(im.jobs) || !Array.isArray(im.timeEntries) || !Array.isArray(im.paychecks) || !Array.isArray(im.goals) || !im.progress)
+            throw new Error('not a Forge backup');
+          if (!confirm('Restore this backup? Your current Forge data will be replaced.')) return;
+          state = { ...state, ...im, progress: { ...state.progress, ...im.progress } };
+          migrate(); recalc();
           if (!save()) return;
           render();
-          alert('Forge backup restored.');
+          toast('Backup restored');
         } catch (err) {
           alert('Could not restore this backup. Please choose a valid Forge JSON backup.');
-          console.error('Forge import failed:', err);
-        } finally {
-          event.target.value = '';
-        }
+          console.error(err);
+        } finally { event.target.value = ''; }
       };
       reader.readAsText(file);
     }
 
-    // Ask the browser to persist the site's storage where supported.
-    async function requestPersistentStorage() {
-      try {
-        if (navigator.storage && navigator.storage.persist) {
-          await navigator.storage.persist();
-        }
-      } catch (e) {
-        console.warn('Persistent storage request was unavailable:', e);
-      }
+    // ========== PROGRESS (derived from data, so deleting/editing always stays consistent) ==========
+    function calcStreaks() {
+      const t = today();
+      const dates = [...new Set(state.timeEntries.map(e => e.date))].filter(d => d <= t).sort();
+      let longest = 0, run = 0, prev = null;
+      for (const d of dates) { run = (prev && dayDiff(prev, d) === 1) ? run + 1 : 1; longest = Math.max(longest, run); prev = d; }
+      const last = dates.length ? dates[dates.length - 1] : null;
+      const cur = last && dayDiff(last, t) <= 1 ? run : 0;
+      return { cur, longest, last };
     }
-
-    function addXp(amount) {
-      let { xp, level } = state.progress;
-      xp += amount;
-      let needed = xpNeeded(level);
-      while (xp >= needed) {
-        xp -= needed;
-        level += 1;
-        needed = xpNeeded(level);
-      }
-      state.progress.xp = xp;
-      state.progress.level = level;
-    }
-
-    // ========== VIEWS ==========
-    function showView(name) {
-      document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-      document.getElementById('view-' + name).classList.remove('hidden');
-      document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.toggle('text-amber-300', b.dataset.view === name);
-        b.classList.toggle('text-white/40', b.dataset.view !== name);
+    function recalc() {
+      let xp = 0;
+      xp += state.jobs.filter(j => !j.seed).length * 25;
+      xp += state.goals.length * 20;
+      xp += state.paychecks.length * 40;
+      state.timeEntries.forEach(e => { xp += Math.round(e.hours * 8) + (e.actual ? 10 : 5); });
+      state.goals.forEach(g => { xp += Math.round(Math.max(0, goalCurrent(g)) / 5); });
+      let level = 1, rem = xp;
+      while (rem >= xpNeeded(level)) { rem -= xpNeeded(level); level++; }
+      const s = calcStreaks();
+      Object.assign(state.progress, {
+        totalXp: xp, xp: rem, level,
+        currentStreak: s.cur, longestStreak: s.longest, lastLogDate: s.last,
+        totalHours: state.timeEntries.reduce((a, e) => a + e.hours, 0),
+        totalSaved: state.goals.reduce((a, g) => a + goalCurrent(g), 0)
       });
+    }
+    // Call after any change: recalc, save, redraw, celebrate.
+    function commit(msg) {
+      const prevXp = state.progress.totalXp || 0, prevLevel = state.progress.level;
+      recalc();
+      save();
       render();
+      const gain = state.progress.totalXp - prevXp;
+      if (state.progress.level > prevLevel) {
+        toast(`Level ${state.progress.level} · ${levelTitle(state.progress.level)}`);
+        const b = $('level-badge'); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump');
+      } else if (msg) {
+        toast(msg + (gain > 0 ? ` · +${gain} XP` : ''));
+      }
+    }
+
+    // ========== TOAST / SHEET / PICK ==========
+    let toastT;
+    function toast(msg) {
+      const t = $('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastT);
+      toastT = setTimeout(() => t.classList.remove('show'), 2400);
+    }
+    function openSheet(html) {
+      const body = $('sheet-body');
+      body.innerHTML = `<div class="sheet-in"><div class="grabber"></div>${html}</div>`;
+      $('sheet-root').classList.add('open');
+      $('sheet').scrollTop = 0;
+    }
+    function closeSheet() { $('sheet-root').classList.remove('open'); if (document.activeElement) document.activeElement.blur(); }
+    function sheetHead(title, sub) {
+      return `<div class="flex items-center justify-between mb-4">
+        <div><h3 class="text-lg font-semibold">${title}</h3>${sub ? `<div class="text-[11px] text-white/40 mt-0.5">${sub}</div>` : ''}</div>
+        <button onclick="closeSheet()" class="text-white/40 text-sm px-2 py-1">Close</button></div>`;
+    }
+    function seg(group, opts, val, cls = 'py-2.5 text-sm') {
+      return `<div class="flex gap-2">${opts.map(([v, l]) =>
+        `<button type="button" data-group="${group}" data-val="${v}" onclick="pick('${group}','${v}')" class="seg ${v === val ? 'on' : ''} flex-1 ${cls} rounded-xl font-medium">${l}</button>`).join('')}</div>`;
+    }
+    function pick(group, val) {
+      ui.pick[group] = val;
+      document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.toggle('on', b.dataset.val === val));
+      if (group === 'jtype') $('f-rate-wrap')?.classList.toggle('hidden', val !== 'hourly');
+      if (group === 'cmode') {
+        $('c-check-wrap')?.classList.toggle('hidden', val !== 'add');
+        const b = $('c-save'); if (b) b.textContent = val === 'add' ? 'Add Money' : 'Withdraw';
+      }
+    }
+    // Two-tap delete: first tap arms the button, second tap confirms.
+    function arm(btn, fn, ...args) {
+      if (btn.dataset.armed) { clearTimeout(btn._t); window[fn](...args); return; }
+      btn.dataset.armed = '1'; btn.dataset.label = btn.textContent;
+      btn.textContent = 'Tap again to confirm'; btn.classList.add('armed');
+      btn._t = setTimeout(() => { delete btn.dataset.armed; btn.textContent = btn.dataset.label; btn.classList.remove('armed'); }, 3000);
+    }
+    const delBtn = (fn, id, label = 'Delete') =>
+      `<button onclick="arm(this,'${fn}','${id}')" class="w-full py-3 rounded-xl bg-red-500/15 text-red-300 text-sm font-medium">${label}</button>`;
+
+    // ========== VIEW SWITCHING (smooth directional transitions) ==========
+    function showView(name) {
+      const next = $('view-' + name);
+      if (!next) return;
+      if (name === currentView) { render(); return; }
+      const prevName = currentView;
+      const prev = prevName ? $('view-' + prevName) : null;
+      const dir = prevName ? Math.sign(VIEW_ORDER.indexOf(name) - VIEW_ORDER.indexOf(prevName)) || 1 : 1;
+
+      document.querySelectorAll('.view').forEach(v => {
+        if (v !== next && v !== prev) { v.getAnimations().forEach(a => a.cancel()); v.classList.add('hidden'); }
+      });
+      next.getAnimations().forEach(a => a.cancel());
+      currentView = name;
+      render();
+
+      next.classList.remove('hidden');
+      next.style.zIndex = 2; next.style.pointerEvents = '';
+      next.animate(
+        [{ opacity: 0, transform: `translateX(${dir * 44}px) scale(.97)` }, { opacity: 1, transform: 'translateX(0) scale(1)' }],
+        { duration: 460, easing: 'cubic-bezier(.22,1,.36,1)' }
+      );
+      staggerIn(next);
+
+      if (prev) {
+        prev.getAnimations().forEach(a => a.cancel());
+        prev.style.zIndex = 1; prev.style.pointerEvents = 'none';
+        const out = prev.animate(
+          [{ opacity: 1, transform: 'translateX(0) scale(1)' }, { opacity: 0, transform: `translateX(${-dir * 36}px) scale(.97)` }],
+          { duration: 260, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }
+        );
+        out.onfinish = () => { if (currentView !== prevName) prev.classList.add('hidden'); out.cancel(); };
+      }
+
+      // tabs + sliding pill
+      const idx = VIEW_ORDER.indexOf(name);
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        const on = b.dataset.view === name;
+        b.classList.toggle('on', on);
+        b.classList.toggle('text-amber-300', on);
+        b.classList.toggle('text-white/40', !on);
+      });
+      $('tab-pill').style.transform = `translateX(${idx * 100}%)`;
+    }
+    function staggerIn(view) {
+      [...view.querySelectorAll('.glass, .glass-strong, .glass-subtle, button.border-dashed')].slice(0, 14).forEach((el, i) => {
+        el.animate(
+          [{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'translateY(0)' }],
+          { duration: 520, delay: 70 + i * 45, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' }
+        );
+      });
     }
 
     // ========== RENDER ==========
     function render() {
-      // Level / XP
-      document.getElementById('level-num').textContent = state.progress.level;
-      document.getElementById('level-title').textContent = levelTitle(state.progress.level);
-      document.getElementById('xp-current').textContent = state.progress.xp + ' XP';
-      const needed = xpNeeded(state.progress.level);
-      document.getElementById('xp-needed').textContent = needed + ' to next';
-      document.getElementById('xp-bar').style.width = Math.min(100, (state.progress.xp / needed) * 100) + '%';
+      const p = state.progress;
+      $('level-num').textContent = p.level;
+      $('level-title').textContent = levelTitle(p.level);
+      $('xp-current').textContent = p.xp + ' XP';
+      const needed = xpNeeded(p.level);
+      $('xp-needed').textContent = (needed - p.xp) + ' to next';
+      $('xp-bar').style.width = Math.min(100, (p.xp / needed) * 100) + '%';
+      $('stat-streak').textContent = p.currentStreak;
+      $('stat-hours').textContent = Math.round(p.totalHours * 10) / 10;
+      $('stat-saved').textContent = '$' + Math.round(p.totalSaved);
+      $('lifetime-saved').textContent = fmt(p.totalSaved);
 
-      // Stats
-      document.getElementById('stat-streak').textContent = state.progress.currentStreak;
-      document.getElementById('stat-hours').textContent = Math.round(state.progress.totalHours);
-      document.getElementById('stat-saved').textContent = '$' + Math.round(state.progress.totalSaved);
-      document.getElementById('lifetime-saved').textContent = '$' + state.progress.totalSaved.toFixed(2);
+      const active = state.jobs.filter(j => j.active !== false);
 
       // Home jobs
-      const homeJobs = document.getElementById('home-jobs');
-      const active = state.jobs.filter(j => j.active !== false);
-      if (active.length === 0) {
-        homeJobs.innerHTML = `<div class="glass rounded-2xl p-4 text-center text-sm text-white/40">No jobs yet. <button onclick="showView('jobs')" class="text-amber-300">Add one</button></div>`;
-      } else {
-        homeJobs.innerHTML = active.map(j => `
-          <div class="glass rounded-2xl p-3.5 flex items-center gap-3 float">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style="background:${j.color}22">${j.icon}</div>
-            <div class="flex-1 min-w-0">
-              <div class="font-medium truncate">${j.name}</div>
-              <div class="text-[11px] text-white/40">${j.type === 'hourly' && j.rate ? '$' + j.rate + '/hr' : j.type === 'gig' ? 'Gig / Variable' : 'Other'}</div>
-            </div>
+      $('home-jobs').innerHTML = active.length ? active.map(j => `
+        <div class="glass rounded-2xl p-3.5 flex items-center gap-3 tap" onclick="openJobSheet('${j.id}')">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style="background:${j.color}22">${esc(j.icon)}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium truncate">${esc(j.name)}</div>
+            <div class="text-[11px] text-white/40">${j.type === 'hourly' && j.rate ? '$' + j.rate + '/hr' : j.type === 'gig' ? 'Gig / Variable' : j.type === 'hourly' ? 'Hourly' : 'Other'}</div>
           </div>
-        `).join('');
-      }
+        </div>`).join('') : `<div class="glass rounded-2xl p-4 text-center text-sm text-white/40">No active jobs. <button onclick="openJobSheet()" class="text-amber-300">Add one</button></div>`;
 
       // Home goals
-      const goalsSec = document.getElementById('home-goals-section');
-      const homeGoals = document.getElementById('home-goals');
-      if (state.goals.length) {
-        goalsSec.classList.remove('hidden');
-        homeGoals.innerHTML = state.goals.slice(0, 2).map(g => {
-          const pct = Math.min(100, (g.current / g.target) * 100);
-          return `
-            <div class="glass rounded-2xl p-3.5">
-              <div class="flex justify-between text-sm mb-1.5">
-                <span class="font-medium">${g.name}</span>
-                <span class="text-white/50">$${g.current.toFixed(0)} / $${g.target}</span>
-              </div>
-              <div class="progress-track h-1.5"><div class="progress-fill bg-emerald-400" style="width:${pct}%"></div></div>
-            </div>`;
-        }).join('');
-      } else {
-        goalsSec.classList.add('hidden');
-      }
+      $('home-goals-section').classList.toggle('hidden', !state.goals.length);
+      $('home-goals').innerHTML = state.goals.slice(0, 3).map(g => {
+        const cur = goalCurrent(g), pct = goalPct(g);
+        return `<div class="glass rounded-2xl p-3.5 tap" onclick="openGoalSheet('${g.id}')">
+          <div class="flex justify-between text-sm mb-1.5"><span class="font-medium truncate pr-2">${esc(g.name)}</span><span class="text-white/50 shrink-0">${fmt(cur)} / ${fmt(g.target)}</span></div>
+          <div class="progress-track h-1.5"><div class="progress-fill bg-emerald-400" style="width:${pct}%"></div></div></div>`;
+      }).join('');
 
       // Jobs list
-      const jobsList = document.getElementById('jobs-list');
-      jobsList.innerHTML = state.jobs.map(j => `
-        <div class="glass rounded-2xl p-3.5 flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl" style="background:${j.color}22">${j.icon}</div>
+      $('jobs-list').innerHTML = state.jobs.length ? state.jobs.map(j => {
+        const hrs = state.timeEntries.filter(e => e.jobId === j.id).reduce((a, e) => a + e.hours, 0);
+        return `<div class="glass rounded-2xl p-3.5 flex items-center gap-3 tap" onclick="openJobSheet('${j.id}')">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl" style="background:${j.color}22">${esc(j.icon)}</div>
           <div class="flex-1 min-w-0">
-            <div class="font-medium truncate">${j.name}</div>
-            <div class="text-[11px] text-white/40">${j.type === 'hourly' ? (j.rate ? '$' + j.rate + '/hr' : 'Hourly') : j.type === 'gig' ? 'Gig' : 'Other'}</div>
+            <div class="font-medium truncate">${esc(j.name)}</div>
+            <div class="text-[11px] text-white/40">${j.type === 'hourly' ? (j.rate ? '$' + j.rate + '/hr' : 'Hourly') : j.type === 'gig' ? 'Gig' : 'Other'} · ${Math.round(hrs * 10) / 10}h logged</div>
           </div>
-          <button onclick="toggleJobActive('${j.id}')" class="text-[11px] px-2.5 py-1 rounded-full ${j.active !== false ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white/40'}">
-            ${j.active !== false ? 'Active' : 'Paused'}
-          </button>
-        </div>
-      `).join('');
+          <button onclick="event.stopPropagation();toggleJobActive('${j.id}')" class="text-[11px] px-2.5 py-1 rounded-full ${j.active !== false ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white/40'}">${j.active !== false ? 'Active' : 'Paused'}</button>
+        </div>`;
+      }).join('') : empty('No jobs yet. Add your first one.');
 
-      // Log job select
-      const logJob = document.getElementById('log-job');
-      const checkJob = document.getElementById('check-job');
-      const opts = active.map(j => `<option value="${j.id}">${j.icon} ${j.name}</option>`).join('');
-      logJob.innerHTML = opts || '<option value="">Add a job first</option>';
-      checkJob.innerHTML = '<option value="">Combined / Multiple</option>' + opts;
+      // Log + paycheck job selects (keep current selection)
+      const logJob = $('log-job'), checkPrev = logJob.value;
+      logJob.innerHTML = active.map(j => `<option value="${j.id}">${j.icon} ${esc(j.name)}</option>`).join('') || '<option value="">Add a job first</option>';
+      if (checkPrev && active.some(j => j.id === checkPrev)) logJob.value = checkPrev;
 
-      // Log recent
-      const recent = [...state.timeEntries].sort((a,b) => b.created.localeCompare(a.created)).slice(0, 8);
-      document.getElementById('log-recent').innerHTML = recent.length ? recent.map(e => {
-        const job = state.jobs.find(j => j.id === e.jobId);
-        return `
-          <div class="glass rounded-2xl p-3 flex items-center gap-3">
-            <div class="text-lg">${job?.icon || '⏱️'}</div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium">${e.hours}h · ${job?.name || '—'}</div>
-              <div class="text-[11px] text-white/40">${e.date}${e.notes ? ' · ' + e.notes : ''}</div>
+      // Recent logs
+      const all = [...state.timeEntries].sort((a, b) => (b.date.localeCompare(a.date)) || b.created.localeCompare(a.created));
+      const shown = ui.showAllLogs ? all : all.slice(0, 12);
+      $('log-recent').innerHTML = (shown.length ? shown.map(e => `
+        <div class="glass rounded-2xl p-3 flex items-center gap-3 tap" onclick="openEntrySheet('${e.id}')">
+          <div class="text-lg">${jobById(e.jobId)?.icon || '⏱️'}</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium truncate">${e.hours}h · ${jobById(e.jobId) ? esc(jobById(e.jobId).name) : 'Deleted job'}</div>
+            <div class="text-[11px] text-white/40 truncate">${fmtDate(e.date)}${e.notes ? ' · ' + esc(e.notes) : ''}</div>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full ${e.actual ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white/50'}">${e.actual ? 'Worked' : 'Scheduled'}</span>
+        </div>`).join('') : empty('No logs yet.'))
+        + (all.length > 12 ? `<button onclick="ui.showAllLogs=!ui.showAllLogs;render()" class="w-full py-2.5 text-xs text-amber-300/80">${ui.showAllLogs ? 'Show less' : `Show all (${all.length})`}</button>` : '');
+
+      // Money
+      const checks = [...state.paychecks].sort((a, b) => b.date.localeCompare(a.date));
+      $('money-total').textContent = fmt(checks.reduce((s, c) => s + c.amount, 0));
+      $('money-unalloc').textContent = fmt(checks.reduce((s, c) => s + Math.max(0, checkRemaining(c)), 0));
+      $('checks-list').innerHTML = checks.length ? checks.map(c => {
+        const alloc = checkAllocated(c.id), rem = r2(c.amount - alloc), pct = Math.min(100, Math.max(0, alloc / c.amount * 100));
+        return `<div class="glass rounded-2xl p-4 tap" onclick="openCheckSheet('${c.id}')">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-xl font-semibold">${fmt(c.amount)}</div>
+              <div class="text-[11px] text-white/40 mt-0.5">${c.jobId ? jobLabel(c.jobId) : 'Multiple'} · ${fmtDate(c.date)}</div>
+              ${c.expected ? `<div class="text-[11px] text-white/30 mt-0.5">Expected ${fmt(c.expected)}</div>` : ''}
             </div>
-            <span class="text-[10px] px-2 py-0.5 rounded-full ${e.actual ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white/40'}">${e.actual ? 'Worked' : 'Planned'}</span>
-          </div>`;
-      }).join('') : '<div class="text-sm text-white/30 text-center py-4">No logs yet</div>';
-
-      // Checks
-      const checks = [...state.paychecks].sort((a,b) => b.date.localeCompare(a.date));
-      document.getElementById('checks-list').innerHTML = checks.length ? checks.map(c => {
-        const job = state.jobs.find(j => j.id === c.jobId);
-        return `
-          <div class="glass rounded-2xl p-4">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <div class="text-xl font-semibold">$${c.amount.toFixed(2)}</div>
-                <div class="text-[11px] text-white/40 mt-0.5">${job ? job.icon + ' ' + job.name : 'Multiple'} · ${c.date}</div>
-                ${c.expected ? `<div class="text-[11px] text-white/30 mt-0.5">Expected $${c.expected.toFixed(2)}</div>` : ''}
-              </div>
-              <button onclick="openAlloc('${c.id}')" class="text-[11px] px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">Allocate</button>
-            </div>
-          </div>`;
-      }).join('') : '<div class="text-sm text-white/30 text-center py-6">No paychecks yet</div>';
+            <button onclick="event.stopPropagation();openContribSheet(null,'${c.id}')" class="text-[11px] px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">Allocate</button>
+          </div>
+          <div class="progress-track h-1 mt-3"><div class="progress-fill bg-amber-400" style="width:${pct}%"></div></div>
+          <div class="text-[11px] text-white/40 mt-1.5">${rem > 0.004 ? fmt(rem) + ' unallocated' : rem < -0.004 ? 'Over-allocated by ' + fmt(-rem) : 'Fully allocated'}</div>
+        </div>`;
+      }).join('') : empty('No paychecks yet.');
 
       // Goals
-      document.getElementById('goals-list').innerHTML = state.goals.map(g => {
-        const pct = Math.min(100, (g.current / g.target) * 100);
-        return `
-          <div class="glass rounded-2xl p-4">
-            <div class="flex justify-between mb-2">
-              <div class="font-medium">${g.name}</div>
-              <div class="text-sm text-emerald-400 font-medium">${Math.round(pct)}%</div>
-            </div>
-            <div class="text-[11px] text-white/40 mb-2">$${g.current.toFixed(2)} of $${g.target.toFixed(2)}</div>
-            <div class="progress-track h-2"><div class="progress-fill bg-emerald-400" style="width:${pct}%"></div></div>
-          </div>`;
-      }).join('') || '';
-
-      // Alloc goals select
-      document.getElementById('alloc-goal').innerHTML = state.goals.map(g =>
-        `<option value="${g.id}">${g.name} ($${g.current.toFixed(0)} / $${g.target})</option>`
-      ).join('') || '<option value="">No goals yet</option>';
+      $('goals-list').innerHTML = state.goals.length ? state.goals.map(g => {
+        const cur = goalCurrent(g), pct = goalPct(g), done = cur >= g.target;
+        return `<div class="glass rounded-2xl p-4 tap" onclick="openGoalSheet('${g.id}')">
+          <div class="flex justify-between items-start mb-2 gap-3">
+            <div class="font-medium">${esc(g.name)}</div>
+            <div class="text-sm ${done ? 'text-amber-300' : 'text-emerald-400'} font-medium shrink-0">${done ? 'Reached 🎉' : Math.round(pct) + '%'}</div>
+          </div>
+          <div class="text-[11px] text-white/40 mb-2">${fmt(cur)} of ${fmt(g.target)}</div>
+          <div class="progress-track h-2"><div class="progress-fill ${done ? 'bg-amber-400' : 'bg-emerald-400'}" style="width:${pct}%"></div></div>
+          <div class="mt-3"><button onclick="event.stopPropagation();openContribSheet('${g.id}')" class="text-[12px] px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">+ Add money</button></div>
+        </div>`;
+      }).join('') : empty('No goals yet. Set one and start stacking.');
     }
+    function goalPct(g) { return g.target > 0 ? Math.max(0, Math.min(100, goalCurrent(g) / g.target * 100)) : 0; }
 
-    // ========== ACTIONS ==========
-    function toggleJobForm() {
-      document.getElementById('job-form').classList.toggle('hidden');
+    // ========== JOBS ==========
+    function openJobSheet(id) {
+      const j = id ? jobById(id) : null;
+      ui.pick.jtype = j?.type || 'hourly';
+      ui.pick.jicon = j?.icon || '🛒';
+      const used = id ? state.timeEntries.filter(e => e.jobId === id).length + state.paychecks.filter(c => c.jobId === id).length : 0;
+      openSheet(`
+        ${sheetHead(j ? 'Edit job' : 'New job')}
+        <div class="space-y-3">
+          <input id="f-name" type="text" placeholder="Job name (Walmart, Uber Eats…)" value="${esc(j?.name)}" class="w-full px-3.5 py-3 text-sm" />
+          ${seg('jtype', [['hourly', 'Hourly'], ['gig', 'Gig'], ['other', 'Other']], ui.pick.jtype, 'py-2 text-xs')}
+          <div id="f-rate-wrap" class="${ui.pick.jtype === 'hourly' ? '' : 'hidden'}"><input id="f-rate" type="number" inputmode="decimal" step="0.01" placeholder="Hourly rate (optional)" value="${j?.rate ?? ''}" class="w-full px-3.5 py-3 text-sm" /></div>
+          <div class="flex flex-wrap gap-2">${JOB_ICONS.map(i =>
+            `<button type="button" data-group="jicon" data-val="${i}" onclick="pick('jicon','${i}')" class="seg seg-icon ${i === ui.pick.jicon ? 'on' : ''} w-10 h-10 rounded-xl text-lg">${i}</button>`).join('')}</div>
+          <button onclick="saveJob('${id || ''}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">${j ? 'Save changes' : 'Add Job'}</button>
+          ${j ? `${delBtn('deleteJob', id, 'Delete job')}${used ? `<div class="text-[11px] text-white/35 text-center">${used} log/paycheck record${used > 1 ? 's' : ''} use this job. They stay, labeled “Deleted job”.</div>` : ''}` : ''}
+        </div>`);
     }
-    function toggleCheckForm() {
-      document.getElementById('check-form').classList.toggle('hidden');
-      if (!document.getElementById('check-date').value) document.getElementById('check-date').value = today();
+    function saveJob(id) {
+      const name = $('f-name').value.trim();
+      if (!name) { toast('Give the job a name'); return; }
+      const type = ui.pick.jtype;
+      const rate = type === 'hourly' ? (parseFloat($('f-rate').value) || null) : null;
+      if (id) {
+        const j = jobById(id);
+        Object.assign(j, { name, type, rate, icon: ui.pick.jicon });
+      } else {
+        state.jobs.push({ id: uid(), name, type, rate, icon: ui.pick.jicon, color: JOB_COLORS[state.jobs.length % JOB_COLORS.length], active: true, created: new Date().toISOString() });
+      }
+      closeSheet(); commit(id ? 'Job updated' : 'Job added');
     }
-    function toggleGoalForm() {
-      document.getElementById('goal-form').classList.toggle('hidden');
-    }
-
-    // Job form helpers
-    document.querySelectorAll('.job-type-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        ui.jobType = btn.dataset.type;
-        document.querySelectorAll('.job-type-btn').forEach(b => {
-          b.classList.toggle('bg-amber-500', b.dataset.type === ui.jobType);
-          b.classList.toggle('text-black', b.dataset.type === ui.jobType);
-          b.classList.toggle('glass-subtle', b.dataset.type !== ui.jobType);
-        });
-      });
-    });
-    document.querySelectorAll('.job-icon').forEach(btn => {
-      btn.addEventListener('click', () => {
-        ui.jobIcon = btn.dataset.icon;
-        document.querySelectorAll('.job-icon').forEach(b => {
-          b.classList.toggle('ring-2', b.dataset.icon === ui.jobIcon);
-          b.classList.toggle('ring-amber-400', b.dataset.icon === ui.jobIcon);
-        });
-      });
-    });
-
-    function saveJob() {
-      const name = document.getElementById('job-name').value.trim();
-      if (!name) return;
-      const rate = parseFloat(document.getElementById('job-rate').value) || null;
-      const colors = ['#f59e0b','#0071ce','#06c167','#8b5cf6','#ef4444','#06b6d4','#ec4899'];
-      state.jobs.push({
-        id: uid(),
-        name,
-        type: ui.jobType,
-        rate: ui.jobType === 'hourly' ? rate : null,
-        icon: ui.jobIcon,
-        color: colors[state.jobs.length % colors.length],
-        active: true,
-        created: new Date().toISOString()
-      });
-      addXp(25);
-      save();
-      document.getElementById('job-name').value = '';
-      document.getElementById('job-rate').value = '';
-      toggleJobForm();
-      render();
-    }
-
     function toggleJobActive(id) {
-      const j = state.jobs.find(x => x.id === id);
-      if (j) { j.active = j.active === false ? true : false; save(); render(); }
+      const j = jobById(id);
+      if (j) { j.active = j.active === false; commit(j.active ? 'Job active' : 'Job paused'); }
+    }
+    function deleteJob(id) {
+      state.jobs = state.jobs.filter(j => j.id !== id);
+      closeSheet(); commit('Job deleted');
     }
 
-    function setLogType(actual) {
-      ui.logIsActual = actual;
-      document.getElementById('btn-worked').className = actual
-        ? 'flex-1 py-2.5 rounded-xl text-sm font-medium bg-amber-500 text-black'
-        : 'flex-1 py-2.5 rounded-xl text-sm font-medium glass-subtle';
-      document.getElementById('btn-scheduled').className = !actual
-        ? 'flex-1 py-2.5 rounded-xl text-sm font-medium bg-amber-500 text-black'
-        : 'flex-1 py-2.5 rounded-xl text-sm font-medium glass-subtle';
-    }
-
+    // ========== LOGS ==========
     function submitLog() {
-      const jobId = document.getElementById('log-job').value;
-      const hours = parseFloat(document.getElementById('log-hours').value);
-      const date = document.getElementById('log-date').value || today();
-      const notes = document.getElementById('log-notes').value.trim();
-      if (!jobId || !hours || hours <= 0) return;
-
-      state.timeEntries.push({
-        id: uid(), jobId, date, hours, actual: ui.logIsActual, notes: notes || undefined,
-        created: new Date().toISOString()
-      });
-
-      // Streak
-      const last = state.progress.lastLogDate;
-      let streak = state.progress.currentStreak;
-      if (last) {
-        const diff = Math.floor((new Date(date) - new Date(last)) / 86400000);
-        if (diff === 1) streak += 1;
-        else if (diff > 1) streak = 1;
-      } else streak = 1;
-      state.progress.currentStreak = streak;
-      if (streak > state.progress.longestStreak) state.progress.longestStreak = streak;
-      state.progress.lastLogDate = date;
-      state.progress.totalHours += hours;
-
-      addXp(Math.round(hours * 8) + (ui.logIsActual ? 10 : 5));
-      save();
-
-      document.getElementById('log-hours').value = '';
-      document.getElementById('log-notes').value = '';
-      const btn = document.getElementById('btn-log');
-      btn.textContent = '✓ Logged + XP';
-      setTimeout(() => { btn.textContent = 'Log Hours'; }, 2000);
-      render();
+      const jobId = $('log-job').value;
+      const hours = parseFloat($('log-hours').value);
+      const date = $('log-date').value || today();
+      const notes = $('log-notes').value.trim();
+      if (!jobId) { toast('Add a job first'); return; }
+      if (!hours || hours <= 0) { toast('Enter hours'); return; }
+      state.timeEntries.push({ id: uid(), jobId, date, hours, actual: ui.pick.logType === 'worked', notes: notes || undefined, created: new Date().toISOString() });
+      $('log-hours').value = ''; $('log-notes').value = '';
+      commit('Logged');
+      const btn = $('btn-log'); btn.textContent = '✓ Logged'; setTimeout(() => { btn.textContent = 'Log Hours'; }, 1800);
+    }
+    function openEntrySheet(id) {
+      const e = state.timeEntries.find(x => x.id === id); if (!e) return;
+      ui.pick.etype = e.actual ? 'worked' : 'scheduled';
+      const opts = state.jobs.filter(j => j.active !== false || j.id === e.jobId).map(j => `<option value="${j.id}" ${j.id === e.jobId ? 'selected' : ''}>${j.icon} ${esc(j.name)}</option>`).join('');
+      const orphan = !jobById(e.jobId) ? `<option value="${esc(e.jobId)}" selected>Deleted job</option>` : '';
+      openSheet(`
+        ${sheetHead('Edit log')}
+        <div class="space-y-3">
+          <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Job</label><select id="e-job" class="w-full mt-1 px-3.5 py-3 text-sm">${orphan}${opts}</select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Date</label><input id="e-date" type="date" value="${esc(e.date)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Hours</label><input id="e-hours" type="number" inputmode="decimal" step="0.25" min="0.25" value="${e.hours}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+          </div>
+          ${seg('etype', [['worked', 'Worked'], ['scheduled', 'Scheduled']], ui.pick.etype)}
+          <input id="e-notes" type="text" placeholder="Notes (optional)" value="${esc(e.notes)}" class="w-full px-3.5 py-3 text-sm" />
+          <button onclick="saveEntry('${id}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Save changes</button>
+          ${delBtn('deleteEntry', id, 'Delete log')}
+        </div>`);
+    }
+    function saveEntry(id) {
+      const e = state.timeEntries.find(x => x.id === id); if (!e) return;
+      const hours = parseFloat($('e-hours').value);
+      if (!hours || hours <= 0) { toast('Enter hours'); return; }
+      Object.assign(e, { jobId: $('e-job').value, date: $('e-date').value || today(), hours, actual: ui.pick.etype === 'worked', notes: $('e-notes').value.trim() || undefined });
+      closeSheet(); commit('Log updated');
+    }
+    function deleteEntry(id) {
+      state.timeEntries = state.timeEntries.filter(e => e.id !== id);
+      closeSheet(); commit('Log deleted');
     }
 
-    function saveCheck() {
-      const amount = parseFloat(document.getElementById('check-amount').value);
-      if (!amount || amount <= 0) return;
-      const expected = parseFloat(document.getElementById('check-expected').value) || null;
-      const jobId = document.getElementById('check-job').value || null;
-      const date = document.getElementById('check-date').value || today();
-
-      state.paychecks.push({
-        id: uid(), jobId, amount, expected, date, created: new Date().toISOString()
-      });
-      addXp(40);
-      save();
-      document.getElementById('check-amount').value = '';
-      document.getElementById('check-expected').value = '';
-      toggleCheckForm();
-      render();
+    // ========== PAYCHECKS ==========
+    function openCheckSheet(id) {
+      const c = id ? state.paychecks.find(x => x.id === id) : null;
+      const opts = state.jobs.filter(j => j.active !== false || (c && j.id === c.jobId)).map(j => `<option value="${j.id}" ${c && c.jobId === j.id ? 'selected' : ''}>${j.icon} ${esc(j.name)}</option>`).join('');
+      const orphan = c && c.jobId && !jobById(c.jobId) ? `<option value="${esc(c.jobId)}" selected>Deleted job</option>` : '';
+      const alloc = c ? checkAllocated(c.id) : 0;
+      openSheet(`
+        ${sheetHead(c ? 'Edit paycheck' : 'Record paycheck', c ? `${fmt(alloc)} allocated to goals` : '')}
+        <div class="space-y-3">
+          <div><label class="text-[11px] text-white/40 uppercase tracking-wider">From job</label>
+            <select id="c-job" class="w-full mt-1 px-3.5 py-3 text-sm"><option value="">Combined / Multiple</option>${orphan}${opts}</select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label><input id="c-amount" type="number" inputmode="decimal" step="0.01" placeholder="842.50" value="${c ? c.amount : ''}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Expected</label><input id="c-expected" type="number" inputmode="decimal" step="0.01" placeholder="Optional" value="${c?.expected ?? ''}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+          </div>
+          <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Date received</label><input id="c-date" type="date" value="${esc(c ? c.date : today())}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+          <button onclick="saveCheck('${id || ''}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">${c ? 'Save changes' : 'Save paycheck'}</button>
+          ${c ? `${delBtn('deleteCheck', id, 'Delete paycheck')}${alloc ? '<div class="text-[11px] text-white/35 text-center">Money already moved to goals stays in those goals.</div>' : ''}` : ''}
+        </div>`);
+    }
+    function saveCheck(id) {
+      const amount = parseFloat($('c-amount').value);
+      if (!amount || amount <= 0) { toast('Enter the amount'); return; }
+      const data = { jobId: $('c-job').value || null, amount: r2(amount), expected: parseFloat($('c-expected').value) || null, date: $('c-date').value || today() };
+      if (id) Object.assign(state.paychecks.find(x => x.id === id), data);
+      else state.paychecks.push({ id: uid(), ...data, created: new Date().toISOString() });
+      closeSheet(); commit(id ? 'Paycheck updated' : 'Paycheck saved');
+    }
+    function deleteCheck(id) {
+      state.paychecks = state.paychecks.filter(c => c.id !== id);
+      state.goals.forEach(g => g.contributions.forEach(c => { if (c.checkId === id) c.checkId = null; }));
+      closeSheet(); commit('Paycheck deleted');
     }
 
-    function openAlloc(checkId) {
-      if (!state.goals.length) {
-        alert('Create a savings goal first.');
-        showView('goals');
+    // ========== GOALS ==========
+    function openGoalSheet(id) {
+      const g = id ? state.goals.find(x => x.id === id) : null;
+      if (!g) {
+        openSheet(`
+          ${sheetHead('New goal')}
+          <div class="space-y-3">
+            <input id="g-name" type="text" placeholder="Emergency fund, New gear…" class="w-full px-3.5 py-3 text-sm" />
+            <input id="g-target" type="number" inputmode="decimal" step="1" placeholder="Target amount" class="w-full px-3.5 py-3 text-sm" />
+            <input id="g-start" type="number" inputmode="decimal" step="0.01" placeholder="Already saved? (optional)" class="w-full px-3.5 py-3 text-sm" />
+            <button onclick="saveGoal('')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Create goal</button>
+          </div>`);
         return;
       }
-      ui.allocatingCheckId = checkId;
-      document.getElementById('alloc-modal').classList.remove('hidden');
-      document.getElementById('alloc-modal').classList.add('flex');
-      document.getElementById('alloc-amount').value = '';
+      const cur = goalCurrent(g), pct = goalPct(g);
+      const hist = [...g.contributions].sort((a, b) => b.date.localeCompare(a.date) || b.created.localeCompare(a.created));
+      openSheet(`
+        ${sheetHead(esc(g.name))}
+        <div class="space-y-3">
+          <div class="glass-subtle rounded-2xl p-3.5">
+            <div class="flex justify-between text-sm mb-2"><span class="text-emerald-400 font-semibold">${fmt(cur)}</span><span class="text-white/40">of ${fmt(g.target)}</span></div>
+            <div class="progress-track h-2"><div class="progress-fill bg-emerald-400" style="width:${pct}%"></div></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="openContribSheet('${g.id}')" class="py-3 rounded-xl bg-emerald-500 text-black font-semibold text-sm">+ Add money</button>
+            <button onclick="openContribSheet('${g.id}',null,'withdraw')" class="py-3 rounded-xl glass-subtle text-sm font-medium">Withdraw</button>
+          </div>
+          <div class="pt-1 space-y-2">
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">Edit goal</label>
+            <input id="g-name" type="text" value="${esc(g.name)}" class="w-full px-3.5 py-3 text-sm" />
+            <input id="g-target" type="number" inputmode="decimal" step="1" value="${g.target}" class="w-full px-3.5 py-3 text-sm" />
+            <button onclick="saveGoal('${g.id}')" class="w-full py-3 rounded-xl bg-amber-500 text-black font-semibold text-sm">Save changes</button>
+          </div>
+          <div>
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">History</label>
+            <div class="mt-2 space-y-1.5">${hist.length ? hist.map(c => `
+              <div class="flex items-center gap-3 glass-subtle rounded-xl px-3 py-2">
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-medium ${c.amount < 0 ? 'text-red-300' : 'text-emerald-400'}">${c.amount < 0 ? '−' : '+'}${fmt(Math.abs(c.amount))}</div>
+                  <div class="text-[11px] text-white/40 truncate">${fmtDate(c.date)} · ${c.checkId ? 'From paycheck' : c.amount < 0 ? 'Withdrawal' : 'Deposit'}${c.note ? ' · ' + esc(c.note) : ''}</div>
+                </div>
+                <button onclick="arm(this,'deleteContrib','${g.id}','${c.id}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-white/10 text-white/50">Remove</button>
+              </div>`).join('') : '<div class="text-xs text-white/30 py-2">Nothing yet. Add your first deposit.</div>'}</div>
+          </div>
+          ${delBtn('deleteGoal', g.id, 'Delete goal')}
+        </div>`);
     }
-    function closeAlloc() {
-      document.getElementById('alloc-modal').classList.add('hidden');
-      document.getElementById('alloc-modal').classList.remove('flex');
-      ui.allocatingCheckId = null;
-    }
-    function confirmAlloc() {
-      const goalId = document.getElementById('alloc-goal').value;
-      const amount = parseFloat(document.getElementById('alloc-amount').value);
-      if (!goalId || !amount || amount <= 0) return;
-      const goal = state.goals.find(g => g.id === goalId);
-      if (goal) {
-        goal.current += amount;
-        state.progress.totalSaved += amount;
-        addXp(Math.round(amount / 5));
-        save();
+    function saveGoal(id) {
+      const name = $('g-name').value.trim();
+      const target = parseFloat($('g-target').value);
+      if (!name) { toast('Name your goal'); return; }
+      if (!target || target <= 0) { toast('Enter a target amount'); return; }
+      if (id) {
+        Object.assign(state.goals.find(g => g.id === id), { name, target });
+      } else {
+        const start = r2(parseFloat($('g-start').value) || 0);
+        state.goals.push({ id: uid(), name, target, created: new Date().toISOString(),
+          contributions: start > 0 ? [{ id: uid(), amount: start, date: today(), note: 'Starting balance', checkId: null, created: new Date().toISOString() }] : [] });
       }
-      closeAlloc();
-      render();
+      closeSheet(); commit(id ? 'Goal updated' : 'Goal created');
+    }
+    function deleteGoal(id) {
+      state.goals = state.goals.filter(g => g.id !== id);
+      closeSheet(); commit('Goal deleted');
+    }
+    function deleteContrib(goalId, cid) {
+      const g = state.goals.find(x => x.id === goalId); if (!g) return;
+      g.contributions = g.contributions.filter(c => c.id !== cid);
+      commit('Removed');
+      openGoalSheet(goalId);
     }
 
-    function saveGoal() {
-      const name = document.getElementById('goal-name').value.trim();
-      const target = parseFloat(document.getElementById('goal-target').value);
-      if (!name || !target || target <= 0) return;
-      state.goals.push({
-        id: uid(), name, target, current: 0, created: new Date().toISOString()
-      });
-      addXp(20);
-      save();
-      document.getElementById('goal-name').value = '';
-      document.getElementById('goal-target').value = '';
-      toggleGoalForm();
-      render();
+    // ========== ADD / WITHDRAW MONEY ==========
+    function openContribSheet(goalId, checkId, mode) {
+      if (!state.goals.length) { closeSheet(); toast('Create a goal first'); showView('goals'); return; }
+      ui.pick.cmode = mode || 'add';
+      ui.fromCheck = !!checkId;
+      const checks = [...state.paychecks].sort((a, b) => b.date.localeCompare(a.date));
+      const chk = checkId ? state.paychecks.find(c => c.id === checkId) : null;
+      const prefill = chk ? Math.max(0, checkRemaining(chk)) : '';
+      openSheet(`
+        ${sheetHead('Move money')}
+        <div class="space-y-3">
+          ${seg('cmode', [['add', 'Add'], ['withdraw', 'Withdraw']], ui.pick.cmode)}
+          <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Goal</label>
+            <select id="m-goal" class="w-full mt-1 px-3.5 py-3 text-sm">${state.goals.map(g => `<option value="${g.id}" ${g.id === goalId ? 'selected' : ''}>${esc(g.name)} (${fmt(goalCurrent(g))} / ${fmt(g.target)})</option>`).join('')}</select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label><input id="m-amount" type="number" inputmode="decimal" step="0.01" placeholder="100" value="${prefill}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Date</label><input id="m-date" type="date" value="${today()}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+          </div>
+          <div id="c-check-wrap" class="${ui.pick.cmode === 'add' ? '' : 'hidden'}">
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">From paycheck (optional)</label>
+            <select id="m-check" class="w-full mt-1 px-3.5 py-3 text-sm"><option value="">Not from a paycheck</option>${checks.map(c => `<option value="${c.id}" ${c.id === checkId ? 'selected' : ''}>${fmt(c.amount)} · ${fmtDate(c.date)} — ${fmt(Math.max(0, checkRemaining(c)))} left</option>`).join('')}</select>
+          </div>
+          <input id="m-note" type="text" placeholder="Note (optional)" class="w-full px-3.5 py-3 text-sm" />
+          <button id="c-save" onclick="saveContrib()" class="w-full py-3.5 rounded-2xl bg-emerald-500 text-black font-semibold text-sm">${ui.pick.cmode === 'add' ? 'Add Money' : 'Withdraw'}</button>
+        </div>`);
+    }
+    function saveContrib() {
+      const mode = ui.pick.cmode;
+      const g = state.goals.find(x => x.id === $('m-goal').value);
+      const amt = r2(parseFloat($('m-amount').value));
+      if (!g) return;
+      if (!(amt > 0)) { toast('Enter an amount'); return; }
+      if (mode === 'withdraw' && amt > goalCurrent(g) + 0.004) { toast(`Only ${fmt(goalCurrent(g))} in this goal`); return; }
+      let checkId = null;
+      if (mode === 'add') {
+        checkId = $('m-check').value || null;
+        if (checkId) {
+          const c = state.paychecks.find(x => x.id === checkId);
+          if (c && amt > checkRemaining(c) + 0.004) { toast(`Only ${fmt(checkRemaining(c))} left on that paycheck`); return; }
+        }
+      }
+      g.contributions.push({ id: uid(), amount: mode === 'add' ? amt : -amt, date: $('m-date').value || today(), note: $('m-note').value.trim() || undefined, checkId, created: new Date().toISOString() });
+      const gid = g.id, fromCheck = ui.fromCheck;
+      commit(mode === 'add' ? 'Money added' : 'Withdrawn');
+      if (fromCheck) closeSheet(); else openGoalSheet(gid); // goal detail shows the new balance
     }
 
     // ========== INIT ==========
-    load();
-    requestPersistentStorage();
-    window.addEventListener('pagehide', () => { save(); });
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') save();
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+    document.addEventListener('focusin', e => {
+      if (e.target.closest && e.target.closest('#sheet')) setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 350);
     });
-    document.getElementById('log-date').value = today();
-    document.getElementById('check-date').value = today();
 
-    // First-run quick start
+    load();
+    window.addEventListener('pagehide', save);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+
     if (!state.onboardingDone && state.jobs.length === 0) {
+      const now = new Date().toISOString();
       state.jobs = [
-        { id: uid(), name: 'Walmart', type: 'hourly', rate: null, icon: '🛒', color: '#0071ce', active: true, created: new Date().toISOString() },
-        { id: uid(), name: 'Uber Eats', type: 'gig', rate: null, icon: '🚗', color: '#06c167', active: true, created: new Date().toISOString() }
+        { id: uid(), name: 'Walmart', type: 'hourly', rate: null, icon: '🛒', color: '#0071ce', active: true, seed: true, created: now },
+        { id: uid(), name: 'Uber Eats', type: 'gig', rate: null, icon: '🚗', color: '#06c167', active: true, seed: true, created: now }
       ];
       state.onboardingDone = true;
-      save();
     }
+    recalc();
+    save();
+
+    $('splash-mascot').innerHTML = mascot();
+    $('home-mascot').innerHTML = mascot();
+    $('log-date').value = today();
 
     render();
     showView('home');
+    // showView animates the first screen in behind the splash; hold it until the splash leaves
+    $('view-home').style.opacity = 0;
+    setTimeout(() => {
+      $('splash').classList.add('leave');
+      $('view-home').style.opacity = '';
+      $('view-home').getAnimations().forEach(a => a.cancel());
+      $('view-home').animate([{ opacity: 0, transform: 'scale(.96) translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 700, easing: 'cubic-bezier(.22,1,.36,1)' });
+      staggerIn($('view-home'));
+      setTimeout(() => $('splash').remove(), 800);
+    }, 2100);
   </script>
 </body>
 </html>
