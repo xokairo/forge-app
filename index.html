@@ -398,26 +398,6 @@
           <button onclick="openBudgetItemSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add to must pay</button>
           <div id="punch-card"></div>
           <div id="bingo-card"></div>
-          <div>
-            <button onclick="toggleChecks()" class="w-full glass-subtle rounded-2xl px-4 py-3 flex items-center justify-between text-left">
-              <span><span class="text-sm font-medium">Paychecks</span> <span id="checks-sum" class="text-[11px] text-white/40 ml-1"></span></span>
-              <span id="checks-caret" class="text-white/40 text-sm transition-transform">▾</span>
-            </button>
-            <div id="checks-body" class="hidden mt-3">
-              <div class="grid grid-cols-2 gap-3 mb-3">
-                <div class="glass rounded-2xl p-3.5">
-                  <div class="text-[10px] text-white/40 uppercase tracking-wide">Received</div>
-                  <div class="text-xl font-semibold mt-0.5" id="money-total">$0.00</div>
-                </div>
-                <div class="glass rounded-2xl p-3.5">
-                  <div class="text-[10px] text-white/40 uppercase tracking-wide">Unallocated</div>
-                  <div class="text-xl font-semibold mt-0.5 text-amber-300" id="money-unalloc">$0.00</div>
-                </div>
-              </div>
-              <button onclick="openCheckSheet()" class="w-full py-3 rounded-2xl bg-amber-500 text-black font-semibold text-sm mb-3">+ Record Paycheck</button>
-              <div id="checks-list" class="space-y-3"></div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -495,8 +475,6 @@
     function xpNeeded(level) { return Math.floor(250 * Math.pow(1.5, level - 1)); }
     function levelTitle(l) { return LEVEL_TITLES[Math.min(l, 10)] || `Level ${l}`; }
     function goalCurrent(g) { return r2((g.contributions || []).reduce((s, c) => s + c.amount, 0)); }
-    function checkAllocated(id) { return r2(state.goals.reduce((s, g) => s + g.contributions.filter(c => c.checkId === id).reduce((a, c) => a + c.amount, 0), 0)); }
-    function checkRemaining(c) { return r2(c.amount - checkAllocated(c.id)); }
     function jobById(id) { return state.jobs.find(j => j.id === id); }
     function jobLabel(id) { const j = jobById(id); return j ? `${j.icon} ${esc(j.name)}` : '— Deleted job'; }
 
@@ -674,7 +652,6 @@
       let xp = 0;
       xp += state.jobs.filter(j => !j.seed).length * 10;
       xp += state.goals.length * 10;
-      xp += state.paychecks.length * 25;
       state.timeEntries.forEach(e => { xp += Math.round(e.hours * 2) + (e.actual ? 5 : 2); });
       state.goals.forEach(g => { xp += Math.round(Math.max(0, goalCurrent(g)) / 10); });
       xp += (state.punch.claimed * 10 + state.punch.days.length) * 5 + state.punch.claimed * 50;
@@ -739,7 +716,6 @@
       document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.toggle('on', b.dataset.val === val));
       if (group === 'jtype') $('f-rate-wrap')?.classList.toggle('hidden', val === 'other');
       if (group === 'cmode') {
-        $('c-check-wrap')?.classList.toggle('hidden', val !== 'add');
         const b = $('c-save'); if (b) b.textContent = val === 'add' ? 'Add Money' : 'Withdraw';
       }
     }
@@ -887,26 +863,6 @@
         </div>`).join('') : empty('No logs yet.'))
         + (all.length > 12 ? `<button onclick="ui.showAllLogs=!ui.showAllLogs;render()" class="w-full py-2.5 text-xs text-amber-300/80">${ui.showAllLogs ? 'Show less' : `Show all (${all.length})`}</button>` : '');
 
-      // Money
-      const checks = [...state.paychecks].sort((a, b) => b.date.localeCompare(a.date));
-      $('money-total').textContent = fmt(checks.reduce((s, c) => s + c.amount, 0));
-      $('money-unalloc').textContent = fmt(checks.reduce((s, c) => s + Math.max(0, checkRemaining(c)), 0));
-      $('checks-list').innerHTML = checks.length ? checks.map(c => {
-        const alloc = checkAllocated(c.id), rem = r2(c.amount - alloc), pct = Math.min(100, Math.max(0, alloc / c.amount * 100));
-        return `<div class="glass rounded-2xl p-4 tap" onclick="openCheckSheet('${c.id}')">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <div class="text-xl font-semibold">${fmt(c.amount)}</div>
-              <div class="text-[11px] text-white/40 mt-0.5">${c.jobId ? jobLabel(c.jobId) : 'Multiple'} · ${fmtDate(c.date)}</div>
-              ${c.expected ? `<div class="text-[11px] text-white/30 mt-0.5">Expected ${fmt(c.expected)}</div>` : ''}
-            </div>
-            <button onclick="event.stopPropagation();openContribSheet(null,'${c.id}')" class="text-[11px] px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">Allocate</button>
-          </div>
-          <div class="progress-track h-1 mt-3"><div class="progress-fill bg-amber-400" style="width:${pct}%"></div></div>
-          <div class="text-[11px] text-white/40 mt-1.5">${rem > 0.004 ? fmt(rem) + ' unallocated' : rem < -0.004 ? 'Over-allocated by ' + fmt(-rem) : 'Fully allocated'}</div>
-        </div>`;
-      }).join('') : empty('No paychecks yet.');
-
       // Goals
       $('goals-list').innerHTML = state.goals.length ? state.goals.map(g => {
         const cur = goalCurrent(g), pct = goalPct(g), done = cur >= g.target;
@@ -928,7 +884,7 @@
       const j = id ? jobById(id) : null;
       ui.pick.jtype = j?.type || 'hourly';
       ui.pick.jicon = j?.icon || '🛒';
-      const used = id ? state.timeEntries.filter(e => e.jobId === id).length + state.paychecks.filter(c => c.jobId === id).length : 0;
+      const used = id ? state.timeEntries.filter(e => e.jobId === id).length : 0;
       openSheet(`
         ${sheetHead(j ? 'Edit job' : 'New job')}
         <div class="space-y-3">
@@ -938,7 +894,7 @@
           <div class="flex flex-wrap gap-2">${JOB_ICONS.map(i =>
             `<button type="button" data-group="jicon" data-val="${i}" onclick="pick('jicon','${i}')" class="seg seg-icon ${i === ui.pick.jicon ? 'on' : ''} w-10 h-10 rounded-xl text-lg">${i}</button>`).join('')}</div>
           <button onclick="saveJob('${id || ''}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">${j ? 'Save changes' : 'Add Job'}</button>
-          ${j ? `${delBtn('deleteJob', id, 'Delete job')}${used ? `<div class="text-[11px] text-white/35 text-center">${used} log/paycheck record${used > 1 ? 's' : ''} use this job. They stay, labeled “Deleted job”.</div>` : ''}` : ''}
+          ${j ? `${delBtn('deleteJob', id, 'Delete job')}${used ? `<div class="text-[11px] text-white/35 text-center">${used} log${used > 1 ? 's' : ''} use this job. They stay, labeled “Deleted job”.</div>` : ''}` : ''}
         </div>`);
     }
     function saveJob(id) {
@@ -1009,44 +965,6 @@
       closeSheet(); commit('Log deleted');
     }
 
-    // ========== PAYCHECKS ==========
-    function openCheckSheet(id) {
-      const c = id ? state.paychecks.find(x => x.id === id) : null;
-      const opts = state.jobs.filter(j => j.active !== false || (c && j.id === c.jobId)).map(j => `<option value="${j.id}" ${c && c.jobId === j.id ? 'selected' : ''}>${j.icon} ${esc(j.name)}</option>`).join('');
-      const orphan = c && c.jobId && !jobById(c.jobId) ? `<option value="${esc(c.jobId)}" selected>Deleted job</option>` : '';
-      const alloc = c ? checkAllocated(c.id) : 0;
-      openSheet(`
-        ${sheetHead(c ? 'Edit paycheck' : 'Record paycheck', c ? `${fmt(alloc)} allocated to goals` : '')}
-        <div class="space-y-3">
-          <div><label class="text-[11px] text-white/40 uppercase tracking-wider">From job</label>
-            <select id="c-job" class="w-full mt-1 px-3.5 py-3 text-sm"><option value="">Combined / Multiple</option>${orphan}${opts}</select></div>
-          <div class="grid grid-cols-2 gap-3">
-            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label><input id="c-amount" type="number" inputmode="decimal" step="0.01" placeholder="842.50" value="${c ? c.amount : ''}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
-            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Expected</label><input id="c-expected" type="number" inputmode="decimal" step="0.01" placeholder="Optional" value="${c?.expected ?? ''}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
-          </div>
-          <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Date received</label><input id="c-date" type="date" value="${esc(c ? c.date : today())}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
-          <button onclick="saveCheck('${id || ''}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">${c ? 'Save changes' : 'Save paycheck'}</button>
-          ${c ? `${delBtn('deleteCheck', id, 'Delete paycheck')}${alloc ? '<div class="text-[11px] text-white/35 text-center">Money already moved to goals stays in those goals.</div>' : ''}` : ''}
-        </div>`);
-    }
-    function saveCheck(id) {
-      const amount = parseFloat($('c-amount').value);
-      if (!amount || amount <= 0) { toast('Enter the amount'); return; }
-      const data = { jobId: $('c-job').value || null, amount: r2(amount), expected: parseFloat($('c-expected').value) || null, date: $('c-date').value || today() };
-      if (id) Object.assign(state.paychecks.find(x => x.id === id), data);
-      else state.paychecks.push({ id: uid(), ...data, created: new Date().toISOString() });
-      closeSheet(); commit(id ? 'Paycheck updated' : 'Paycheck saved');
-      if (!id) {
-        const due = state.goals.filter(g => nextPlan(g));
-        if (due.length) setTimeout(() => toast(`Plan: save ${fmt(nextPlan(due[0]).amount)} → ${due[0].name}` + (due.length > 1 ? ` (+${due.length - 1} more)` : '')), 2700);
-      }
-    }
-    function deleteCheck(id) {
-      state.paychecks = state.paychecks.filter(c => c.id !== id);
-      state.goals.forEach(g => g.contributions.forEach(c => { if (c.checkId === id) c.checkId = null; }));
-      closeSheet(); commit('Paycheck deleted');
-    }
-
     // ========== GOALS ==========
     function openGoalSheet(id) {
       const g = id ? state.goals.find(x => x.id === id) : null;
@@ -1072,7 +990,7 @@
           </div>
           <div class="grid grid-cols-2 gap-2">
             <button onclick="openContribSheet('${g.id}')" class="py-3 rounded-xl bg-emerald-500 text-black font-semibold text-sm">+ Add money</button>
-            <button onclick="openContribSheet('${g.id}',null,'withdraw')" class="py-3 rounded-xl glass-subtle text-sm font-medium">Withdraw</button>
+            <button onclick="openContribSheet('${g.id}','withdraw')" class="py-3 rounded-xl glass-subtle text-sm font-medium">Withdraw</button>
           </div>
           <button onclick="openPlanSheet('${g.id}')" class="w-full py-3 rounded-xl glass-subtle text-sm font-medium flex items-center justify-between px-4"><span>📋 Paycheck plan</span><span class="text-amber-300/80 text-xs">${nextPlan(g) ? 'Next: ' + fmt(nextPlan(g).amount) : 'Set up'}</span></button>
           <div class="pt-1 space-y-2">
@@ -1087,7 +1005,7 @@
               <div class="flex items-center gap-3 glass-subtle rounded-xl px-3 py-2">
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-medium ${c.amount < 0 ? 'text-red-300' : 'text-emerald-400'}">${c.amount < 0 ? '−' : '+'}${fmt(Math.abs(c.amount))}</div>
-                  <div class="text-[11px] text-white/40 truncate">${fmtDate(c.date)} · ${c.checkId ? 'From paycheck' : c.amount < 0 ? 'Withdrawal' : 'Deposit'}${c.note ? ' · ' + esc(c.note) : ''}</div>
+                  <div class="text-[11px] text-white/40 truncate">${fmtDate(c.date)} · ${c.amount < 0 ? 'Withdrawal' : 'Deposit'}${c.note ? ' · ' + esc(c.note) : ''}</div>
                 </div>
                 <button onclick="arm(this,'deleteContrib','${g.id}','${c.id}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-white/10 text-white/50">Remove</button>
               </div>`).join('') : '<div class="text-xs text-white/30 py-2">Nothing yet. Add your first deposit.</div>'}</div>
@@ -1126,9 +1044,7 @@
     function setPlanDone(g, p, done) {
       if (done) {
         const cid = uid();
-        const latest = [...state.paychecks].sort((a, b) => b.date.localeCompare(a.date))[0];
-        const link = latest && checkRemaining(latest) >= p.amount - 0.004 ? latest.id : null;
-        g.contributions.push({ id: cid, amount: p.amount, date: today(), note: 'Paycheck plan', checkId: link, created: new Date().toISOString() });
+        g.contributions.push({ id: cid, amount: p.amount, date: today(), note: 'Paycheck plan', checkId: null, created: new Date().toISOString() });
         p.done = true; p.contribId = cid;
       } else {
         g.contributions = g.contributions.filter(c => c.id !== p.contribId);
@@ -1232,13 +1148,9 @@
     }
 
     // ========== ADD / WITHDRAW MONEY ==========
-    function openContribSheet(goalId, checkId, mode) {
+    function openContribSheet(goalId, mode) {
       if (!state.goals.length) { closeSheet(); toast('Create a goal first'); showView('goals'); return; }
       ui.pick.cmode = mode || 'add';
-      ui.fromCheck = !!checkId;
-      const checks = [...state.paychecks].sort((a, b) => b.date.localeCompare(a.date));
-      const chk = checkId ? state.paychecks.find(c => c.id === checkId) : null;
-      const prefill = chk ? Math.max(0, checkRemaining(chk)) : '';
       openSheet(`
         ${sheetHead('Move money')}
         <div class="space-y-3">
@@ -1246,12 +1158,8 @@
           <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Goal</label>
             <select id="m-goal" class="w-full mt-1 px-3.5 py-3 text-sm">${state.goals.map(g => `<option value="${g.id}" ${g.id === goalId ? 'selected' : ''}>${esc(g.name)} (${fmt(goalCurrent(g))} / ${fmt(g.target)})</option>`).join('')}</select></div>
           <div class="grid grid-cols-2 gap-3">
-            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label><input id="m-amount" type="number" inputmode="decimal" step="0.01" placeholder="100" value="${prefill}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label><input id="m-amount" type="number" inputmode="decimal" step="0.01" placeholder="100" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
             <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Date</label><input id="m-date" type="date" value="${today()}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
-          </div>
-          <div id="c-check-wrap" class="${ui.pick.cmode === 'add' ? '' : 'hidden'}">
-            <label class="text-[11px] text-white/40 uppercase tracking-wider">From paycheck (optional)</label>
-            <select id="m-check" class="w-full mt-1 px-3.5 py-3 text-sm"><option value="">Not from a paycheck</option>${checks.map(c => `<option value="${c.id}" ${c.id === checkId ? 'selected' : ''}>${fmt(c.amount)} · ${fmtDate(c.date)} — ${fmt(Math.max(0, checkRemaining(c)))} left</option>`).join('')}</select>
           </div>
           <input id="m-note" type="text" placeholder="Note (optional)" class="w-full px-3.5 py-3 text-sm" />
           <button id="c-save" onclick="saveContrib()" class="w-full py-3.5 rounded-2xl bg-emerald-500 text-black font-semibold text-sm">${ui.pick.cmode === 'add' ? 'Add Money' : 'Withdraw'}</button>
@@ -1264,18 +1172,10 @@
       if (!g) return;
       if (!(amt > 0)) { toast('Enter an amount'); return; }
       if (mode === 'withdraw' && amt > goalCurrent(g) + 0.004) { toast(`Only ${fmt(goalCurrent(g))} in this goal`); return; }
-      let checkId = null;
-      if (mode === 'add') {
-        checkId = $('m-check').value || null;
-        if (checkId) {
-          const c = state.paychecks.find(x => x.id === checkId);
-          if (c && amt > checkRemaining(c) + 0.004) { toast(`Only ${fmt(checkRemaining(c))} left on that paycheck`); return; }
-        }
-      }
-      g.contributions.push({ id: uid(), amount: mode === 'add' ? amt : -amt, date: $('m-date').value || today(), note: $('m-note').value.trim() || undefined, checkId, created: new Date().toISOString() });
-      const gid = g.id, fromCheck = ui.fromCheck;
+      g.contributions.push({ id: uid(), amount: mode === 'add' ? amt : -amt, date: $('m-date').value || today(), note: $('m-note').value.trim() || undefined, checkId: null, created: new Date().toISOString() });
+      const gid = g.id;
       commit(mode === 'add' ? 'Money added' : 'Withdrawn');
-      if (fromCheck) closeSheet(); else openGoalSheet(gid); // goal detail shows the new balance
+      openGoalSheet(gid); // goal detail shows the new balance
     }
 
     // ========== BUDGET / PAY PERIOD ==========
@@ -1393,7 +1293,6 @@
         </div>`;
       }).join('') : `<div class="glass-subtle rounded-2xl p-3.5 text-[12px] text-white/40">Rent, phone, car, fast food, gas… everything your check is going toward. Add it, then log what you pay as you go.</div>`;
 
-      renderChecksSummary();
       renderPunch();
       renderBingo();
     }
@@ -1517,15 +1416,6 @@
       b.items.forEach(i => { i.spends = []; if (i.due) i.due = addDays(i.due, shift); });
       Object.assign(b, { periodStart: start, nextPayday: addDays(start, len) });
       closeSheet(); commit('New pay period');
-    }
-
-    function toggleChecks() {
-      const open = $('checks-body').classList.toggle('hidden') === false;
-      $('checks-caret').style.transform = open ? 'rotate(180deg)' : '';
-    }
-    function renderChecksSummary() {
-      const n = state.paychecks.length, un = state.paychecks.reduce((s, c) => s + Math.max(0, checkRemaining(c)), 0);
-      $('checks-sum').textContent = n ? `${n} recorded · ${fmt(un)} unallocated` : 'none recorded';
     }
 
     // ========== NO-SPEND PUNCH CARD ==========
@@ -1776,6 +1666,41 @@
     }
 
     // ========== INIT ==========
+    // Swipe a sheet down to close it (works anywhere you can drag, not just the Close button)
+    (function initSheetSwipe() {
+      const sheet = $('sheet'), root = $('sheet-root'), bd = $('sheet-backdrop');
+      let y0 = 0, t0 = 0, dy = 0, drag = false, tracking = false;
+      sheet.addEventListener('touchstart', e => {
+        if (!root.classList.contains('open') || e.touches.length !== 1) return;
+        tracking = true; drag = false; y0 = e.touches[0].clientY; t0 = Date.now(); dy = 0;
+      }, { passive: true });
+      sheet.addEventListener('touchmove', e => {
+        if (!tracking) return;
+        const d = e.touches[0].clientY - y0;
+        if (!drag) {
+          if (d > 6 && sheet.scrollTop <= 0) { drag = true; sheet.style.transition = 'none'; bd.style.transition = 'none'; }
+          else return;
+        }
+        dy = Math.max(0, d);
+        e.preventDefault();
+        sheet.style.transform = `translateY(${dy}px)`;
+        bd.style.opacity = String(Math.max(0, 1 - dy / 500));
+      }, { passive: false });
+      function end() {
+        if (!tracking) return;
+        tracking = false;
+        if (!drag) return;
+        drag = false;
+        const close = dy > 110 || (dy / Math.max(1, Date.now() - t0) > 0.6 && dy > 40);
+        sheet.style.transition = ''; bd.style.transition = '';
+        void sheet.offsetHeight;
+        sheet.style.transform = ''; bd.style.opacity = '';
+        if (close) closeSheet();
+      }
+      sheet.addEventListener('touchend', end);
+      sheet.addEventListener('touchcancel', end);
+    })();
+
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
     document.addEventListener('focusin', e => {
       if (e.target.closest && e.target.closest('#sheet')) setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 350);
