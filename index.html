@@ -395,11 +395,7 @@
             <div class="flex items-center justify-between mb-2 px-1"><h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Must pay</h2><span id="bud-bills-sum" class="text-[11px] text-white/40"></span></div>
             <div id="bud-bills" class="space-y-2"></div>
           </div>
-          <div>
-            <div class="flex items-center justify-between mb-2 px-1"><h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Spending plans</h2><span id="bud-spend-sum" class="text-[11px] text-white/40"></span></div>
-            <div id="bud-spend" class="space-y-2"></div>
-          </div>
-          <button onclick="openBudgetItemSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add bill or spending plan</button>
+          <button onclick="openBudgetItemSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add to must pay</button>
           <div id="punch-card"></div>
           <div id="bingo-card"></div>
           <div>
@@ -595,7 +591,11 @@
         expectedIncome: B.expectedIncome > 0 ? B.expectedIncome : null,
         items: Array.isArray(B.items) ? B.items : []
       };
-      state.budget.items.forEach(i => { i.spends = Array.isArray(i.spends) ? i.spends : []; i.kind = i.kind === 'bill' ? 'bill' : 'spend'; });
+      state.budget.items.forEach(i => {
+        i.spends = Array.isArray(i.spends) ? i.spends : []; i.kind = i.kind === 'bill' ? 'bill' : 'spend';
+        if (i.paid === true && !i.spends.length) i.spends.push({ id: uid(), amount: i.amount, date: t, note: 'Marked paid', breaks: false });
+        delete i.paid;
+      });
       state.punch = { reward: P.reward || '', days: Array.isArray(P.days) ? [...new Set(P.days)].sort().slice(0, 10) : [], claimed: P.claimed || 0 };
       state.bingo = { anchor: G.anchor || t, cycles: G.cycles && typeof G.cycles === 'object' ? G.cycles : {} };
     }
@@ -738,7 +738,6 @@
       ui.pick[group] = val;
       document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.toggle('on', b.dataset.val === val));
       if (group === 'jtype') $('f-rate-wrap')?.classList.toggle('hidden', val === 'other');
-      if (group === 'bkind') $('b-due-wrap')?.classList.toggle('hidden', val !== 'bill');
       if (group === 'cmode') {
         $('c-check-wrap')?.classList.toggle('hidden', val !== 'add');
         const b = $('c-save'); if (b) b.textContent = val === 'add' ? 'Add Money' : 'Withdraw';
@@ -1293,50 +1292,61 @@
     }
     function jobRate(id) { const j = jobById(id); return j && j.rate > 0 ? j.rate : 0; }
 
-    // Hours between last payday and next payday -> money on the way.
+    // "On my way to" = only hours marked WORKED since your last payday.
+    // "Hours left" = only your NEXT 4 scheduled shifts (one pay week), nothing beyond.
     function earnings() {
       const b = state.budget, t = today();
       const start = b.periodStart || addDays(t, -7), end = b.nextPayday || addDays(t, 7);
-      let earned = 0, sched = 0, noRate = false;
+      let earned = 0, noRate = false;
       state.timeEntries.forEach(e => {
-        if (e.date < start || e.date > end) return;
+        if (!e.actual || e.date < start) return;
         const r = jobRate(e.jobId);
         if (!r) { noRate = true; return; }
-        if (e.actual) earned += r * e.hours; else sched += r * e.hours;
+        earned += r * e.hours;
       });
-      return { earned: r2(earned), sched: r2(sched), projected: r2(earned + sched), start, end, noRate };
+      const up = state.timeEntries.filter(e => !e.actual && e.date >= t)
+        .sort((a, c) => a.date.localeCompare(c.date) || (a.created || '').localeCompare(c.created || ''));
+      const next = up.slice(0, 4);
+      return {
+        earned: r2(earned), start, end, noRate, next, extra: up.length - next.length,
+        leftHours: r2(next.reduce((s, e) => s + e.hours, 0)),
+        leftPay: r2(next.reduce((s, e) => s + jobRate(e.jobId) * e.hours, 0))
+      };
     }
-    function itemSpent(it) { return r2((it.spends || []).reduce((s, x) => s + x.amount, 0)); }
+    function itemPaid(it) { return r2((it.spends || []).reduce((s, x) => s + x.amount, 0)); }
+    function itemDone(it) { return it.amount > 0 && itemPaid(it) >= it.amount - 0.004; }
     function budgetTotals() {
       const items = state.budget.items;
-      const bills = items.filter(i => i.kind === 'bill'), sp = items.filter(i => i.kind !== 'bill');
       return {
-        bills, sp,
-        billsTotal: r2(bills.reduce((s, i) => s + i.amount, 0)),
-        billsPaid: r2(bills.filter(i => i.paid).reduce((s, i) => s + i.amount, 0)),
-        spPlanned: r2(sp.reduce((s, i) => s + i.amount, 0)),
-        spSpent: r2(sp.reduce((s, i) => s + itemSpent(i), 0)),
-        planned: r2(items.reduce((s, i) => s + i.amount, 0))
+        planned: r2(items.reduce((s, i) => s + i.amount, 0)),
+        paid: r2(items.reduce((s, i) => s + Math.min(itemPaid(i), i.amount), 0))
       };
     }
 
     function renderBudget() {
       const b = state.budget, e = earnings(), T = budgetTotals(), t = today();
-      const override = b.expectedIncome > 0;
-      const income = override ? b.expectedIncome : e.projected;
+      const income = e.earned;
       const left = r2(income - T.planned);
       const daysTo = dayDiff(t, e.end);
       const over = T.planned > income + 0.004;
       const pct = income > 0 ? Math.min(100, T.planned / income * 100) : (T.planned > 0 ? 100 : 0);
       const barCls = over ? 'bg-red-400' : pct > 85 ? 'bg-orange-400' : 'bg-amber-400';
-      const rated = state.jobs.filter(j => j.active !== false && j.rate > 0);
-      const avg = rated.length ? rated.reduce((s, j) => s + j.rate, 0) / rated.length : 0;
       const unrated = state.jobs.filter(j => j.active !== false && !(j.rate > 0) && j.type !== 'other');
       let status;
-      if (!T.planned) status = 'Add your bills and spending plans to see what is left.';
-      else if (over) status = `Short ${fmt(-left)}${avg ? ` · about ${Math.ceil(-left / avg)} more hours` : ''}`;
+      if (!T.planned) status = 'Add your bills to see what is left.';
+      else if (over) status = `Short ${fmt(-left)}${e.leftPay > 0 ? ` · next shifts bring ~${fmt(e.leftPay)}` : ''}`;
       else status = `${fmt(left)} left after everything`;
       const when = daysTo > 1 ? `${daysTo} days to payday` : daysTo === 1 ? 'Payday tomorrow' : daysTo === 0 ? 'Payday is today' : 'Payday passed';
+
+      const shifts = e.next.length ? `
+        <div class="mt-3 glass-subtle rounded-xl p-3">
+          <div class="flex justify-between text-[11px]"><span class="text-white/50">Hours left · next ${e.next.length} shift${e.next.length === 1 ? '' : 's'}</span><span class="text-amber-300 font-medium">${e.leftHours}h${e.leftPay > 0 ? ' · ~' + fmt(e.leftPay) : ''}</span></div>
+          <div class="mt-2 space-y-1">${e.next.map(x => {
+            const j = jobById(x.jobId), r = jobRate(x.jobId);
+            return `<div class="flex justify-between text-[12px]"><span class="text-white/70 truncate pr-2">${fmtShort(x.date)} · ${j ? esc(j.icon) + ' ' + esc(j.name) : 'Job'}</span><span class="text-white/45 shrink-0">${x.hours}h${r ? ' · ~' + fmt(r * x.hours) : ''}</span></div>`;
+          }).join('')}</div>
+          ${e.extra > 0 ? `<div class="text-[10px] text-white/30 mt-1.5">+${e.extra} more scheduled, not counted yet</div>` : ''}
+        </div>` : `<div class="mt-3 text-[11px] text-white/35">No upcoming shifts scheduled. Add them in Log.</div>`;
 
       $('bud-hero').innerHTML = `
         <div class="glass-strong rounded-2xl p-4">
@@ -1347,47 +1357,41 @@
             </div>
             <span class="text-[11px] text-white/40">Edit</span>
           </div>
-          <div class="mt-3 text-[11px] text-white/40">${override ? 'Expected paycheck' : 'On my way to'}</div>
+          <div class="mt-3 text-[11px] text-white/40">On my way to</div>
           <div class="text-4xl font-semibold text-amber-300 leading-tight">${fmt(income)}</div>
-          <div class="text-[11px] text-white/40 mt-0.5">Earned ${fmt(e.earned)} · Scheduled ${fmt(e.sched)}${override ? ' · using your number' : ''}</div>
+          <div class="text-[11px] text-white/40 mt-0.5">From hours you marked worked since ${fmtShort(e.start)}</div>
           <div class="progress-track h-2 mt-3.5"><div class="progress-fill ${barCls}" style="width:${pct}%"></div></div>
           <div class="flex justify-between text-[11px] mt-1.5">
-            <span class="text-white/45">Planned ${fmt(T.planned)}</span>
+            <span class="text-white/45">Bills ${fmt(T.planned)}</span>
             <span class="${over ? 'text-red-300' : 'text-emerald-300'} font-medium">${status}</span>
           </div>
+          ${shifts}
           ${daysTo < 0 ? `<button onclick="openPeriodSheet()" class="mt-3 w-full py-2.5 rounded-xl bg-amber-500 text-black text-sm font-semibold">Got paid? Start the next period</button>` : ''}
           ${unrated.length ? `<button onclick="showView('jobs')" class="mt-3 w-full text-left text-[11px] text-amber-200/80 glass-subtle rounded-xl px-3 py-2">Add a pay rate for ${unrated.map(j => esc(j.name)).join(' & ')} so its hours count →</button>` : ''}
         </div>`;
 
-      const t0 = today();
-      const bills = [...T.bills].sort((a, c) => (a.due || '9999').localeCompare(c.due || '9999') || a.name.localeCompare(c.name));
-      $('bud-bills-sum').textContent = T.bills.length ? `${fmt(T.billsPaid)} of ${fmt(T.billsTotal)} paid` : '';
-      $('bud-bills').innerHTML = bills.length ? bills.map(it => {
-        const overdue = !it.paid && it.due && it.due < t0;
-        return `<div class="glass rounded-2xl p-3 flex items-center gap-3">
-          <button onclick="toggleBill('${it.id}')" aria-label="Mark paid" class="w-8 h-8 shrink-0 rounded-full border flex items-center justify-center text-sm font-bold ${it.paid ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent'}">✓</button>
-          <div class="flex-1 min-w-0 tap" onclick="openBudgetItemSheet('${it.id}')">
-            <div class="text-sm font-medium truncate ${it.paid ? 'line-through text-white/40' : ''}">${esc(it.icon)} ${esc(it.name)}</div>
-            <div class="text-[11px] ${overdue ? 'text-red-300' : 'text-white/40'}">${it.paid ? 'Paid' : it.due ? (overdue ? 'Overdue · ' : 'Due ') + fmtShort(it.due) : 'No due date'}</div>
-          </div>
-          <div class="text-sm font-semibold ${it.paid ? 'text-white/40' : ''}">${fmt(it.amount)}</div>
-        </div>`;
-      }).join('') : `<div class="glass-subtle rounded-2xl p-3.5 text-[12px] text-white/40">Rent, phone, car, insurance… anything you must pay before your next check.</div>`;
-
-      $('bud-spend-sum').textContent = T.sp.length ? `${fmt(T.spSpent)} of ${fmt(T.spPlanned)} spent` : '';
-      $('bud-spend').innerHTML = T.sp.length ? T.sp.map(it => {
-        const sp = itemSpent(it), ov = sp > it.amount + 0.004, p = it.amount > 0 ? Math.min(100, sp / it.amount * 100) : 0;
+      // One merged list: bills and spending plans, unfinished first
+      const items = [...state.budget.items].sort((a, c) =>
+        (itemDone(a) ? 1 : 0) - (itemDone(c) ? 1 : 0) || (a.due || '9999').localeCompare(c.due || '9999') || a.name.localeCompare(c.name));
+      $('bud-bills-sum').textContent = items.length ? `${fmt(T.paid)} of ${fmt(T.planned)} paid` : '';
+      $('bud-bills').innerHTML = items.length ? items.map(it => {
+        const paid = itemPaid(it), done = itemDone(it), ov = paid > it.amount + 0.004;
+        const overdue = !done && it.due && it.due < t;
+        const p = it.amount > 0 ? Math.min(100, paid / it.amount * 100) : 0;
+        const sub = done ? (ov ? `Over by ${fmt(paid - it.amount)}` : 'Paid in full') : `${fmt(it.amount - paid)} left`;
         return `<div class="glass rounded-2xl p-3.5">
           <div class="flex items-center gap-3">
+            <div class="w-8 h-8 shrink-0 rounded-full border flex items-center justify-center text-sm font-bold ${done ? (ov ? 'bg-red-400 border-red-400' : 'bg-emerald-500 border-emerald-500') + ' text-black' : 'border-white/25 text-transparent'}">✓</div>
             <div class="flex-1 min-w-0 tap" onclick="openBudgetItemSheet('${it.id}')">
-              <div class="text-sm font-medium truncate">${esc(it.icon)} ${esc(it.name)}</div>
-              <div class="text-[11px] ${ov ? 'text-red-300' : 'text-white/40'}">${fmt(sp)} of ${fmt(it.amount)}${ov ? ' · over by ' + fmt(sp - it.amount) : ' · ' + fmt(it.amount - sp) + ' left'}</div>
+              <div class="text-sm font-medium truncate">${esc(it.icon)} ${esc(it.name)}${it.kind === 'spend' ? ' <span class="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-sky-400/15 text-sky-300 align-middle ml-1">plan</span>' : ''}</div>
+              <div class="text-[11px] ${overdue || ov ? 'text-red-300' : 'text-white/40'}">${sub}${it.due ? ' · ' + (overdue ? 'Overdue ' : 'Due ') + fmtShort(it.due) : ''}</div>
             </div>
-            <button onclick="openSpendSheet('${it.id}')" class="text-[12px] px-3 py-1.5 rounded-full bg-white/10 font-medium">+ Spend</button>
+            <button onclick="openSpendSheet('${it.id}')" class="text-[12px] px-3 py-1.5 rounded-full ${done ? 'bg-white/10 text-white/60' : 'bg-amber-500/20 text-amber-300'} font-medium">+ Pay</button>
           </div>
-          <div class="progress-track h-1.5 mt-2.5"><div class="progress-fill ${ov ? 'bg-red-400' : p > 80 ? 'bg-orange-400' : 'bg-sky-400'}" style="width:${p}%"></div></div>
+          <div class="progress-track h-1.5 mt-2.5"><div class="progress-fill ${ov ? 'bg-red-400' : done ? 'bg-emerald-400' : 'bg-sky-400'}" style="width:${p}%"></div></div>
+          <div class="flex justify-between text-[11px] text-white/40 mt-1.5"><span>${fmt(paid)} paid</span><span>of ${fmt(it.amount)}</span></div>
         </div>`;
-      }).join('') : `<div class="glass-subtle rounded-2xl p-3.5 text-[12px] text-white/40">Fast food, gas, groceries, fun money… set how much you plan to spend, then log it as you go.</div>`;
+      }).join('') : `<div class="glass-subtle rounded-2xl p-3.5 text-[12px] text-white/40">Rent, phone, car, fast food, gas… everything your check is going toward. Add it, then log what you pay as you go.</div>`;
 
       renderChecksSummary();
       renderPunch();
@@ -1398,14 +1402,18 @@
       const it = id ? state.budget.items.find(x => x.id === id) : null;
       ui.pick.bkind = it?.kind || 'bill'; ui.pick.bicon = it?.icon || '💳';
       openSheet(`
-        ${sheetHead(it ? 'Edit item' : 'Add to budget', 'Must-pay bills or spending you plan to do before next payday')}
+        ${sheetHead(it ? 'Edit item' : 'Add to must pay', 'Anything your check is going toward before next payday')}
         <div class="space-y-3">
           ${it ? '' : `<div class="flex flex-wrap gap-1.5">${BUDGET_PRESETS.map((p, i) => `<button type="button" onclick="applyPreset(${i})" class="seg px-2.5 py-1.5 rounded-full text-[12px]">${p[0]} ${p[1]}</button>`).join('')}</div>`}
           <input id="b-name" type="text" placeholder="Name (Rent, Fast food…)" value="${esc(it?.name)}" class="w-full px-3.5 py-3 text-sm" />
-          ${seg('bkind', [['bill', 'Must-pay bill'], ['spend', 'Spending plan']], ui.pick.bkind, 'py-2 text-xs')}
           <div class="grid grid-cols-2 gap-3">
             <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label><input id="b-amount" type="number" inputmode="decimal" step="0.01" placeholder="0.00" value="${it ? it.amount : ''}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
-            <div id="b-due-wrap" class="${ui.pick.bkind === 'bill' ? '' : 'hidden'}"><label class="text-[11px] text-white/40 uppercase tracking-wider">Due (optional)</label><input id="b-due" type="date" value="${esc(it?.due || '')}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Due (optional)</label><input id="b-due" type="date" value="${esc(it?.due || '')}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+          </div>
+          <div>
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">Type</label>
+            <div class="mt-1">${seg('bkind', [['bill', 'Bill'], ['spend', 'Spending plan']], ui.pick.bkind, 'py-2 text-xs')}</div>
+            <div class="text-[11px] text-white/35 mt-1.5">Spending plans (fast food, gas…) count against your no-spend card. Bills don't.</div>
           </div>
           <div class="flex flex-wrap gap-2">${BUDGET_ICONS.map(i => `<button type="button" data-group="bicon" data-val="${i}" onclick="pick('bicon','${i}')" class="seg seg-icon ${i === ui.pick.bicon ? 'on' : ''} w-10 h-10 rounded-xl text-lg">${i}</button>`).join('')}</div>
           <button onclick="saveBudgetItem('${id || ''}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">${it ? 'Save changes' : 'Add'}</button>
@@ -1421,42 +1429,40 @@
       const name = $('b-name').value.trim(), amount = r2(parseFloat($('b-amount').value));
       if (!name) { toast('Name it'); return; }
       if (!(amount > 0)) { toast('Enter an amount'); return; }
-      const kind = ui.pick.bkind, due = kind === 'bill' ? ($('b-due').value || null) : null;
+      const kind = ui.pick.bkind, due = $('b-due').value || null;
       if (id) {
         const it = state.budget.items.find(x => x.id === id);
         Object.assign(it, { name, amount, kind, due, icon: ui.pick.bicon });
       } else {
-        state.budget.items.push({ id: uid(), name, amount, kind, due, icon: ui.pick.bicon, paid: false, spends: [] });
+        state.budget.items.push({ id: uid(), name, amount, kind, due, icon: ui.pick.bicon, spends: [] });
       }
-      closeSheet(); commit(id ? 'Updated' : 'Added to budget');
+      closeSheet(); commit(id ? 'Updated' : 'Added to must pay');
     }
     function deleteBudgetItem(id) {
       state.budget.items = state.budget.items.filter(x => x.id !== id);
       closeSheet(); commit('Removed');
     }
-    function toggleBill(id) {
-      const it = state.budget.items.find(x => x.id === id); if (!it) return;
-      it.paid = !it.paid; commit(it.paid ? 'Marked paid' : 'Marked unpaid');
-    }
 
+    // Log a payment toward an item (a partial payment is fine)
     function openSpendSheet(id) {
       const it = state.budget.items.find(x => x.id === id); if (!it) return;
-      ui.pick.sbreak = 'yes';
+      ui.pick.sbreak = it.kind === 'spend' ? 'yes' : 'no';
+      const paid = itemPaid(it), rem = Math.max(0, r2(it.amount - paid));
       const hist = [...(it.spends || [])].sort((a, b) => b.date.localeCompare(a.date));
       openSheet(`
-        ${sheetHead(esc(it.icon) + ' ' + esc(it.name), `${fmt(itemSpent(it))} of ${fmt(it.amount)} this pay period`)}
+        ${sheetHead(esc(it.icon) + ' ' + esc(it.name), `${fmt(paid)} paid of ${fmt(it.amount)}${rem > 0 ? ' · ' + fmt(rem) + ' left' : ''}`)}
         <div class="space-y-3">
           <div class="grid grid-cols-2 gap-3">
-            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Amount</label><input id="s-amount" type="number" inputmode="decimal" step="0.01" placeholder="12.50" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Amount paid</label><input id="s-amount" type="number" inputmode="decimal" step="0.01" placeholder="${rem > 0 ? rem : '12.50'}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
             <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Date</label><input id="s-date" type="date" value="${today()}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
           </div>
+          ${rem > 0 ? `<button onclick="$('s-amount').value='${rem}'" class="text-[12px] px-3 py-1.5 rounded-full bg-white/10 text-white/70">Fill remaining ${fmt(rem)}</button>` : ''}
           <input id="s-note" type="text" placeholder="Note (optional)" class="w-full px-3.5 py-3 text-sm" />
-          ${seg('sbreak', [['yes', 'Counts as spending day'], ['no', 'Essential']], 'yes', 'py-2 text-xs')}
-          <div class="text-[11px] text-white/35">A spending day takes that day's punch off your no-spend card.</div>
-          <button onclick="saveSpend('${id}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Log spend</button>
-          ${hist.length ? `<div><label class="text-[11px] text-white/40 uppercase tracking-wider">This period</label><div class="mt-2 space-y-1.5">${hist.map(s => `
+          ${seg('sbreak', [['no', 'Doesn\'t break no-spend'], ['yes', 'Counts as spending day']], ui.pick.sbreak, 'py-2 text-xs')}
+          <button onclick="saveSpend('${id}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Log payment</button>
+          ${hist.length ? `<div><label class="text-[11px] text-white/40 uppercase tracking-wider">Payments this period</label><div class="mt-2 space-y-1.5">${hist.map(s => `
             <div class="flex items-center gap-3 glass-subtle rounded-xl px-3 py-2">
-              <div class="flex-1 min-w-0"><div class="text-sm font-medium">${fmt(s.amount)}</div><div class="text-[11px] text-white/40 truncate">${fmtDate(s.date)}${s.note ? ' · ' + esc(s.note) : ''}${s.breaks === false ? ' · essential' : ''}</div></div>
+              <div class="flex-1 min-w-0"><div class="text-sm font-medium">${fmt(s.amount)}</div><div class="text-[11px] text-white/40 truncate">${fmtDate(s.date)}${s.note ? ' · ' + esc(s.note) : ''}${s.breaks === false ? '' : ' · spending day'}</div></div>
               <button onclick="arm(this,'removeSpend','${id}','${s.id}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-white/10 text-white/50">Remove</button>
             </div>`).join('')}</div></div>` : ''}
         </div>`);
@@ -1465,13 +1471,14 @@
       const it = state.budget.items.find(x => x.id === id); if (!it) return;
       const amount = r2(parseFloat($('s-amount').value));
       if (!(amount > 0)) { toast('Enter an amount'); return; }
-      const date = $('s-date').value || today(), breaks = ui.pick.sbreak !== 'no';
+      const date = $('s-date').value || today(), breaks = ui.pick.sbreak === 'yes';
+      const wasDone = itemDone(it);
       it.spends.push({ id: uid(), amount, date, note: $('s-note').value.trim() || undefined, breaks });
       const lost = breaks && state.punch.days.includes(date);
       if (lost) state.punch.days = state.punch.days.filter(d => d !== date);
       closeSheet();
-      const ov = itemSpent(it) - it.amount;
-      commit(lost ? 'Logged · that day’s punch is gone' : ov > 0.004 ? `Over ${it.name} by ${fmt(ov)}` : 'Spend logged');
+      const ov = itemPaid(it) - it.amount;
+      commit(lost ? 'Logged · that day’s punch is gone' : ov > 0.004 ? `Over ${it.name} by ${fmt(ov)}` : (!wasDone && itemDone(it)) ? `${it.name} paid in full ✓` : 'Payment logged');
     }
     function removeSpend(itemId, sid) {
       const it = state.budget.items.find(x => x.id === itemId); if (!it) return;
@@ -1482,17 +1489,15 @@
     function openPeriodSheet() {
       const b = state.budget;
       openSheet(`
-        ${sheetHead('Pay period', 'Hours you log between these dates count toward your next check')}
+        ${sheetHead('Pay period', 'Hours you mark worked since your last payday count toward your next check')}
         <div class="space-y-3">
           <div class="grid grid-cols-2 gap-3">
             <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Last payday</label><input id="pp-start" type="date" value="${esc(b.periodStart)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
             <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Next payday</label><input id="pp-end" type="date" value="${esc(b.nextPayday)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
           </div>
-          <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Expected paycheck (optional)</label>
-            <input id="pp-income" type="number" inputmode="decimal" step="0.01" placeholder="Blank = use my logged hours" value="${b.expectedIncome > 0 ? b.expectedIncome : ''}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
           <button onclick="savePeriod()" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Save</button>
           <div class="pt-3 border-t border-white/10 space-y-2">
-            <div class="text-[11px] text-white/40">Got paid? This marks every bill unpaid, clears this period's spending and moves due dates forward.</div>
+            <div class="text-[11px] text-white/40">Got paid? This clears every payment logged toward your must-pay list and moves due dates forward.</div>
             <button onclick="arm(this,'newPeriod')" class="w-full py-3 rounded-xl bg-white/10 text-sm font-medium">Start next pay period</button>
           </div>
         </div>`);
@@ -1501,7 +1506,7 @@
       const s = $('pp-start').value, e = $('pp-end').value;
       if (!s || !e) { toast('Pick both dates'); return; }
       if (e < s) { toast('Next payday is before the last one'); return; }
-      Object.assign(state.budget, { periodStart: s, nextPayday: e, expectedIncome: parseFloat($('pp-income').value) > 0 ? r2(parseFloat($('pp-income').value)) : null });
+      Object.assign(state.budget, { periodStart: s, nextPayday: e });
       closeSheet(); commit('Pay period saved');
     }
     function newPeriod() {
@@ -1509,8 +1514,8 @@
       const len = Math.max(7, dayDiff(b.periodStart, b.nextPayday) || 14);
       const start = b.nextPayday && b.nextPayday <= t ? b.nextPayday : t;
       const shift = dayDiff(b.periodStart, start);
-      b.items.forEach(i => { i.paid = false; i.spends = []; if (i.due) i.due = addDays(i.due, shift); });
-      Object.assign(b, { periodStart: start, nextPayday: addDays(start, len), expectedIncome: null });
+      b.items.forEach(i => { i.spends = []; if (i.due) i.due = addDays(i.due, shift); });
+      Object.assign(b, { periodStart: start, nextPayday: addDays(start, len) });
       closeSheet(); commit('New pay period');
     }
 
@@ -1727,18 +1732,16 @@
           <div class="flex gap-2 mt-2.5"><input id="earn-rate" type="number" inputmode="decimal" step="0.01" placeholder="$ per hour" class="flex-1 min-w-0 px-3.5 py-3 text-sm" />
           <button onclick="saveEarnRate('${e.id}')" class="px-4 rounded-xl bg-amber-500 text-black font-semibold text-sm">Save</button></div>`;
       } else {
-        const en = earnings(), T = budgetTotals(), income = state.budget.expectedIncome > 0 ? state.budget.expectedIncome : en.projected;
+        const en = earnings(), T = budgetTotals();
         const cov = T.planned > 0 ? Math.min(999, en.earned / T.planned * 100) : 0;
         html = head + `<div class="mt-3"><div id="earn-amt" class="text-4xl font-semibold ${e.actual ? 'text-emerald-400' : 'text-amber-300'}">${e.actual ? '+' : '~'}$0.00</div>
-          <div class="text-[11px] text-white/40">${e.hours}h × ${fmt(rate)}/hr</div></div>
+          <div class="text-[11px] text-white/40">${e.hours}h × ${fmt(rate)}/hr${e.actual ? '' : ' · counts once you mark it worked'}</div></div>
           <div class="mt-3 glass-subtle rounded-xl p-3">
-            <div class="flex justify-between text-[11px] text-white/50"><span>Earned this pay period</span><span>On my way to ${fmt(income)}</span></div>
-            <div class="progress-track h-1.5 mt-1.5"><div class="progress-fill bg-emerald-400" style="width:${income > 0 ? Math.min(100, en.earned / income * 100) : 0}%"></div></div>
-            <div class="flex justify-between text-[11px] mt-1.5"><span class="text-emerald-300">${fmt(en.earned)} in</span><span class="text-white/40">payday ${fmtShort(en.end)}</span></div>
+            <div class="flex justify-between text-[11px] text-white/50"><span>On my way to</span><span class="text-emerald-300 font-medium">${fmt(en.earned)}</span></div>
+            <div class="progress-track h-1.5 mt-1.5"><div class="progress-fill bg-emerald-400" style="width:${T.planned > 0 ? Math.min(100, cov) : 0}%"></div></div>
+            <div class="flex justify-between text-[11px] mt-1.5"><span class="text-white/40">${T.planned > 0 ? Math.round(cov) + '% of your ' + fmt(T.planned) + ' bills' : 'payday ' + fmtShort(en.end)}</span><span class="text-white/40">${en.next.length ? en.leftHours + 'h left · next ' + en.next.length + ' shift' + (en.next.length === 1 ? '' : 's') : 'no shifts scheduled'}</span></div>
           </div>
-          ${T.planned > 0
-            ? `<div class="mt-2.5 text-[12px] text-white/60">Money in so far covers <b class="${cov >= 100 ? 'text-emerald-300' : 'text-amber-300'}">${Math.round(cov)}%</b> of your ${fmt(T.planned)} plan</div>`
-            : `<button onclick="hideEarnPop();showView('money')" class="mt-2.5 text-[12px] text-amber-300/90">Add your bills in Budget to see what this covers →</button>`}`;
+          ${T.planned > 0 ? '' : `<button onclick="hideEarnPop();showView('money')" class="mt-2.5 text-[12px] text-amber-300/90">Add your bills in Budget to see what this covers →</button>`}`;
       }
       pop.innerHTML = html; pop.classList.add('show');
       if (rate) { countUp($('earn-amt'), r2(rate * e.hours), e.actual ? '+' : '~'); earnTimer = setTimeout(hideEarnPop, 7000); }
