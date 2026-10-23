@@ -148,6 +148,30 @@
     @keyframes sheetIn { from { opacity: 0; transform: translateY(10px); } }
 
     /* ===== Toast ===== */
+    /* ===== Wallet cards ===== */
+    .wcard { position: relative; aspect-ratio: 1.586; border-radius: 22px; padding: 14px 16px; color: #fff; overflow: hidden; cursor: pointer;
+      background: linear-gradient(135deg, var(--c1), var(--c2));
+      box-shadow: 0 -8px 20px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(0,0,0,.2);
+      transition: transform .5s cubic-bezier(.32,.72,0,1); }
+    .wcard::before { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 90% at 0% 0%, rgba(255,255,255,.28), transparent 55%); pointer-events: none; }
+    .wcard + .wcard { margin-top: calc(72px - 63.05%); }
+    .wcard:active { transform: scale(.985); }
+    .wc-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; position: relative; }
+    .wc-name { font-size: 15px; font-weight: 600; letter-spacing: -.01em; text-shadow: 0 1px 2px rgba(0,0,0,.25); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wc-bal { font-size: 17px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+    .wc-body { position: absolute; left: 16px; right: 16px; bottom: 14px; font-size: 12px; color: rgba(255,255,255,.85); display: flex; justify-content: space-between; align-items: flex-end; }
+    .wc-body b { display: block; font-size: 20px; font-weight: 600; color: #fff; }
+    .wc-ghost { height: 150px; border-radius: 22px; border: 1.5px dashed rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 24px; font-size: 13px; color: rgba(255,255,255,.4); }
+    .wcard.art { background-size: 100% 100%; background-position: center; background-repeat: no-repeat; background-color: #111; padding: 0; }
+    .wcard.art::before { display: none; }
+    .wc-pill { position: absolute; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #fff; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.2); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+    .wc-pill.sav { font-size: 12px; font-weight: 500; color: #a7f3d0; }
+    .wc-brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .wc-logo { width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,.96); padding: 3px; object-fit: contain; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+    .wc-mark { width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:14px;letter-spacing:-.06em;background:rgba(255,255,255,.95);color:#111;box-shadow:0 1px 4px rgba(0,0,0,.3); }
+    .wc-mark.chime { color:#00a86b; } .wc-mark.cash-app { color:#00d632; } .wc-mark.venmo { color:#008cff; } .wc-mark.paypal { color:#003087; } .wc-mark.apple-cash { color:#111; }
+    .swatch { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; background: linear-gradient(135deg, var(--c1), var(--c2)); }
+    .swatch.on { border-color: #fff; transform: scale(1.12); }
     .sw { position: relative; width: 44px; height: 26px; border-radius: 999px; background: rgba(255,255,255,.15); flex-shrink: 0; transition: background .25s; }
     .sw i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
     .sw.on { background: #f59e0b; }
@@ -341,6 +365,15 @@
             </div>
             <input id="backup-file" type="file" accept="application/json,.json" class="hidden" onchange="importBackup(event)" />
           </div>
+
+          <div id="wallet-section">
+            <div class="flex items-end justify-between mb-2.5 px-1">
+              <h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Wallet</h2>
+              <div id="wallet-total" class="text-[11px] text-white/40 text-right"></div>
+            </div>
+            <div id="wallet-stack"></div>
+            <button onclick="openAccountSheet()" class="mt-3 w-full py-3 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add card</button>
+          </div>
         </div>
       </div>
 
@@ -404,7 +437,12 @@
             <div class="flex items-center justify-between mb-2 px-1"><h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Must pay</h2><span id="bud-bills-sum" class="text-[11px] text-white/40"></span></div>
             <div id="bud-bills" class="space-y-2"></div>
           </div>
-          <button onclick="openBudgetItemSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add to must pay</button>
+          <button onclick="openBudgetItemSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add bill</button>
+          <div>
+            <div class="flex items-center justify-between mb-2 px-1"><h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Spending plans</h2><span id="bud-spending-sum" class="text-[11px] text-white/40"></span></div>
+            <div id="bud-spending" class="space-y-2"></div>
+            <button onclick="openSpendingItemSheet()" class="mt-2 w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add spending plan</button>
+          </div>
           <div id="punch-card"></div>
           <div id="bingo-card"></div>
         </div>
@@ -452,6 +490,22 @@
 
   <script>
     // ========== CONSTANTS / STATE ==========
+    // Emergency startup escape: this is intentionally registered before app initialization.
+    // Even if saved data or a later initialization function fails, the splash cannot trap the user.
+    setTimeout(() => {
+      const splashEl = document.getElementById('splash');
+      const homeEl = document.getElementById('view-home');
+      if (homeEl) {
+        homeEl.classList.remove('hidden');
+        homeEl.style.opacity = '1';
+        homeEl.style.pointerEvents = 'auto';
+      }
+      if (splashEl) {
+        splashEl.classList.add('leave');
+        setTimeout(() => splashEl.remove(), 850);
+      }
+    }, 2600);
+
     const STORAGE_KEY = 'forge-v1';
     const LEVEL_TITLES = { 1:'Spark', 2:'Apprentice', 3:'Operator', 4:'Forgeman', 5:'Architect', 6:'Strategist', 7:'Master', 8:'Legend', 9:'Mythic', 10:'Eternal' };
     const VIEW_ORDER = ['home','jobs','log','money','goals'];
@@ -585,6 +639,7 @@
       });
       state.punch = { reward: P.reward || '', days: Array.isArray(P.days) ? [...new Set(P.days)].sort().slice(0, 10) : [], claimed: P.claimed || 0 };
       state.bingo = { anchor: G.anchor || t, cycles: G.cycles && typeof G.cycles === 'object' ? G.cycles : {} };
+      state.accounts = (Array.isArray(state.accounts) ? state.accounts : []).map(a => ({ id: a.id || uid(), name: String(a.name || 'Card'), balance: Number(a.balance) || 0, savings: Number(a.savings) || 0, color: Number.isInteger(a.color) ? a.color : 0, hex: /^#[0-9a-f]{6}$/i.test(a.hex || '') ? a.hex : null, logo: typeof a.logo === 'string' && a.logo.startsWith('data:image/') ? a.logo : null, art: typeof a.art === 'string' && a.art.startsWith('data:image/') ? a.art : null, updated: a.updated || today() }));
       const R = state.settings || {};
       state.settings = {
         nudges: { streak: true, budget: true, punch: true, payday: true, ...(R.nudges || {}) },
@@ -820,6 +875,7 @@
       renderMilestones();
       renderBudget();
       renderReminders();
+      renderWallet();
 
       const active = state.jobs.filter(j => j.active !== false);
 
@@ -1215,7 +1271,7 @@
       const start = b.periodStart || addDays(t, -7), end = b.nextPayday || addDays(t, 7);
       let earned = 0, noRate = false;
       state.timeEntries.forEach(e => {
-        if (!e.actual || e.date < start) return;
+        if (!e.actual || e.date < start || e.date > end || e.date > t) return;
         const r = jobRate(e.jobId);
         if (!r) { noRate = true; return; }
         earned += r * e.hours;
@@ -1231,8 +1287,9 @@
     }
     function itemPaid(it) { return r2((it.spends || []).reduce((s, x) => s + x.amount, 0)); }
     function itemDone(it) { return it.amount > 0 && itemPaid(it) >= it.amount - 0.004; }
+    // Must-pay totals include bills only. Flexible spending plans never count as bills.
     function budgetTotals() {
-      const items = state.budget.items;
+      const items = state.budget.items.filter(i => i.kind === 'bill');
       return {
         planned: r2(items.reduce((s, i) => s + i.amount, 0)),
         paid: r2(items.reduce((s, i) => s + Math.min(itemPaid(i), i.amount), 0))
@@ -1251,7 +1308,7 @@
       let status;
       if (!T.planned) status = 'Add your bills to see what is left.';
       else if (over) status = `Short ${fmt(-left)}${e.leftPay > 0 ? ` · next shifts bring ~${fmt(e.leftPay)}` : ''}`;
-      else status = `${fmt(left)} left after everything`;
+      else status = `${fmt(left)} left after bills`;
       const when = daysTo > 1 ? `${daysTo} days to payday` : daysTo === 1 ? 'Payday tomorrow' : daysTo === 0 ? 'Payday is today' : 'Payday passed';
 
       const shifts = e.next.length ? `
@@ -1275,10 +1332,10 @@
           </div>
           <div class="mt-3 text-[11px] text-white/40">On my way to</div>
           <div class="text-4xl font-semibold text-amber-300 leading-tight">${fmt(income)}</div>
-          <div class="text-[11px] text-white/40 mt-0.5">From hours you marked worked since ${fmtShort(e.start)}</div>
+          <div class="text-[11px] text-white/40 mt-0.5">Estimated gross pay from worked hours in this pay period · ${fmtShort(e.start)}–${fmtShort(e.end)}</div>
           <div class="progress-track h-2 mt-3.5"><div class="progress-fill ${barCls}" style="width:${pct}%"></div></div>
           <div class="flex justify-between text-[11px] mt-1.5">
-            <span class="text-white/45">Bills ${fmt(T.planned)}</span>
+            <span class="text-white/45">Bills due ${fmt(T.planned)}</span>
             <span class="${over ? 'text-red-300' : 'text-emerald-300'} font-medium">${status}</span>
           </div>
           ${shifts}
@@ -1286,33 +1343,45 @@
           ${unrated.length ? `<button onclick="showView('jobs')" class="mt-3 w-full text-left text-[11px] text-amber-200/80 glass-subtle rounded-xl px-3 py-2">Add a pay rate for ${unrated.map(j => esc(j.name)).join(' & ')} so its hours count →</button>` : ''}
         </div>`;
 
-      // One merged list: bills and spending plans, unfinished first
-      const items = [...state.budget.items].sort((a, c) =>
-        (itemDone(a) ? 1 : 0) - (itemDone(c) ? 1 : 0) || (a.due || '9999').localeCompare(c.due || '9999') || a.name.localeCompare(c.name));
-      $('bud-bills-sum').textContent = items.length ? `${fmt(T.paid)} of ${fmt(T.planned)} paid` : '';
-      $('bud-bills').innerHTML = items.length ? items.map(it => {
+      // Keep required bills and flexible spending plans visually separate.
+      const sortItems = arr => arr.sort((a, c) => (itemDone(a) ? 1 : 0) - (itemDone(c) ? 1 : 0) || (a.due || '9999').localeCompare(c.due || '9999') || a.name.localeCompare(c.name));
+      const billItems = sortItems(state.budget.items.filter(i => i.kind === 'bill'));
+      const spendItems = sortItems(state.budget.items.filter(i => i.kind === 'spend'));
+      const billPaid = r2(billItems.reduce((sum, i) => sum + Math.min(itemPaid(i), i.amount), 0));
+      const billPlanned = r2(billItems.reduce((sum, i) => sum + i.amount, 0));
+      const spendPlanned = r2(spendItems.reduce((sum, i) => sum + i.amount, 0));
+      $('bud-bills-sum').textContent = billItems.length ? `${fmt(billPaid)} of ${fmt(billPlanned)} paid` : 'Bills only';
+      $('bud-spending-sum').textContent = spendItems.length ? `${fmt(spendPlanned)} planned` : '';
+      const renderBudgetItems = (arr, emptyText) => arr.length ? arr.map(it => {
         const paid = itemPaid(it), done = itemDone(it), ov = paid > it.amount + 0.004;
         const overdue = !done && it.due && it.due < t;
         const p = it.amount > 0 ? Math.min(100, paid / it.amount * 100) : 0;
-        const sub = done ? (ov ? `Over by ${fmt(paid - it.amount)}` : 'Paid in full') : `${fmt(it.amount - paid)} left`;
+        const sub = done ? (ov ? `Over by ${fmt(paid - it.amount)}` : 'Paid in full') : `${fmt(Math.max(0, it.amount - paid))} left`;
         return `<div class="glass rounded-2xl p-3.5">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 shrink-0 rounded-full border flex items-center justify-center text-sm font-bold ${done ? (ov ? 'bg-red-400 border-red-400' : 'bg-emerald-500 border-emerald-500') + ' text-black' : 'border-white/25 text-transparent'}">✓</div>
             <div class="flex-1 min-w-0 tap" onclick="openBudgetItemSheet('${it.id}')">
-              <div class="text-sm font-medium truncate">${esc(it.icon)} ${esc(it.name)}${it.kind === 'spend' ? ' <span class="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-sky-400/15 text-sky-300 align-middle ml-1">plan</span>' : ''}</div>
+              <div class="text-sm font-medium truncate">${esc(it.icon)} ${esc(it.name)}</div>
               <div class="text-[11px] ${overdue || ov ? 'text-red-300' : 'text-white/40'}">${sub}${it.due ? ' · ' + (overdue ? 'Overdue ' : 'Due ') + fmtShort(it.due) : ''}</div>
             </div>
             <button onclick="openSpendSheet('${it.id}')" class="text-[12px] px-3 py-1.5 rounded-full ${done ? 'bg-white/10 text-white/60' : 'bg-amber-500/20 text-amber-300'} font-medium">+ Pay</button>
           </div>
-          <div class="progress-track h-1.5 mt-2.5"><div class="progress-fill ${ov ? 'bg-red-400' : done ? 'bg-emerald-400' : 'bg-sky-400'}" style="width:${p}%"></div></div>
+          <div class="progress-track h-1.5 mt-2.5"><div class="progress-fill ${ov ? 'bg-red-400' : done ? 'bg-emerald-400' : it.kind === 'bill' ? 'bg-amber-400' : 'bg-sky-400'}" style="width:${p}%"></div></div>
           <div class="flex justify-between text-[11px] text-white/40 mt-1.5"><span>${fmt(paid)} paid</span><span>of ${fmt(it.amount)}</span></div>
         </div>`;
-      }).join('') : `<div class="glass-subtle rounded-2xl p-3.5 text-[12px] text-white/40">Rent, phone, car, fast food, gas… everything your check is going toward. Add it, then log what you pay as you go.</div>`;
+      }).join('') : `<div class="glass-subtle rounded-2xl p-3.5 text-[12px] text-white/40">${emptyText}</div>`;
+      $('bud-bills').innerHTML = renderBudgetItems(billItems, 'Add your required bills here. Only these affect the Must pay total.');
+      $('bud-spending').innerHTML = renderBudgetItems(spendItems, 'Track flexible categories like food, gas, and fun here. These do not count as bills.');
 
       renderPunch();
       renderBingo();
     }
 
+    function openSpendingItemSheet() {
+      openBudgetItemSheet();
+      ui.pick.bkind = 'spend';
+      document.querySelectorAll('[data-group="bkind"]').forEach(b => b.classList.toggle('on', b.dataset.val === 'spend'));
+    }
     function openBudgetItemSheet(id) {
       const it = id ? state.budget.items.find(x => x.id === id) : null;
       ui.pick.bkind = it?.kind || 'bill'; ui.pick.bicon = it?.icon || '💳';
@@ -1756,6 +1825,21 @@
       const r = computeReminders()[0]; if (!r) return;
       S.lastNudge = now; save(); toast(r.icon + ' ' + r.title);
     }
+    // Never interrupt on launch. Wait until the user has actively used Forge for a while.
+    let nudgeTimer = null, userHasInteracted = false, nudgeShownThisSession = false;
+    function scheduleGentleNudge() {
+      if (nudgeTimer) clearTimeout(nudgeTimer);
+      nudgeTimer = setTimeout(() => {
+        if (userHasInteracted && !nudgeShownThisSession && document.visibilityState === 'visible') {
+          nudgeShownThisSession = true;
+          maybeNudgeToast();
+        }
+      }, 180000);
+    }
+    ['pointerdown', 'touchstart', 'keydown', 'click'].forEach(evt => document.addEventListener(evt, () => {
+      userHasInteracted = true;
+      if (!nudgeShownThisSession && !nudgeTimer) scheduleGentleNudge();
+    }, { passive: true, once: true }));
 
     function swRow(on, fn, a, b, label, sub) {
       return `<button onclick="${fn}(this,'${a}')" class="w-full flex items-center justify-between gap-3 glass-subtle rounded-xl px-3.5 py-3 text-left">
@@ -1778,6 +1862,164 @@
       state.settings.nudges[k] = !nudgeOn(k);
       btn.querySelector('.sw').classList.toggle('on', nudgeOn(k));
       save(); renderReminders();
+    }
+
+    // ========== WALLET (your accounts as cards) ==========
+    const WALLET_COLORS = [['#34d399', '#047857'], ['#60a5fa', '#1d4ed8'], ['#a78bfa', '#6d28d9'], ['#fbbf24', '#b45309'], ['#f472b6', '#be185d'], ['#94a3b8', '#334155'], ['#22d3ee', '#0e7490'], ['#f87171', '#b91c1c']];
+    const WALLET_PRESETS = [['Chime', 0], ['Cash App', 6], ['Venmo', 1], ['PayPal', 2], ['Apple Cash', 5], ['Bank', 3], ['Credit union', 4], ['Cash', 0]];
+    function mixHex(h, target, amt) {
+      const n = parseInt(h.slice(1), 16), m = c => Math.round(c + (target - c) * amt);
+      return '#' + [m(n >> 16), m((n >> 8) & 255), m(n & 255)].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+    function cardColors(a) {
+      if (a.hex) return [mixHex(a.hex, 255, .22), mixHex(a.hex, 0, .38)];
+      const n = String(a.name || '').toLowerCase();
+      if (n.includes('chime')) return ['#d9f5e9', '#00a86b'];
+      if (n.includes('cash app') || n === 'cashapp') return ['#00d632', '#006b24'];
+      if (n.includes('venmo')) return ['#008cff', '#004b9b'];
+      if (n.includes('paypal')) return ['#009cde', '#003087'];
+      if (n.includes('apple cash')) return ['#f3f4f6', '#aeb4bd'];
+      return WALLET_COLORS[a.color] || WALLET_COLORS[0];
+    }
+    function walletOrder() {
+      const a = state.accounts.slice();
+      const i = a.findIndex(x => x.id === ui.walletFront);
+      if (i > -1) a.push(a.splice(i, 1)[0]);   // the card you tapped comes to the front (bottom of the stack)
+      return a;
+    }
+    function brandMark(name) {
+      const n = String(name || '').toLowerCase();
+      if (n.includes('chime')) return '<span class="wc-mark chime" aria-hidden="true">c</span>';
+      if (n.includes('cash app') || n === 'cashapp') return '<span class="wc-mark cash-app" aria-hidden="true">$</span>';
+      if (n.includes('venmo')) return '<span class="wc-mark venmo" aria-hidden="true">V</span>';
+      if (n.includes('paypal')) return '<span class="wc-mark paypal" aria-hidden="true">P</span>';
+      if (n.includes('apple cash')) return '<span class="wc-mark apple-cash" aria-hidden="true"></span>';
+      return '<span class="wc-mark" aria-hidden="true">▤</span>';
+    }
+    function renderWallet() {
+      const list = walletOrder(), spend = r2(state.accounts.reduce((s, a) => s + a.balance, 0)), sav = r2(state.accounts.reduce((s, a) => s + a.savings, 0));
+      $('wallet-total').innerHTML = state.accounts.length ? `Balance <b class="text-white/80">${fmt(spend)}</b> · Savings <b class="text-emerald-300">${fmt(sav)}</b>` : '';
+      $('wallet-stack').innerHTML = list.length ? list.map((a, i) => {
+        const c = cardColors(a), last = i === list.length - 1;
+        const face = a.art
+          ? `<span class="wc-pill" style="left:12px;top:50px">${fmt(a.balance)}</span>${last && a.savings ? `<span class="wc-pill sav" style="left:12px;bottom:12px">Savings ${fmt(a.savings)}</span>` : ''}`
+          : `<div class="wc-top"><span class="wc-brand">${brandMark(a.name)}<span class="wc-name">${esc(a.name)}</span></span><span class="wc-bal">${fmt(a.balance)}</span></div>
+          ${last ? `<div class="wc-body"><div>Savings held<b>${fmt(a.savings)}</b></div><div class="text-right opacity-80">Updated ${fmtShort(a.updated)}<br>Tap to edit</div></div>` : ''}`;
+        return `<div class="wcard${a.art ? ' art' : ''}" role="button" aria-label="${esc(a.name)} card" style="--c1:${c[0]};--c2:${c[1]}${a.art ? `;background-image:url('${a.art}')` : ''}" onclick="tapCard('${a.id}')">${face}</div>`;
+      }).join('') : `<div class="wc-ghost" onclick="openAccountSheet()">Add your Chime, Cash App or bank to see your balances here</div>`;
+    }
+    function tapCard(id) {
+      const list = walletOrder();
+      if (list[list.length - 1].id === id) { openAccountSheet(id); return; }
+      ui.walletFront = id; renderWallet();
+      const el = $('wallet-stack').lastElementChild;
+      if (el) el.animate([{ transform: 'translateY(34px) scale(.97)' }, { transform: 'translateY(0) scale(1)' }], { duration: 480, easing: 'cubic-bezier(.34,1.4,.64,1)' });
+    }
+    function openAccountSheet(id) {
+      const a = id ? state.accounts.find(x => x.id === id) : null;
+      ui.pick.acolor = a && a.hex ? 'custom' : String(a ? a.color : 0);
+      ui.pendingArt = undefined;
+      openSheet(`
+        ${sheetHead(a ? esc(a.name) : 'Add a card', a ? 'Update your balance whenever you check it' : 'Just a name and balances. No card or account numbers.')}
+        <div class="space-y-3">
+          ${a ? '' : `<div class="flex flex-wrap gap-1.5">${WALLET_PRESETS.map((p, i) => `<button type="button" onclick="applyAccPreset(${i})" class="seg px-2.5 py-1.5 rounded-full text-[12px]">${p[0]}</button>`).join('')}</div>`}
+          <input id="a-name" type="text" placeholder="Chime, Cash App, Bank…" value="${esc(a?.name)}" class="w-full px-3.5 py-3 text-sm" />
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Balance</label><input id="a-bal" type="number" inputmode="decimal" step="0.01" placeholder="0.00" value="${a ? a.balance : ''}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Savings held</label><input id="a-sav" type="number" inputmode="decimal" step="0.01" placeholder="0.00" value="${a && a.savings ? a.savings : ''}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+          </div>
+          <div class="text-[11px] text-white/35">Balance is what you can spend. Savings held is money set aside on this card (like a savings pocket).</div>
+          <div>
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">Card image</label>
+            <div class="flex items-center gap-3 mt-1">
+              <div id="a-art-prev" class="rounded-lg bg-white/10 flex items-center justify-center text-white/30 text-xs overflow-hidden shrink-0" style="width:88px;aspect-ratio:1.586">${a && a.art ? `<img src="${a.art}" style="width:100%;height:100%;object-fit:cover" alt="">` : 'none'}</div>
+              <div class="flex flex-col gap-1.5">
+                <button type="button" onclick="document.getElementById('a-art-file').click()" class="px-3.5 py-2.5 rounded-xl bg-white/10 text-sm font-medium">Upload card image</button>
+                <button type="button" onclick="clearAccArt()" class="text-left px-1 text-xs text-white/40">Remove</button>
+              </div>
+              <input id="a-art-file" type="file" accept="image/*" class="hidden" onchange="handleAccArt(event)" />
+            </div>
+            <div class="text-[11px] text-white/35 mt-1.5">Screenshot your card from the app. Edges are trimmed automatically. Use one that doesn't show the card number.</div>
+          </div>
+          <div>
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">Color</label>
+            <div class="flex gap-2.5 flex-wrap items-center mt-1.5">${WALLET_COLORS.map((c, i) => `<button type="button" data-group="acolor" data-val="${i}" onclick="pick('acolor','${i}')" style="--c1:${c[0]};--c2:${c[1]}" class="swatch ${String(i) === ui.pick.acolor ? 'on' : ''}"></button>`).join('')}
+              <label class="swatch ${ui.pick.acolor === 'custom' ? 'on' : ''}" data-group="acolor" data-val="custom" style="--c1:${a && a.hex ? a.hex : '#888888'};--c2:${a && a.hex ? a.hex : '#444444'};position:relative;overflow:hidden" title="Match your brand color">
+                <input id="a-hex" type="color" value="${a && a.hex ? a.hex : '#2dd4a0'}" oninput="pick('acolor','custom');this.parentElement.style.setProperty('--c1',this.value);this.parentElement.style.setProperty('--c2',this.value)" style="position:absolute;inset:-8px;width:60px;height:60px;opacity:0;cursor:pointer" />
+                <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;pointer-events:none">🎨</span>
+              </label>
+            </div>
+          </div>
+          <button onclick="saveAccount('${id || ''}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">${a ? 'Save' : 'Add card'}</button>
+          ${a ? delBtn('deleteAccount', id, 'Delete card') : ''}
+        </div>`);
+    }
+    // Shrink the picked image so it stays small in local storage
+    function handleAccLogo(ev) {
+      const f = ev.target.files && ev.target.files[0]; if (!f) return;
+      const url = URL.createObjectURL(f), img = new Image();
+      img.onload = () => {
+        const S = 128, k = Math.min(S / img.width, S / img.height, 1), w = Math.max(1, Math.round(img.width * k)), h = Math.max(1, Math.round(img.height * k));
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        ui.pendingLogo = cv.toDataURL('image/png');
+        $('a-logo-prev').innerHTML = `<img src="${ui.pendingLogo}" class="w-full h-full object-contain bg-white p-1" alt="">`;
+        URL.revokeObjectURL(url); ev.target.value = '';
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); toast('Could not read that image'); };
+      img.src = url;
+    }
+    // Trim the empty margin around a card screenshot (works on dark or transparent backgrounds)
+    function findCardBox(cx, w, h) {
+      const d = cx.getImageData(0, 0, w, h).data, px = (x, y) => { const i = (y * w + x) * 4; return [d[i], d[i + 1], d[i + 2], d[i + 3]]; };
+      const pts = [[2, 2], [w - 3, 2], [2, h - 3], [w - 3, h - 3]].map(([x, y]) => px(x, y));
+      const clear = pts.every(p => p[3] < 20), bg = [0, 1, 2].map(c => pts.reduce((s, p) => s + p[c], 0) / 4);
+      const differs = (x, y) => { const p = px(x, y); return clear ? p[3] >= 20 : p[3] >= 20 && Math.abs(p[0] - bg[0]) + Math.abs(p[1] - bg[1]) + Math.abs(p[2] - bg[2]) > 45; };
+      const rows = new Array(h).fill(0), cols = new Array(w).fill(0);
+      for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) if (differs(x, y)) { rows[y]++; cols[x]++; }
+      const rt = 0.08 * (w / 2), ct = 0.08 * (h / 2);
+      const first = (a, t) => a.findIndex(v => v >= t), last = (a, t) => a.length - 1 - [...a].reverse().findIndex(v => v >= t);
+      const x0 = first(cols, ct), x1 = last(cols, ct), y0 = first(rows, rt), y1 = last(rows, rt);
+      if (x0 < 0 || y0 < 0 || x1 <= x0 || y1 <= y0 || (x1 - x0) * (y1 - y0) < 0.35 * w * h) return { x: 0, y: 0, w, h };
+      return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+    }
+    function handleAccArt(ev) {
+      const f = ev.target.files && ev.target.files[0]; if (!f) return;
+      const url = URL.createObjectURL(f), img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 900 / Math.max(img.width, img.height)), w = Math.round(img.width * k), h = Math.round(img.height * k);
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        const cx = cv.getContext('2d', { willReadFrequently: true }); cx.drawImage(img, 0, 0, w, h);
+        const bx = findCardBox(cx, w, h), OW = Math.min(640, bx.w), OH = Math.max(1, Math.round(bx.h * OW / bx.w));
+        const out = document.createElement('canvas'); out.width = OW; out.height = OH;
+        const oc = out.getContext('2d'); oc.fillStyle = '#111'; oc.fillRect(0, 0, OW, OH);
+        oc.drawImage(cv, bx.x, bx.y, bx.w, bx.h, 0, 0, OW, OH);
+        ui.pendingArt = out.toDataURL('image/jpeg', 0.88);
+        $('a-art-prev').innerHTML = `<img src="${ui.pendingArt}" style="width:100%;height:100%;object-fit:cover" alt="">`;
+        URL.revokeObjectURL(url); ev.target.value = '';
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); toast('Could not read that image'); };
+      img.src = url;
+    }
+    function clearAccArt() { ui.pendingArt = null; $('a-art-prev').textContent = 'none'; }
+    function clearAccLogo() { ui.pendingLogo = null; $('a-logo-prev').textContent = 'none'; }
+    function applyAccPreset(i) { $('a-name').value = WALLET_PRESETS[i][0]; pick('acolor', String(WALLET_PRESETS[i][1])); $('a-bal').focus(); }
+    function saveAccount(id) {
+      const name = $('a-name').value.trim();
+      if (!name) { toast('Name the card'); return; }
+      const balance = r2(parseFloat($('a-bal').value) || 0), savings = r2(parseFloat($('a-sav').value) || 0);
+      const custom = ui.pick.acolor === 'custom';
+      const data = { name, balance, savings, color: custom ? 0 : (+ui.pick.acolor || 0), hex: custom ? $('a-hex').value : null, updated: today() };
+      data.logo = null;
+      if (ui.pendingArt !== undefined) data.art = ui.pendingArt;
+      if (id) Object.assign(state.accounts.find(x => x.id === id), data);
+      else { const acc = { id: uid(), ...data }; state.accounts.push(acc); ui.walletFront = acc.id; }
+      closeSheet(); commit(id ? 'Card updated' : 'Card added');
+    }
+    function deleteAccount(id) {
+      state.accounts = state.accounts.filter(x => x.id !== id);
+      if (ui.walletFront === id) ui.walletFront = null;
+      closeSheet(); commit('Card removed');
     }
 
     // Swipe a sheet down to close it (works anywhere you can drag, not just the Close button)
@@ -1822,7 +2064,7 @@
 
     load();
     window.addEventListener('pagehide', save);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); else { recalc(); render(); maybeNudgeToast(); } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); else { recalc(); render(); } });
     try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
 
     if (!state.onboardingDone && state.jobs.length === 0) {
@@ -1840,19 +2082,22 @@
     { const st0 = streakStage(state.progress.currentStreak); $('splash-mascot').innerHTML = mascot('', st0); $('splash-mascot').style.filter = `drop-shadow(0 0 40px ${STAGE_PAL[Math.max(1, st0)].glow})`; }
     $('log-date').value = today();
 
-    render();
-    showView('home');
-    // showView animates the first screen in behind the splash; hold it until the splash leaves
-    $('view-home').style.opacity = 0;
-    setTimeout(() => {
-      $('splash').classList.add('leave');
-      $('view-home').style.opacity = '';
-      $('view-home').getAnimations().forEach(a => a.cancel());
-      $('view-home').animate([{ opacity: 0, transform: 'scale(.96) translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 700, easing: 'cubic-bezier(.22,1,.36,1)' });
-      staggerIn($('view-home'));
-      setTimeout(() => $('splash').remove(), 800);
-      setTimeout(maybeNudgeToast, 1100);
-    }, 2100);
+    try {
+      render();
+      showView('home');
+      $('view-home').style.opacity = 0;
+    } catch (err) {
+      console.error('Forge startup render failed:', err);
+      // Keep the Home view accessible and surface the error for diagnosis instead of
+      // leaving the user staring at the splash screen indefinitely.
+      document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+      if ($('view-home')) $('view-home').classList.remove('hidden');
+      if ($('splash')) $('splash').style.zIndex = '0';
+      if ($('toast')) {
+        $('toast').textContent = 'Forge opened with a display issue. Your saved data was not intentionally cleared.';
+        $('toast').classList.add('show');
+      }
+    }
   </script>
 </body>
 </html>
