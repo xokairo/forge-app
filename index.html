@@ -148,7 +148,12 @@
     @keyframes sheetIn { from { opacity: 0; transform: translateY(10px); } }
 
     /* ===== Toast ===== */
+    .sw { position: relative; width: 44px; height: 26px; border-radius: 999px; background: rgba(255,255,255,.15); flex-shrink: 0; transition: background .25s; }
+    .sw i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+    .sw.on { background: #f59e0b; }
+    .sw.on i { transform: translateX(18px); }
     #toast {
+      max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis;
       position: fixed; left: 50%; top: max(env(safe-area-inset-top), 12px); z-index: 300;
       transform: translate(-50%, -140%); opacity: 0;
       transition: transform .5s cubic-bezier(.34,1.56,.64,1), opacity .3s;
@@ -254,9 +259,12 @@
                 <h1 class="text-[28px] font-semibold tracking-tight leading-tight">Momentum</h1>
               </div>
             </div>
+            <div class="flex items-center gap-2">
+            <button onclick="openRemindersSheet()" aria-label="Reminders" class="w-10 h-10 rounded-full glass-subtle flex items-center justify-center text-lg">🔔</button>
             <div id="level-badge" class="level-badge px-3.5 py-1.5 rounded-full text-center">
               <div class="text-[10px] text-amber-300/80 uppercase tracking-wider">Level</div>
               <div class="text-sm font-semibold text-amber-200" id="level-num">1</div>
+            </div>
             </div>
           </div>
           <div class="mt-4 glass-subtle rounded-2xl px-4 py-3">
@@ -272,6 +280,7 @@
         </div>
 
         <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
+          <div id="home-reminders" class="space-y-2 empty:hidden"></div>
           <div class="grid grid-cols-3 gap-3">
             <div class="glass rounded-2xl p-3.5 text-center float" onclick="openStreakSheet()">
               <div class="flex items-center justify-center gap-1.5">
@@ -576,6 +585,12 @@
       });
       state.punch = { reward: P.reward || '', days: Array.isArray(P.days) ? [...new Set(P.days)].sort().slice(0, 10) : [], claimed: P.claimed || 0 };
       state.bingo = { anchor: G.anchor || t, cycles: G.cycles && typeof G.cycles === 'object' ? G.cycles : {} };
+      const R = state.settings || {};
+      state.settings = {
+        nudges: { streak: true, budget: true, punch: true, payday: true, ...(R.nudges || {}) },
+        dismissed: R.dismissed && Array.isArray(R.dismissed.ids) ? R.dismissed : { date: '', ids: [] },
+        lastNudge: R.lastNudge || 0
+      };
     }
 
     function load() {
@@ -804,6 +819,7 @@
       $('lifetime-saved').textContent = fmt(p.totalSaved);
       renderMilestones();
       renderBudget();
+      renderReminders();
 
       const active = state.jobs.filter(j => j.active !== false);
 
@@ -1666,6 +1682,104 @@
     }
 
     // ========== INIT ==========
+    // ========== REMINDERS ==========
+    // In-app: smart cards on Home + a toast when you open the app.
+        const NUDGES = [
+      ['streak', '🔥', 'Streak', 'Nudge me to log so the flame stays lit'],
+      ['budget', '💸', 'Budget watch', 'Spending plans near the limit, bills coming due'],
+      ['punch', '🎟️', 'No-spend punch', 'Evening nudge to punch the card'],
+      ['payday', '🎉', 'Payday heads-up', 'Payday coming or passed']
+    ];
+    function nudgeOn(k) { return state.settings.nudges[k] !== false; }
+
+    function computeReminders() {
+      const out = [], S = state.settings, t = today(), hr = new Date().getHours();
+      const e = earnings(), daysTo = dayDiff(t, e.end);
+      const add = r => out.push(r);
+      if (nudgeOn('streak') && !state.timeEntries.some(x => x.date === t)) {
+        const dates = state.timeEntries.map(x => x.date).filter(d => d <= t).sort();
+        const last = dates.length ? dates[dates.length - 1] : null, n = state.progress.currentStreak;
+        if (!last) add({ id: 'streak', icon: '🔥', title: 'Log your first shift', sub: 'Light the flame. Worked or scheduled both count.', go: 'log', urgent: false });
+        else if (n > 0) {
+          const final = dayDiff(last, t) >= GRACE;
+          add({ id: 'streak', icon: '🔥', title: final ? `Last chance to keep your ${n}-day streak` : `Log today to keep your ${n}-day streak`, sub: final ? 'Log something today or it resets.' : 'Worked or scheduled both count.', go: 'log', urgent: final });
+        } else add({ id: 'streak', icon: '🔥', title: 'Relight your streak', sub: 'Log today to start a new one.', go: 'log', urgent: false });
+      }
+      if (nudgeOn('budget')) {
+        let alerts = 0;
+        state.budget.items.forEach(it => {
+          const paid = itemPaid(it), left = r2(it.amount - paid);
+          if (it.kind === 'spend' && it.amount > 0) {
+            const r = paid / it.amount;
+            if (r > 1.0005) { alerts++; add({ id: 'over-' + it.id, icon: it.icon, title: `Over ${it.name} by ${fmt(-left)}`, sub: 'Pull back for the rest of this pay period.', go: 'money', urgent: true }); }
+            else if (r >= 0.9995) { alerts++; add({ id: 'full-' + it.id, icon: it.icon, title: `${it.name} budget is used up`, sub: 'Nothing left in this plan.', go: 'money', urgent: true }); }
+            else if (r >= 0.8) { alerts++; add({ id: 'near-' + it.id, icon: it.icon, title: `${it.name}: ${fmt(left)} left of ${fmt(it.amount)}`, sub: 'Close to the limit. Stay in budget.', go: 'money', urgent: false }); }
+          } else if (it.due && !itemDone(it)) {
+            const d = dayDiff(t, it.due);
+            if (d < 0) { alerts++; add({ id: 'due-' + it.id, icon: it.icon, title: `${it.name} is overdue`, sub: `${fmt(left)} left to pay`, go: 'money', urgent: true }); }
+            else if (d <= 1) { alerts++; add({ id: 'due-' + it.id, icon: it.icon, title: `${it.name} due ${d === 0 ? 'today' : 'tomorrow'}`, sub: `${fmt(left)} left to pay`, go: 'money', urgent: d === 0 }); }
+          }
+        });
+        const plans = state.budget.items.filter(i => i.kind === 'spend');
+        if (!alerts && plans.length && hr >= 11) {
+          const rem = r2(plans.reduce((s, i) => s + Math.max(0, i.amount - itemPaid(i)), 0));
+          add({ id: 'budget-day', icon: '💸', title: 'Stay in budget this paycheck', sub: `${fmt(rem)} of planned spending left${daysTo > 0 ? ' · ' + daysTo + ' day' + (daysTo === 1 ? '' : 's') + ' to payday' : ''}`, go: 'money', urgent: false });
+        }
+      }
+      if (nudgeOn('punch') && hr >= 18 && state.punch.days.length < 10 && !state.punch.days.includes(t) && !spentOn(t))
+        add({ id: 'punch', icon: '🎟️', title: 'No spending today?', sub: 'Punch today\u2019s card.', go: 'money', urgent: false });
+      if (nudgeOn('payday')) {
+        if (daysTo < 0) add({ id: 'payday', icon: '🎉', title: 'Payday passed', sub: 'Start your next pay period when the check lands.', go: 'money', urgent: false });
+        else if (daysTo <= 1) add({ id: 'payday', icon: '🎉', title: daysTo === 0 ? 'Payday is today' : 'Payday tomorrow', sub: 'Then start your next pay period.', go: 'money', urgent: false });
+      }
+      const hidden = S.dismissed.date === t ? S.dismissed.ids : [];
+      return out.filter(r => !hidden.includes(r.id)).sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0));
+    }
+    function renderReminders() {
+      const list = computeReminders().slice(0, 4);
+      $('home-reminders').innerHTML = list.map(r => `
+        <div class="glass rounded-2xl p-3 flex items-center gap-3 tap" style="${r.urgent ? 'border-color:rgba(248,113,113,.45)' : ''}" onclick="showView('${r.go}')">
+          <div class="text-xl w-8 text-center">${esc(r.icon)}</div>
+          <div class="flex-1 min-w-0"><div class="text-sm font-medium truncate">${esc(r.title)}</div><div class="text-[11px] ${r.urgent ? 'text-red-300/80' : 'text-white/45'} truncate">${esc(r.sub)}</div></div>
+          <button onclick="event.stopPropagation();dismissReminder('${esc(r.id)}')" aria-label="Dismiss for today" class="text-white/30 px-1.5 text-sm">✕</button>
+        </div>`).join('');
+    }
+    function dismissReminder(id) {
+      const S = state.settings, t = today();
+      if (S.dismissed.date !== t) S.dismissed = { date: t, ids: [] };
+      S.dismissed.ids.push(id); save(); renderReminders();
+    }
+    // One gentle toast when you open (or come back to) the app, at most every 4 hours.
+    function maybeNudgeToast() {
+      const S = state.settings, now = Date.now();
+      if (now - (S.lastNudge || 0) < 4 * 3600 * 1000) return;
+      const r = computeReminders()[0]; if (!r) return;
+      S.lastNudge = now; save(); toast(r.icon + ' ' + r.title);
+    }
+
+    function swRow(on, fn, a, b, label, sub) {
+      return `<button onclick="${fn}(this,'${a}')" class="w-full flex items-center justify-between gap-3 glass-subtle rounded-xl px-3.5 py-3 text-left">
+        <span class="min-w-0"><span class="text-sm font-medium block">${label}</span><span class="text-[11px] text-white/40 block">${sub}</span></span>
+        <span class="sw ${on ? 'on' : ''}"><i></i></span></button>`;
+    }
+    function openRemindersSheet() {
+      const S = state.settings;
+      openSheet(`
+        ${sheetHead('Reminders', 'Keep the streak and the budget on your radar')}
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">In the app</label>
+            ${NUDGES.map(n => swRow(nudgeOn(n[0]), 'toggleNudge', n[0], '', n[1] + ' ' + n[2], n[3])).join('')}
+            <div class="text-[11px] text-white/35">These show at the top of Home, and as a quick message when you open Forge.</div>
+          </div>
+        </div>`);
+    }
+    function toggleNudge(btn, k) {
+      state.settings.nudges[k] = !nudgeOn(k);
+      btn.querySelector('.sw').classList.toggle('on', nudgeOn(k));
+      save(); renderReminders();
+    }
+
     // Swipe a sheet down to close it (works anywhere you can drag, not just the Close button)
     (function initSheetSwipe() {
       const sheet = $('sheet'), root = $('sheet-root'), bd = $('sheet-backdrop');
@@ -1708,7 +1822,7 @@
 
     load();
     window.addEventListener('pagehide', save);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); else { recalc(); render(); } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); else { recalc(); render(); maybeNudgeToast(); } });
     try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
 
     if (!state.onboardingDone && state.jobs.length === 0) {
@@ -1737,6 +1851,7 @@
       $('view-home').animate([{ opacity: 0, transform: 'scale(.96) translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 700, easing: 'cubic-bezier(.22,1,.36,1)' });
       staggerIn($('view-home'));
       setTimeout(() => $('splash').remove(), 800);
+      setTimeout(maybeNudgeToast, 1100);
     }, 2100);
   </script>
 </body>
