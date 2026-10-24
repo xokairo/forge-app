@@ -2365,7 +2365,7 @@
       if (e && e.status === 404) return aiProvName() + " didn't recognize the model. Pick a different one in ⚙️.";
       if (e && e.status === 429) return aiCfg.provider === 'gemini' ? "Hit the free limit for now (the free plan has per-minute and daily caps). Wait a minute, or try again later today." : "Too many requests right now. Give it a minute and try again.";
       if (/credit balance|billing/i.test(m)) return "Your Anthropic account is out of credit. Add some under Billing at console.anthropic.com, then ask again.";
-      if (e && e.status >= 500) return aiProvName() + " is busy right now. Try again in a moment.";
+      if (e && e.status >= 500) return aiProvName() + " is busy right now. Try again in a moment." + (m && !/^Error \d+$/.test(m) ? "\n\nDetails: " + m.slice(0, 160) : '');
       if (e instanceof TypeError) return "Couldn't reach " + aiProvName() + ". Check your connection and try again.";
       return "Something went wrong: " + m;
     }
@@ -2567,7 +2567,7 @@
       const prov = ui.aiProv || aiCfg.provider, gem = prov === 'gemini';
       const typed = ($('ai-key').value || '').trim(), model = $('ai-model').value;
       if (typed && !gem && !/^sk-ant-/.test(typed)) { toast('That does not look like a Claude key'); return; }
-      if (typed && gem && !/^AIza/.test(typed)) { toast('That does not look like a Google key. It starts with AIza'); return; }
+      if (typed && gem && !/^(AIza|AQ\.)/.test(typed)) { toast('That does not look like a Google key. It starts with AIza or AQ.'); return; }
       const key = typed || (aiCfg.keys && aiCfg.keys[prov]) || (prov === aiCfg.provider ? aiCfg.key : ''), st = $('ai-status'), btn = $('ai-save');
       let ep = '';
       if (gem && $('ai-ep')) {
