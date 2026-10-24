@@ -561,7 +561,7 @@
         <div id="chat-mascot" class="w-10 h-10"></div>
         <div class="flex-1 min-w-0">
           <div class="text-sm font-semibold text-amber-200">4orge</div>
-          <div class="text-[11px] text-white/40">Your savings sidekick · knows your Forge data</div>
+          <div class="text-[11px] text-white/40">Savings, credit, investing basics · plus your Forge data</div>
         </div>
         <button onclick="closeForgeChat()" class="text-white/40 text-sm px-2">Close</button>
       </div>
@@ -2039,9 +2039,9 @@
         renderChips([
           'How am I doing?',
           'What should I save next?',
-          'How much to my top goal?',
-          'Any budget warnings?',
-          'Tips to save more'
+          'Improve my credit',
+          'Investing basics',
+          'Banks with IRAs'
         ]);
       }
       setTimeout(() => $('forge-input').focus(), 300);
@@ -2062,7 +2062,7 @@
     function sendForgeChat() {
       const q = ($('forge-input').value || '').trim(); if (!q) return;
       $('forge-input').value = ''; meSay(q);
-      setTimeout(() => { botSay(forgeReply(q)); renderChips(['How am I doing?', 'What should I save next?', 'Payday plan', 'Streak status']); }, 280);
+      setTimeout(() => { botSay(forgeReply(q)); renderChips(['How am I doing?', 'What should I save next?', 'Improve my credit', 'Investing basics']); }, 280);
     }
     function forgeReply(raw) {
       const q = raw.toLowerCase();
@@ -2075,12 +2075,14 @@
       const e = earnings();
       const leftAfterDue = r2(e.earned - budgetTotals().planned);
       const nl = String.fromCharCode(10);
+      const disclaimer = nl + nl + 'Not personal financial advice — just plain education. Confirm details with the bank or a pro before you move money.';
 
-      if (/how am i|status|doing|overview|summary/.test(q)) {
+      // ----- Your Forge stats -----
+      if (/how am i|status|doing|overview|summary|my stats|my progress/.test(q)) {
         const gline = goals.length ? goals.map(g => '• ' + g.name + ': ' + fmt(goalCurrent(g)) + ' / ' + fmt(g.target) + ' (' + Math.round(goalPct(g)) + '%)').join(nl) : '• No goals yet — set one on the Goals tab.';
         return "Here's your snapshot:" + nl + nl + 'Level ' + p.level + ' · ' + levelTitle(p.level) + nl + 'Streak: ' + p.currentStreak + ' day' + (p.currentStreak===1?'':'s') + ' (' + STAGE_NAMES[streakStage(p.currentStreak)] + ')' + nl + 'Hours logged: ' + (Math.round(p.totalHours*10)/10) + nl + 'Lifetime saved: ' + fmt(p.totalSaved) + nl + nl + 'Goals:' + nl + gline + nl + nl + "This pay period you're on track for ~" + fmt(e.earned) + ' from worked hours.';
       }
-      if (/save next|what should i|where.*(put|save)|allocate|priority|payday plan/.test(q)) {
+      if (/save next|what should i save|where.*(put|save)|allocate|priority|payday plan/.test(q)) {
         if (!goals.length) return "You don't have a savings goal yet. Open Goals and create one — even a $100 emergency fund counts. I'll help you plan from there.";
         const need = goals.map(g => ({ g: g, left: Math.max(0, r2(g.target - goalCurrent(g))) })).filter(x => x.left > 0).sort((a,b)=>a.left-b.left);
         if (!need.length) return "Every goal is fully funded. Legend move. Set a bigger target or a new goal when you're ready.";
@@ -2093,12 +2095,12 @@
         else msg += nl + nl + 'Add due dates on bills so I can tell you what is truly free to save.';
         return msg;
       }
-      if (/top goal|how much.*goal|goal.*left|progress/.test(q)) {
+      if (/top goal|how much.*goal|goal.*left|progress on/.test(q)) {
         if (!top) return 'No goals yet. Create one and I will track the gap for you.';
         const left = Math.max(0, r2(top.target - goalCurrent(top)));
         return top.name + ' is at ' + fmt(goalCurrent(top)) + ' of ' + fmt(top.target) + ' (' + Math.round(goalPct(top)) + '%).' + nl + (left > 0 ? fmt(left) + ' to go.' : 'You already hit it.') + nl + nl + 'Lifetime saved across everything: ' + fmt(p.totalSaved) + '.';
       }
-      if (/budget|bill|owe|due|payday|period|warning/.test(q)) {
+      if (/budget|bill|owe|due|payday|period|warning/.test(q) && !/credit|ira|invest|stock|bank app/.test(q)) {
         const lines = dueBills.length ? dueBills.slice(0, 6).map(i => '• ' + (i.icon||'') + ' ' + i.name + ': ' + fmt(Math.max(0,i.amount-itemPaid(i))) + ' left · due ' + fmtShort(i.due)).join(nl) : '• No unpaid bills with due dates.';
         return 'Due-dated bills only (that is what the pay-period math uses):' + nl + lines + nl + nl + 'Total still due: ' + fmt(dueTotal) + nl + 'Earned this period: ~' + fmt(e.earned) + nl + (leftAfterDue >= 0 ? 'Room after those bills: ~' + fmt(leftAfterDue) : 'Shortfall vs due bills: ' + fmt(-leftAfterDue)) + nl + nl + 'Bills without a due date do not count against that number — they are just notes.';
       }
@@ -2107,29 +2109,70 @@
         const deadline = s.last ? addDays(s.last, GRACE) : null;
         return 'Your flame is ' + STAGE_NAMES[streakStage(p.currentStreak)] + ' at ' + p.currentStreak + ' day' + (p.currentStreak===1?'':'s') + ' (best ' + p.longestStreak + ').' + nl + nl + 'You can skip up to 2 days and keep it. ' + (deadline ? 'Log by ' + fmtDate(deadline) + ' to keep it alive.' : 'Log any hours (worked or scheduled) to light it.') + nl + nl + 'Consistency beats intensity — a short log still counts.';
       }
-      if (/tip|advice|how to save|save more|habit/.test(q)) {
-        return 'Practical moves that fit Forge:' + nl + nl + '1. Put a due date only on bills that actually hit this period — keeps the math honest.' + nl + '2. Use a paycheck plan on one goal so saving is automatic when money lands.' + nl + '3. Punch no-spend days — 10 punches = a reward you chose.' + nl + '4. Log hours the day you work so the streak and "on my way to" stay accurate.' + nl + '5. After payday, move money into a goal before discretionary spending.' + nl + nl + 'Want a plan for a specific goal? Name it and I will size the per-check amount.';
+
+      // ----- Credit -----
+      if (/credit score|improve.*credit|build.*credit|fix my credit|credit card|fico|utilization/.test(q)) {
+        return 'Solid ways people usually improve credit:' + nl + nl +
+          '1. Pay on time, every time — payment history is the biggest factor.' + nl +
+          '2. Keep credit card balances low vs limits (utilization under ~30%, under 10% is even better).' + nl +
+          '3. Don’t close old cards just to “clean up” — age of accounts helps.' + nl +
+          '4. Only apply for new credit when you need it (hard inquiries add up).' + nl +
+          '5. Check your free reports for errors and dispute mistakes.' + nl +
+          '6. If you’re thin-file, a secured card or becoming an authorized user can help build history.' + nl + nl +
+          'In Forge: keep due-dated bills paid on time and log spending so you don’t overshoot plans.' + disclaimer;
       }
+
+      // ----- Investing / stocks -----
+      if (/invest|stock|etf|index fund|brokerage|401k|roth|ira\b|compound|market/.test(q)) {
+        return 'Investing basics (keep it simple):' + nl + nl +
+          '• Emergency fund first — usually 3–6 months of expenses in a high-yield savings account before heavy investing.' + nl +
+          '• For long-term goals (years away), broad low-cost index funds / ETFs (like a total US or S&P 500 fund) are what a lot of people use instead of picking single stocks.' + nl +
+          '• Prefer tax-advantaged accounts when you can: 401(k) (especially if there’s a match), Roth IRA, traditional IRA.' + nl +
+          '• Time in the market beats timing the market — regular contributions beat waiting for the “perfect” day.' + nl +
+          '• Single stocks are higher risk; never invest money you need soon.' + nl + nl +
+          'Apps/brokerages people often use for IRAs & investing: Fidelity, Vanguard, Charles Schwab, SoFi, Wealthfront, Betterment, Robinhood (IRA available), E*TRADE.' + disclaimer;
+      }
+
+      // ----- Banking apps / HYSA / IRA -----
+      if (/bank(ing)? app|high.?yield|hysa|savings account|which bank|best bank|ally|sofi|chime|capital one|discover/.test(q)) {
+        return 'Banking & savings apps people often look at:' + nl + nl +
+          'High-yield savings (park emergency cash):' + nl +
+          '• Ally, Capital One 360, Discover, SoFi, American Express HYSA — rates change; compare current APY.' + nl + nl +
+          'Everyday spending + savings pockets:' + nl +
+          '• Chime, Cash App, SoFi, Capital One — good for budgeting; pair with a real HYSA for bigger emergency funds.' + nl + nl +
+          'IRAs / long-term investing (not just a checking app):' + nl +
+          '• Fidelity, Vanguard, Schwab — strong for Roth/Traditional IRAs and low-cost funds.' + nl +
+          '• SoFi, Betterment, Wealthfront — app-first, IRAs + automated investing.' + nl + nl +
+          'Tip: keep spending money separate from “don’t touch” savings so you don’t accidentally burn the emergency fund.' + disclaimer;
+      }
+
+      // ----- Emergency fund / general savings education -----
+      if (/emergency fund|rainy day|how much.*save|save more|saving tip|habit/.test(q)) {
+        return 'Practical savings moves:' + nl + nl +
+          '1. Name the goal in Forge (emergency fund, car, etc.) so every dollar has a job.' + nl +
+          '2. Automate: on payday, move money to savings/goal before discretionary spending.' + nl +
+          '3. Emergency fund target is often 3–6 months of must-pay bills — start with $500–$1,000 if you’re building from zero.' + nl +
+          '4. Use no-spend punches and spending plans so lifestyle creep doesn’t eat raises.' + nl +
+          '5. After high-interest debt is under control, layer in investing for long-term goals.' + nl + nl +
+          'Want me to size a per-paycheck amount for one of your goals? Name the goal.';
+      }
+
       if (/hello|hi\b|hey|who are you|what can you/.test(q)) {
-        return "I'm 4orge — the flame that watches your money moves. I read your goals, jobs, hours, bills with due dates, streak, and punch card." + nl + nl + 'Ask about progress, what to save next, budget pressure, or habits.';
+        return "I'm 4orge — your savings sidekick. I can talk about YOUR Forge data (goals, bills, streak, hours) and general money topics: saving, credit basics, investing concepts, banks/apps with IRAs, and habits." + nl + nl + 'Ask anything money-related. Examples: “how do I improve my credit?”, “what’s a Roth IRA?”, “good banking apps with IRAs?”';
       }
       if (/thank/.test(q)) return 'Anytime. Keep the flame lit.';
+
+      // generic fallback — still try to be useful
       if (goals.length) {
         const g = goals[0];
-        return 'I can dig into savings, goals, due bills, or your streak. Try "how am I doing?" or "what should I save next?"' + nl + nl + 'Quick hit: ' + g.name + ' is at ' + Math.round(goalPct(g)) + '% (' + fmt(goalCurrent(g)) + ' / ' + fmt(g.target) + ').';
+        return 'I can cover your Forge stats or general money questions — savings, credit, investing basics, banks with IRAs, habits.' + nl + nl +
+          'Quick hit on your data: ' + g.name + ' is at ' + Math.round(goalPct(g)) + '% (' + fmt(goalCurrent(g)) + ' / ' + fmt(g.target) + ').' + nl + nl +
+          'Or ask something like “how do I build credit?” or “best places for a Roth IRA?”';
       }
-      return 'Ask me about your goals, what to save next, due bills, or your streak. Set a goal on the Goals tab and I will get more specific.';
+      return 'Ask me about your goals and budget, or general topics: emergency funds, credit scores, index funds, Roth IRAs, high-yield savings, banking apps. What do you want to tackle?';
     }
 
-// ========== INIT ==========
-    // ========== REMINDERS ==========
-    // In-app: smart cards on Home + a toast when you open the app.
-        const NUDGES = [
-      ['streak', '🔥', 'Streak', 'Nudge me to log so the flame stays lit'],
-      ['budget', '💸', 'Budget watch', 'Spending plans near the limit, bills coming due'],
-      ['punch', '🎟️', 'No-spend punch', 'Evening nudge to punch the card'],
-      ['payday', '🎉', 'Payday heads-up', 'Payday coming or passed']
-    ];
+
     function nudgeOn(k) { return state.settings.nudges[k] !== false; }
 
     function computeReminders() {
@@ -2284,10 +2327,10 @@
       $('wallet-total').innerHTML = state.accounts.length ? `Balance <b class="text-white/80">${fmt(spend)}</b> · Savings <b class="text-emerald-300">${fmt(sav)}</b>` : '';
       $('wallet-stack').innerHTML = list.length ? list.map((a, i) => {
         const c = cardColors(a), last = i === list.length - 1, img = cardArt(a);
-        const face = img
-          ? `<span class="wc-pill" style="left:12px;top:50px">${fmt(a.balance)}</span>${last && a.savings ? `<span class="wc-pill sav" style="left:12px;bottom:12px">Savings ${fmt(a.savings)}</span>` : ''}`
-          : `<div class="wc-top"><span class="wc-brand">${brandMark(a.name)}<span class="wc-name">${esc(a.name)}</span></span><span class="wc-bal">${fmt(a.balance)}</span></div>
-          ${last ? `<div class="wc-body"><div>Savings held<b>${fmt(a.savings)}</b></div><div class="text-right opacity-80">Updated ${fmtShort(a.updated)}<br>Tap to edit</div></div>` : ''}`;
+        const topStyle = img ? ' style="background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,.2) 70%,transparent);padding:14px 16px;margin:0;position:relative;z-index:2"' : '';
+        const bodyStyle = img ? ' style="background:linear-gradient(0deg,rgba(0,0,0,.78),rgba(0,0,0,.25) 75%,transparent);padding:14px 16px;left:0;right:0;bottom:0;position:absolute;z-index:2"' : '';
+        const face = `<div class="wc-top"${topStyle}><span class="wc-brand">${brandMark(a.name)}<span class="wc-name">${esc(a.name)}</span></span><span class="wc-bal">${fmt(a.balance)}</span></div>
+          ${last ? `<div class="wc-body"${bodyStyle}><div>Savings held<b>${fmt(a.savings)}</b></div><div class="text-right opacity-80">Updated ${fmtShort(a.updated)}<br>Tap to edit</div></div>` : ''}`;
         return `<div class="wcard${img ? ' art' : ''}" role="button" aria-label="${esc(a.name)} card" style="--c1:${c[0]};--c2:${c[1]}${img ? `;background-image:url('${img}')` : ''}" onclick="tapCard('${a.id}')">${face}</div>`;
       }).join('') : `<div class="wc-ghost" onclick="openAccountSheet()">Add your Chime, Cash App or bank to see your balances here</div>`;
     }
