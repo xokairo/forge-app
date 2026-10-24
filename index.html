@@ -2181,7 +2181,7 @@
     // Paste your Forge server address here once it is set up and every install works with no key.
     const FORGE_AI_URL = '';
     let aiCfg = { provider: 'gemini', endpoint: '', key: '', keys: {}, model: 'claude-sonnet-5-5', gmodel: 'gemini-3.8-flash', share: true, search: true };
-    let aiBusy = false, aiSearchBlocked = false;
+    let aiBusy = false, aiSearchBlocked = false, aiModelOverride = '';
     function aiLoad() {
       try { const r = JSON.parse(localStorage.getItem(AI_KEY) || 'null'); if (r && typeof r === 'object') aiCfg = { ...aiCfg, ...r }; } catch (e) {}
       if (!AI_MODELS.some(m => m[0] === aiCfg.model)) aiCfg.model = 'claude-sonnet-5-5';
@@ -2261,8 +2261,8 @@
       if (useSearch) body.tools = [{ google_search: {} }];
       const viaServer = !!aiCfg.endpoint;
       const r = viaServer
-        ? await fetch(aiCfg.endpoint, { method: 'POST', signal: signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: aiCfg.gmodel, body: body }) })
-        : await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(aiCfg.gmodel) + ':streamGenerateContent?alt=sse', {
+        ? await fetch(aiCfg.endpoint, { method: 'POST', signal: signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: aiModelOverride || aiCfg.gmodel, body: body }) })
+        : await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(aiModelOverride || aiCfg.gmodel) + ':streamGenerateContent?alt=sse', {
             method: 'POST', signal: signal,
             headers: { 'content-type': 'application/json', 'x-goog-api-key': aiCfg.key },
             body: JSON.stringify(body)
@@ -2363,7 +2363,7 @@
       if (e && e.status === 401) return aiProvName() + " rejected that key. Open ⚙️ and paste it again.";
       if (e && e.status === 403) return "That key doesn't have access. Make a fresh one and paste it in ⚙️.";
       if (e && e.status === 404) return aiProvName() + " didn't recognize the model. Pick a different one in ⚙️.";
-      if (e && e.status === 429) return aiCfg.provider === 'gemini' ? "Hit the free limit for now (the free plan has per-minute and daily caps). Wait a minute, or try again later today." : "Too many requests right now. Give it a minute and try again.";
+      if (e && e.status === 429) return aiCfg.provider === 'gemini' ? "Google says the free limit is reached for now (the free plan has per-minute and daily caps). Wait a minute, or try again later today." + (m && !/^Error \d+$/.test(m) ? "\n\nDetails: " + m.slice(0, 200) : '') : "Too many requests right now. Give it a minute and try again.";
       if (/credit balance|billing/i.test(m)) return "Your Anthropic account is out of credit. Add some under Billing at console.anthropic.com, then ask again.";
       if (e && e.status >= 500) return aiProvName() + " is busy right now. Try again in a moment." + (m && !/^Error \d+$/.test(m) ? "\n\nDetails: " + m.slice(0, 160) : '');
       if (e instanceof TypeError) return "Couldn't reach " + aiProvName() + ". Check your connection and try again.";
@@ -2389,6 +2389,7 @@
           let j;
           try { j = await aiCall(working, search, ctl.signal, on); }
           catch (e) {
+            if (aiCfg.provider === 'gemini' && e.status === 429 && !aiModelOverride && aiCfg.gmodel !== 'gemini-3.5-flash-lite') { aiModelOverride = 'gemini-3.5-flash-lite'; hop--; continue; }
             if (search && e.status === 400 && /web.?search|tool|ground|google_search|search/i.test(String(e.message))) { search = false; aiSearchBlocked = true; droppedSearch = true; hop--; continue; }
             throw e;
           }
