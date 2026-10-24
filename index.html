@@ -1557,8 +1557,8 @@
       const unrated = state.jobs.filter(j => j.active !== false && !(j.rate > 0) && j.type !== 'other');
       let status;
       if (!T.planned) status = 'Add due dates on bills to track what\'s owed.';
-      else if (over) status = `Short ${fmt(-left)} vs projected check${e.leftPay > 0 ? ` · ~${fmt(e.leftPay)} still scheduled` : ''}`;
-      else status = `${fmt(left)} left after due bills (vs projected check)`;
+      else if (over) status = `Short ${fmt(-left)}${e.leftPay > 0 ? ` · ~${fmt(e.leftPay)} still scheduled` : ''}`;
+      else status = `${fmt(left)} left after due bills`;
       const when = daysTo > 1 ? `${daysTo} days to payday` : daysTo === 1 ? 'Payday tomorrow' : daysTo === 0 ? 'Payday is today' : 'Payday passed';
 
       const countedRows = (e.counted || []).slice().sort((a, c) => a.e.date.localeCompare(c.e.date)).map(x => {
@@ -1598,9 +1598,9 @@
           </div>` : ''}
           ${e.out.length ? `<button onclick="openEarnSheet()" class="mt-2 w-full text-left text-[11px] text-orange-200 glass-subtle rounded-xl px-3 py-2">${e.out.length} worked shift${e.out.length === 1 ? '' : 's'} (~${fmt(e.outPay)}) outside this pay period — not in the total. Tap to include →</button>` : ''}
           <div class="progress-track h-2 mt-3.5"><div class="progress-fill ${barCls}" style="width:${pct}%"></div></div>
-          <div class="flex justify-between text-[11px] mt-1.5">
-            <span class="text-white/45">${T.planned ? `Due-dated bills ${fmt(T.planned)}` : `No due-dated bills`}</span>
-            <span class="${over ? 'text-red-300' : 'text-emerald-300'} font-medium">${status}</span>
+          <div class="mt-1.5 space-y-0.5">
+            <div class="text-[11px] ${over ? 'text-red-300' : 'text-emerald-300'} font-medium">${status}</div>
+            <div class="text-[11px] text-white/45">${T.planned ? `Due-dated bills ${fmt(T.planned)}` : `No due-dated bills`}</div>
           </div>
           ${shifts}
           ${daysTo < 0 ? `<button onclick="openPeriodSheet()" class="mt-3 w-full py-2.5 rounded-xl bg-amber-500 text-black text-sm font-semibold">Got paid? Start the next period</button>` : ''}
