@@ -173,8 +173,8 @@
     .wc-body { position: absolute; left: 16px; right: 16px; bottom: 14px; font-size: 12px; color: rgba(255,255,255,.85); display: flex; justify-content: space-between; align-items: flex-end; }
     .wc-body b { display: block; font-size: 20px; font-weight: 600; color: #fff; }
     .wc-ghost { height: 150px; border-radius: 22px; border: 1.5px dashed rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 24px; font-size: 13px; color: rgba(255,255,255,.4); }
-    .wcard.art { background-size: cover; background-position: center; background-repeat: no-repeat; background-color: #111; padding: 0; }
-    .wcard.art::before { display: none; }
+    .wcard.art { background-size: cover; background-position: center; background-repeat: no-repeat; background-color: #111; }
+    .wcard.art::before { background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.05) 38%, rgba(0,0,0,.05) 58%, rgba(0,0,0,.6) 100%); }
     .wcard.art .wc-name, .wcard.art .wc-bal { text-shadow: 0 1px 4px rgba(0,0,0,.75); }
     .wcard.art .wc-mark { box-shadow: 0 2px 8px rgba(0,0,0,.45); }
     .wc-pill { position: absolute; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #fff; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.2); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
@@ -1413,6 +1413,13 @@
         leftPay: r2(next.reduce((s, e) => s + jobRate(e.jobId) * e.hours, 0))
       };
     }
+    function countOutside() {
+      const e = earnings(), b = state.budget; if (!e.out.length) return;
+      const ds = e.out.map(o => o.e.date).sort();
+      if (ds[0] < b.periodStart) b.periodStart = ds[0];
+      const last = ds[ds.length - 1]; if (last > b.nextPayday) b.nextPayday = last;
+      closeSheet(); commit('Pay period updated');
+    }
     function openEarnSheet() {
       const e = earnings();
       const row = (x, extra) => { const j = jobById(x.e.jobId); return `<div class="flex justify-between text-[12px] py-1"><span class="text-white/70 truncate pr-2">${fmtShort(x.e.date)} · ${j ? esc(j.icon) + ' ' + esc(j.name) : 'Job'}<span class="text-white/35"> · ${x.e.hours}h × ${fmt(x.r)}</span>${extra || ''}</span><span class="shrink-0 text-white/60">${fmt(x.r * x.e.hours)}</span></div>`; };
@@ -1427,10 +1434,11 @@
           ${e.out.length ? `<div class="glass-subtle rounded-xl p-3">
             <div class="text-[11px] text-orange-300 mb-1">Worked but NOT counted · ${fmt(e.outPay)}</div>
             ${e.out.map(o => row(o, `<br><span class="text-orange-300/80">${o.why}</span>`)).join('')}
-            <div class="text-[11px] text-white/40 mt-2">If these belong in this check, move "Last payday" earlier (or "Next payday" later).</div>
+            <div class="text-[11px] text-white/40 mt-2">If your check covers these days (many jobs pay a week or two behind), count them.</div>
           </div>` : ''}
           ${unrated.length ? `<div class="text-[11px] text-orange-200">${unrated.length} worked shift${unrated.length === 1 ? ' has' : 's have'} a job with no pay rate, so ${unrated.length === 1 ? 'it adds' : 'they add'} $0. Add the rate in Log.</div>` : ''}
-          <button onclick="closeSheet();setTimeout(openPeriodSheet,350)" class="w-full py-3 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Edit pay period dates</button>
+          ${e.out.length ? `<button onclick="countOutside()" class="w-full py-3 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Count these shifts in this check</button>` : ''}
+          <button onclick="closeSheet();setTimeout(openPeriodSheet,350)" class="w-full py-3 rounded-2xl bg-white/10 text-sm font-medium">Edit pay period dates</button>
         </div>`);
     }
     function itemPaid(it) { return r2((it.spends || []).reduce((s, x) => s + x.amount, 0)); }
@@ -1628,7 +1636,7 @@
         ${sheetHead('Pay period', 'Hours you mark worked since your last payday count toward your next check')}
         <div class="space-y-3">
           <div class="grid grid-cols-2 gap-3">
-            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Last payday</label><input id="pp-start" type="date" value="${esc(b.periodStart)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Count worked hours from</label><input id="pp-start" type="date" value="${esc(b.periodStart)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
             <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Next payday</label><input id="pp-end" type="date" value="${esc(b.nextPayday)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
           </div>
           <button onclick="savePeriod()" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Save</button>
@@ -2753,9 +2761,7 @@
       $('wallet-total').innerHTML = state.accounts.length ? `Balance <b class="text-white/80">${fmt(spend)}</b> · Savings <b class="text-emerald-300">${fmt(sav)}</b>` : '';
       $('wallet-stack').innerHTML = list.length ? list.map((a, i) => {
         const c = cardColors(a), last = i === list.length - 1, img = cardArt(a);
-        const face = img
-          ? `<span class="wc-pill" style="left:12px;top:50px">${fmt(a.balance)}</span>${last && a.savings ? `<span class="wc-pill sav" style="left:12px;bottom:12px">Savings ${fmt(a.savings)}</span>` : ''}`
-          : `<div class="wc-top"><span class="wc-brand">${brandMark(a.name)}<span class="wc-name">${esc(a.name)}</span></span><span class="wc-bal">${fmt(a.balance)}</span></div>
+        const face = `<div class="wc-top"><span class="wc-brand">${brandMark(a.name)}<span class="wc-name">${esc(a.name)}</span></span><span class="wc-bal">${fmt(a.balance)}</span></div>
           ${last ? `<div class="wc-body"><div>Savings held<b>${fmt(a.savings)}</b></div><div class="text-right opacity-80">Updated ${fmtShort(a.updated)}<br>Tap to edit</div></div>` : ''}`;
         return `<div class="wcard${img ? ' art' : ''}" role="button" aria-label="${esc(a.name)} card" style="--c1:${c[0]};--c2:${c[1]}${img ? `;background-image:url('${img}')` : ''}" onclick="tapCard('${a.id}')">${face}</div>`;
       }).join('') : `<div class="wc-ghost" onclick="openAccountSheet()">Add your Chime, Cash App or bank to see your balances here</div>`;
