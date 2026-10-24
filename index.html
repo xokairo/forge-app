@@ -474,7 +474,12 @@
                 <input id="log-hours" type="number" inputmode="decimal" step="0.25" min="0.25" placeholder="8" class="w-full mt-1 px-3.5 py-3 text-sm" />
               </div>
             </div>
-            <div class="flex gap-2">
+                        <div id="log-pay-wrap">
+              <label class="text-[11px] text-white/40 uppercase tracking-wider">Actual pay for this shift (optional)</label>
+              <input id="log-pay" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Usually leave blank" class="w-full mt-1 px-3.5 py-3 text-sm" />
+              <div class="text-[11px] text-white/35 mt-1">Optional override only. Normal path: set your job’s hourly rate once — OT is automatic.</div>
+            </div>
+<div class="flex gap-2">
               <button type="button" data-group="logType" data-val="worked" onclick="pick('logType','worked')" class="seg on flex-1 py-2.5 rounded-xl text-sm font-medium">Worked</button>
               <button type="button" data-group="logType" data-val="scheduled" onclick="pick('logType','scheduled')" class="seg flex-1 py-2.5 rounded-xl text-sm font-medium">Scheduled</button>
             </div>
@@ -1086,7 +1091,11 @@
         <div class="space-y-3">
           <input id="f-name" type="text" placeholder="Job name (Walmart, Uber Eats…)" value="${esc(j?.name)}" class="w-full px-3.5 py-3 text-sm" />
           ${seg('jtype', [['hourly', 'Hourly'], ['gig', 'Gig'], ['other', 'Other']], ui.pick.jtype, 'py-2 text-xs')}
-          <div id="f-rate-wrap" class="${ui.pick.jtype !== 'other' ? '' : 'hidden'}"><input id="f-rate" type="number" inputmode="decimal" step="0.01" placeholder="Pay per hour (optional)" value="${j?.rate ?? ''}" class="w-full px-3.5 py-3 text-sm" /></div>
+          <div id="f-rate-wrap" class="${ui.pick.jtype !== 'other' ? '' : 'hidden'} space-y-1.5">
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">Base pay per hour</label>
+            <input id="f-rate" type="number" inputmode="decimal" step="0.01" placeholder="e.g. 14.60" value="${j?.rate ?? ''}" class="w-full px-3.5 py-3 text-sm" />
+            <div class="text-[11px] text-white/35">This is what Budget uses automatically (hours × rate). For hourly jobs, overtime after 40 hours in a week is applied at time-and-a-half — same idea as most retail jobs. Match this to your Walmart base rate so you never re-enter pay.</div>
+          </div>
           <div class="flex flex-wrap gap-2">${JOB_ICONS.map(i =>
             `<button type="button" data-group="jicon" data-val="${i}" onclick="pick('jicon','${i}')" class="seg seg-icon ${i === ui.pick.jicon ? 'on' : ''} w-10 h-10 rounded-xl text-lg">${i}</button>`).join('')}</div>
           <button onclick="saveJob('${id || ''}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">${j ? 'Save changes' : 'Add Job'}</button>
@@ -1123,9 +1132,13 @@
       const notes = $('log-notes').value.trim();
       if (!jobId) { toast('Add a job first'); return; }
       if (!hours || hours <= 0) { toast('Enter hours'); return; }
-      const entry = { id: uid(), jobId, date, hours, actual: ui.pick.logType === 'worked', notes: notes || undefined, created: new Date().toISOString() };
+      const payEl = $('log-pay');
+      const payRaw = payEl ? payEl.value.trim() : '';
+      const pay = (ui.pick.logType === 'worked' && payRaw !== '' && !isNaN(parseFloat(payRaw))) ? r2(parseFloat(payRaw)) : undefined;
+      const entry = { id: uid(), jobId, date, hours, actual: ui.pick.logType === 'worked', pay, notes: notes || undefined, created: new Date().toISOString() };
       state.timeEntries.push(entry);
       $('log-hours').value = ''; $('log-notes').value = '';
+      if (payEl) payEl.value = '';
       commit('Logged');
       showEarnPop(entry);
       const btn = $('btn-log'); btn.textContent = '✓ Logged'; setTimeout(() => { btn.textContent = 'Log Hours'; }, 1800);
@@ -1143,6 +1156,7 @@
             <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Date</label><input id="e-date" type="date" value="${esc(e.date)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
             <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Hours</label><input id="e-hours" type="number" inputmode="decimal" step="0.25" min="0.25" value="${e.hours}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
           </div>
+          <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Actual pay (optional)</label><input id="e-pay" type="number" inputmode="decimal" step="0.01" min="0" value="${e.pay != null ? e.pay : ''}" placeholder="Blank = hours × job rate" class="w-full mt-1 px-3.5 py-3 text-sm" /><div class="text-[11px] text-white/35 mt-1">Use this when your job app shows a different total for the day.</div></div>
           ${seg('etype', [['worked', 'Worked'], ['scheduled', 'Scheduled']], ui.pick.etype)}
           <input id="e-notes" type="text" placeholder="Notes (optional)" value="${esc(e.notes)}" class="w-full px-3.5 py-3 text-sm" />
           <button onclick="saveEntry('${id}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Save changes</button>
@@ -1153,7 +1167,11 @@
       const e = state.timeEntries.find(x => x.id === id); if (!e) return;
       const hours = parseFloat($('e-hours').value);
       if (!hours || hours <= 0) { toast('Enter hours'); return; }
-      Object.assign(e, { jobId: $('e-job').value, date: $('e-date').value || today(), hours, actual: ui.pick.etype === 'worked', notes: $('e-notes').value.trim() || undefined });
+      const worked = ui.pick.etype === 'worked';
+      const payRaw = $('e-pay') ? $('e-pay').value.trim() : '';
+      const pay = (worked && payRaw !== '' && !isNaN(parseFloat(payRaw))) ? r2(parseFloat(payRaw)) : undefined;
+      Object.assign(e, { jobId: $('e-job').value, date: $('e-date').value || today(), hours, actual: worked, pay, notes: $('e-notes').value.trim() || undefined });
+      if (!worked) delete e.pay;
       closeSheet(); commit('Log updated');
     }
     function deleteEntry(id) {
@@ -1388,29 +1406,85 @@
     }
     function jobRate(id) { const j = jobById(id); return j && j.rate > 0 ? j.rate : 0; }
 
-    // "On my way to" = only hours marked WORKED since your last payday.
-    // "Hours left" = only your NEXT 4 scheduled shifts (one pay week), nothing beyond.
+    // Sunday date string for the week containing d (YYYY-MM-DD). Used for weekly OT.
+    function weekStart(d) {
+      const dt = new Date((d || today()) + 'T12:00:00');
+      if (isNaN(dt)) return d;
+      dt.setDate(dt.getDate() - dt.getDay());
+      const y = dt.getFullYear(), m = String(dt.getMonth() + 1).padStart(2, '0'), day = String(dt.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+    function jobUsesOt(jobId) {
+      const j = jobById(jobId);
+      // Hourly jobs: automatic weekly OT (time-and-a-half after 40h in a Sun–Sat week). Gig/other: off.
+      return !!(j && j.type === 'hourly' && j.ot !== false && j.rate > 0);
+    }
+    // Pay for one worked shift. Optional e.pay still wins (rare override). Otherwise rate × hours with OT.
+    function entryPay(e, priorInWeek) {
+      if (e.pay != null && e.pay !== '' && !isNaN(+e.pay) && +e.pay >= 0) return r2(+e.pay);
+      const r = jobRate(e.jobId);
+      if (!(r > 0)) return 0;
+      const hrs = +e.hours || 0;
+      if (!jobUsesOt(e.jobId)) return r2(r * hrs);
+      const prior = priorInWeek == null ? 0 : priorInWeek;
+      const reg = Math.max(0, Math.min(hrs, Math.max(0, 40 - prior)));
+      const ot = Math.max(0, hrs - reg);
+      return r2(reg * r + ot * r * 1.5);
+    }
+    // "On my way to" = automatic sum of worked shifts in the pay period (rate × hours, OT after 40h/week).
     function earnings() {
       const b = state.budget, t = today();
       const start = b.periodStart || addDays(t, -7), end = b.nextPayday || addDays(t, 7);
       let earned = 0, noRate = false; const counted = [], out = [];
-      state.timeEntries.forEach(e => {
-        if (!e.actual) return;
+      // All worked entries (for OT prior-hours), sorted chronologically
+      const worked = state.timeEntries
+        .filter(e => e.actual)
+        .slice()
+        .sort((a, c) => a.date.localeCompare(c.date) || (a.created || '').localeCompare(c.created || ''));
+      // Running hours per job per week (includes shifts outside the pay period so OT is correct)
+      const weekHrs = {}; // key: jobId|weekStart -> hours so far
+      worked.forEach(e => {
         const r = jobRate(e.jobId);
-        if (!r) { noRate = true; return; }
-        if (e.date > t) { out.push({ e, r, why: 'dated in the future' }); return; }
-        if (e.date < start) { out.push({ e, r, why: 'before your last payday (' + fmtShort(start) + ')' }); return; }
-        if (e.date > end) { out.push({ e, r, why: 'after next payday (' + fmtShort(end) + ')' }); return; }
-        earned += r * e.hours; counted.push({ e, r });
+        const hasPay = e.pay != null && e.pay !== '' && !isNaN(+e.pay) && +e.pay >= 0;
+        if (!(r > 0) && !hasPay) {
+          if (e.date >= start && e.date <= end && e.date <= t) noRate = true;
+          return;
+        }
+        const wk = weekStart(e.date);
+        const key = e.jobId + '|' + wk;
+        const prior = weekHrs[key] || 0;
+        const pay = entryPay(e, prior);
+        weekHrs[key] = prior + (+e.hours || 0);
+
+        if (e.date > t) { out.push({ e, r, pay, why: 'dated in the future' }); return; }
+        if (e.date < start) { out.push({ e, r, pay, why: 'before pay period start (' + fmtShort(start) + ')' }); return; }
+        if (e.date > end) { out.push({ e, r, pay, why: 'after pay period end (' + fmtShort(end) + ')' }); return; }
+        earned += pay;
+        counted.push({ e, r, pay, prior, ot: jobUsesOt(e.jobId) && prior + e.hours > 40 });
       });
-      const recentOut = out.filter(o => dayDiff(o.e.date, t) <= 21 && o.e.date <= t);
+      const recentOut = out.filter(o => dayDiff(o.e.date, t) <= 28 && o.e.date <= t);
       const up = state.timeEntries.filter(e => !e.actual && e.date >= t)
         .sort((a, c) => a.date.localeCompare(c.date) || (a.created || '').localeCompare(c.created || ''));
       const next = up.slice(0, 4);
+      // Estimate next shifts with OT-aware pay (using current week totals so far)
+      let leftPay = 0;
+      const nextWeekHrs = Object.assign({}, weekHrs);
+      next.forEach(e => {
+        const r = jobRate(e.jobId);
+        if (!(r > 0)) return;
+        const wk = weekStart(e.date);
+        const key = e.jobId + '|' + wk;
+        const prior = nextWeekHrs[key] || 0;
+        leftPay += entryPay(Object.assign({}, e, { actual: true }), prior);
+        nextWeekHrs[key] = prior + (+e.hours || 0);
+      });
       return {
-        earned: r2(earned), start, end, noRate, counted, out: recentOut, outPay: r2(recentOut.reduce((s, o) => s + o.r * o.e.hours, 0)), next, extra: up.length - next.length,
+        earned: r2(earned), start, end, noRate, counted, out: recentOut,
+        outPay: r2(recentOut.reduce((s, o) => s + (o.pay != null ? o.pay : 0), 0)),
+        next, extra: up.length - next.length,
         leftHours: r2(next.reduce((s, e) => s + e.hours, 0)),
-        leftPay: r2(next.reduce((s, e) => s + jobRate(e.jobId) * e.hours, 0))
+        leftPay: r2(leftPay),
+        hours: r2(counted.reduce((s, x) => s + (+x.e.hours || 0), 0))
       };
     }
     function countOutside() {
@@ -1422,13 +1496,21 @@
     }
     function openEarnSheet() {
       const e = earnings();
-      const row = (x, extra) => { const j = jobById(x.e.jobId); return `<div class="flex justify-between text-[12px] py-1"><span class="text-white/70 truncate pr-2">${fmtShort(x.e.date)} · ${j ? esc(j.icon) + ' ' + esc(j.name) : 'Job'}<span class="text-white/35"> · ${x.e.hours}h × ${fmt(x.r)}</span>${extra || ''}</span><span class="shrink-0 text-white/60">${fmt(x.r * x.e.hours)}</span></div>`; };
-      const unrated = state.timeEntries.filter(x => x.actual && !jobRate(x.jobId));
+      const row = (x, extra) => {
+        const j = jobById(x.e.jobId);
+        const p = x.pay != null ? x.pay : entryPay(x.e, x.prior || 0);
+        let how;
+        if (x.e.pay != null && +x.e.pay >= 0) how = x.e.hours + 'h · entered pay';
+        else if (x.ot) how = x.e.hours + 'h × ' + fmt(x.r || jobRate(x.e.jobId)) + ' (incl. OT)';
+        else how = x.e.hours + 'h × ' + fmt(x.r || jobRate(x.e.jobId));
+        return `<div class="flex justify-between text-[12px] py-1"><span class="text-white/70 truncate pr-2">${fmtShort(x.e.date)} · ${j ? esc(j.icon) + ' ' + esc(j.name) : 'Job'}<span class="text-white/35"> · ${how}</span>${extra || ''}</span><span class="shrink-0 text-white/60">${fmt(p)}</span></div>`;
+      };
+      const unrated = state.timeEntries.filter(x => x.actual && jobRate(x.jobId) <= 0 && !(x.pay != null && +x.pay >= 0));
       openSheet(`
         ${sheetHead('How this adds up', `Worked hours ${fmtShort(e.start)} → ${fmtShort(e.end)}`)}
         <div class="space-y-3">
           <div class="glass-subtle rounded-xl p-3">
-            <div class="text-[11px] text-emerald-300 mb-1">Counted · ${fmt(e.earned)}</div>
+            <div class="text-[11px] text-emerald-300 mb-1">Counted · ${fmt(e.earned)} · ${e.hours || 0}h</div>
             ${e.counted.length ? e.counted.sort((a, c) => a.e.date.localeCompare(c.e.date)).map(x => row(x)).join('') : '<div class="text-[12px] text-white/40">No worked hours in this pay period yet.</div>'}
           </div>
           ${e.out.length ? `<div class="glass-subtle rounded-xl p-3">
@@ -1489,8 +1571,8 @@
           </div>
           <div class="mt-3 text-[11px] text-white/40">On my way to · tap for breakdown</div>
           <div class="text-4xl font-semibold text-amber-300 leading-tight tap" onclick="openEarnSheet()">${fmt(income)}</div>
-          ${e.out.length ? `<button onclick="openEarnSheet()" class="mt-2 w-full text-left text-[11px] text-orange-200 glass-subtle rounded-xl px-3 py-2">${e.out.length} worked shift${e.out.length === 1 ? '' : 's'} (~${fmt(e.outPay)}) not counted because of the pay period dates. Tap to see why →</button>` : ''}
-          <div class="text-[11px] text-white/40 mt-0.5">Estimated gross pay from worked hours in this pay period · ${fmtShort(e.start)}–${fmtShort(e.end)}</div>
+          <div class="text-[11px] text-white/40 mt-0.5">${e.hours || 0}h worked in this pay period · ${fmtShort(e.start)}–${fmtShort(e.end)} · tap amount for math</div>
+          ${e.out.length ? `<button onclick="openEarnSheet()" class="mt-2 w-full text-left text-[11px] text-orange-200 glass-subtle rounded-xl px-3 py-2">${e.out.length} worked shift${e.out.length === 1 ? '' : 's'} (~${fmt(e.outPay)}) outside this pay period. Tap to count them or edit dates →</button>` : ''}
           <div class="progress-track h-2 mt-3.5"><div class="progress-fill ${barCls}" style="width:${pct}%"></div></div>
           <div class="flex justify-between text-[11px] mt-1.5">
             <span class="text-white/45">${T.planned ? `Due-dated bills ${fmt(T.planned)}` : `No due-dated bills`}</span>
@@ -1637,7 +1719,7 @@
         <div class="space-y-3">
           <div class="grid grid-cols-2 gap-3">
             <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Count worked hours from</label><input id="pp-start" type="date" value="${esc(b.periodStart)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
-            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Next payday</label><input id="pp-end" type="date" value="${esc(b.nextPayday)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
+            <div><label class="text-[11px] text-white/40 uppercase tracking-wider">Period end (payday)</label><input id="pp-end" type="date" value="${esc(b.nextPayday)}" class="w-full mt-1 px-3.5 py-3 text-sm" /></div>
           </div>
           <button onclick="savePeriod()" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Save</button>
           <div class="pt-3 border-t border-white/10 space-y-2">
@@ -1649,7 +1731,7 @@
     function savePeriod() {
       const s = $('pp-start').value, e = $('pp-end').value;
       if (!s || !e) { toast('Pick both dates'); return; }
-      if (e < s) { toast('Next payday is before the last one'); return; }
+      if (e < s) { toast('Period end (payday) is before the last one'); return; }
       Object.assign(state.budget, { periodStart: s, nextPayday: e });
       closeSheet(); commit('Pay period saved');
     }
@@ -1854,7 +1936,7 @@
     }
     function hideEarnPop() { clearTimeout(earnTimer); $('earn-pop').classList.remove('show'); }
     function showEarnPop(e) {
-      const job = jobById(e.jobId), rate = job && job.rate > 0 ? job.rate : 0, pop = $('earn-pop');
+      const job = jobById(e.jobId), rate = job && job.rate > 0 ? job.rate : 0, payAmt = entryPay(e), pop = $('earn-pop');
       const head = `<div class="flex items-center gap-3">
         <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style="background:${job ? job.color : '#888'}22">${job ? esc(job.icon) : '⏱️'}</div>
         <div class="min-w-0 flex-1"><div class="text-[11px] uppercase tracking-wider ${e.actual ? 'text-emerald-300/80' : 'text-amber-300/80'}">${e.actual ? 'Shift worked' : 'Shift scheduled'}</div>
@@ -1879,7 +1961,7 @@
           ${T.planned > 0 ? '' : `<button onclick="hideEarnPop();showView('money')" class="mt-2.5 text-[12px] text-amber-300/90">Add your bills in Budget to see what this covers →</button>`}`;
       }
       pop.innerHTML = html; pop.classList.add('show');
-      if (rate) { countUp($('earn-amt'), r2(rate * e.hours), e.actual ? '+' : '~'); earnTimer = setTimeout(hideEarnPop, 7000); }
+      if (rate) { countUp($('earn-amt'), r2(payAmt), e.actual ? '+' : '~'); earnTimer = setTimeout(hideEarnPop, 7000); }
     }
     function saveEarnRate(entryId) {
       const e = state.timeEntries.find(x => x.id === entryId), job = e && jobById(e.jobId);
