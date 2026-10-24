@@ -2185,7 +2185,7 @@
     function aiLoad() {
       try { const r = JSON.parse(localStorage.getItem(AI_KEY) || 'null'); if (r && typeof r === 'object') aiCfg = { ...aiCfg, ...r }; } catch (e) {}
       if (!AI_MODELS.some(m => m[0] === aiCfg.model)) aiCfg.model = 'claude-sonnet-5-5';
-      if (!GEM_MODELS.some(m => m[0] === aiCfg.gmodel)) aiCfg.gmodel = 'gemini-3.8-flash';
+      if (!/^gemini-[a-z0-9.\-]+$/i.test(aiCfg.gmodel || '')) aiCfg.gmodel = 'gemini-3.8-flash';
       if (!aiCfg.keys || typeof aiCfg.keys !== 'object') aiCfg.keys = {};
       if (aiCfg.key && !aiCfg.keys.anthropic && !aiCfg.keys.gemini) { aiCfg.keys.anthropic = aiCfg.key; aiCfg.provider = 'anthropic'; }
       aiCfg.key = aiCfg.keys[aiCfg.provider] || '';
@@ -2389,7 +2389,7 @@
           let j;
           try { j = await aiCall(working, search, ctl.signal, on); }
           catch (e) {
-            if (aiCfg.provider === 'gemini' && e.status === 429 && !aiModelOverride && aiCfg.gmodel !== 'gemini-3.5-flash-lite') { aiModelOverride = 'gemini-3.5-flash-lite'; hop--; continue; }
+            if (aiCfg.provider === 'gemini' && e.status === 429 && !aiModelOverride && aiCfg.gmodel !== 'gemini-3.5-flash-lite' && aiCfg.gmodel !== 'gemini-3.1-flash-lite') { aiModelOverride = 'gemini-3.5-flash-lite'; hop--; continue; }
             if (search && e.status === 400 && /web.?search|tool|ground|google_search|search/i.test(String(e.message))) { search = false; aiSearchBlocked = true; droppedSearch = true; hop--; continue; }
             throw e;
           }
@@ -2540,6 +2540,11 @@
             <label class="text-[11px] text-white/40 uppercase tracking-wider">Model</label>
             <select id="ai-model" class="w-full mt-1 px-3.5 py-3 text-sm">${models.map(m => `<option value="${m[0]}" ${m[0] === cur ? 'selected' : ''}>${esc(m[1])}</option>`).join('')}</select>
           </div>
+          ${gem ? `<div>
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">Other model name (optional)</label>
+            <input id="ai-gm" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. gemini-2.5-flash" value="${GEM_MODELS.some(m => m[0] === aiCfg.gmodel) ? '' : esc(aiCfg.gmodel)}" class="w-full mt-1 px-3.5 py-3 text-sm" />
+            <div class="text-[11px] text-white/35 mt-1">Use this if the list above says you're out of free quota. Type any Gemini model that shows free usage on your AI Studio rate limits page.</div>
+          </div>` : ''}
           ${swRow(aiCfg.share, 'toggleAiOpt', 'share', '', 'Share my Forge data', 'Goals, budget, hours and card balances go with each question so answers fit you')}
           ${swRow(aiCfg.search, 'toggleAiOpt', 'search', '', 'Look things up on the web', 'For current rates, fees and limits. Skips itself if your plan does not allow it')}
           <div id="ai-status" class="text-[12px] text-white/50"></div>
@@ -2599,7 +2604,10 @@
       aiCfg.provider = prov;
       if (typed) aiCfg.keys[prov] = typed;
       aiCfg.key = aiCfg.keys[prov] || '';
-      if (gem) aiCfg.gmodel = model; else aiCfg.model = model;
+      if (gem) {
+        const cm = $('ai-gm') ? $('ai-gm').value.trim() : '';
+        aiCfg.gmodel = /^gemini-[a-z0-9.\-]+$/i.test(cm) ? cm : model;
+      } else aiCfg.model = model;
       aiSearchBlocked = false; ui.aiProv = null;
       if (!aiSave()) return;
       toast(aiReady() ? 'Connected ✓' : 'Saved. Add a key to turn answers on');
