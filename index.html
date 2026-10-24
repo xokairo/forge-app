@@ -266,10 +266,19 @@
     #forge-chat { position: fixed; inset: 0; z-index: 200; display: none; flex-direction: column; background: rgba(7,7,10,.55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
     #forge-chat.open { display: flex; }
     #forge-chat-panel { margin-top: auto; max-height: 88%; display: flex; flex-direction: column; border-radius: 28px 28px 0 0; background: linear-gradient(160deg, rgba(40,40,52,.96), rgba(14,14,20,.98)); border: 1px solid rgba(255,255,255,.12); border-bottom: none; box-shadow: 0 -20px 50px rgba(0,0,0,.5); padding-bottom: env(safe-area-inset-bottom); }
-    #forge-msgs { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 16px 8px; display: flex; flex-direction: column; gap: 10px; min-height: 180px; max-height: 48vh; }
-    .fmsg { max-width: 88%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; }
+    #forge-msgs { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 16px 8px; display: flex; flex-direction: column; gap: 10px; min-height: 180px; max-height: 56vh; }
+    .fmsg { max-width: 92%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; }
     .fmsg.bot { align-self: flex-start; background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.25); color: #fde68a; border-bottom-left-radius: 6px; }
     .fmsg.me { align-self: flex-end; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.12); color: #f0f0f5; border-bottom-right-radius: 6px; }
+    .fmsg b { color: #fff; font-weight: 600; }
+    .fmsg a { color: #fcd34d; text-decoration: underline; }
+    .fmsg .fsrc { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(245,158,11,.2); font-size: 11px; line-height: 1.4; color: rgba(253,230,138,.7); }
+    .fmsg.typing { display: flex; gap: 5px; align-items: center; padding: 14px 16px; }
+    .fmsg.typing i { width: 6px; height: 6px; border-radius: 50%; background: #fcd34d; opacity: .3; animation: fdot 1.1s infinite; }
+    .fmsg.typing i:nth-child(2) { animation-delay: .18s; } .fmsg.typing i:nth-child(3) { animation-delay: .36s; }
+    .fmsg .flabel { font-size: 11px; color: rgba(253,230,138,.7); margin-left: 6px; }
+    .fchip-act { background: rgba(245,158,11,.18); border-color: rgba(245,158,11,.4); color: #fde68a; }
+    @keyframes fdot { 0%,80%,100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
     .fchip { display: inline-block; margin: 2px 4px 2px 0; padding: 7px 12px; border-radius: 999px; font-size: 12px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.75); }
 
 
@@ -561,14 +570,17 @@
         <div id="chat-mascot" class="w-10 h-10"></div>
         <div class="flex-1 min-w-0">
           <div class="text-sm font-semibold text-amber-200">4orge</div>
-          <div class="text-[11px] text-white/40">Savings, credit, investing basics · plus your Forge data</div>
+          <div id="chat-sub" class="text-[11px] text-white/40">Ask me anything · knows your Forge data</div>
         </div>
+        <button onclick="newForgeChat()" class="text-white/50 text-xs px-1.5">New</button>
+        <button onclick="toggleForgeSettings()" aria-label="4orge settings" class="text-white/50 text-lg px-1.5">⚙️</button>
         <button onclick="closeForgeChat()" class="text-white/40 text-sm px-2">Close</button>
       </div>
+      <div id="forge-settings" class="hidden px-5 py-4 overflow-y-auto" style="max-height:62vh"></div>
       <div id="forge-msgs"></div>
       <div id="forge-chips" class="px-4 pb-2 flex flex-wrap"></div>
-      <div class="px-4 pb-3 flex gap-2">
-        <input id="forge-input" type="text" placeholder="Ask about savings, goals, budget…" class="flex-1 min-w-0 px-3.5 py-3 text-sm" onkeydown="if(event.key==='Enter')sendForgeChat()" />
+      <div id="forge-inputrow" class="px-4 pb-3 flex gap-2">
+        <input id="forge-input" type="text" placeholder="Ask anything: savings, credit, investing…" class="flex-1 min-w-0 px-3.5 py-3 text-sm" onkeydown="if(event.key==='Enter')sendForgeChat()" />
         <button onclick="sendForgeChat()" class="px-4 rounded-xl bg-amber-500 text-black font-semibold text-sm">Send</button>
       </div>
     </div>
@@ -808,9 +820,20 @@
     // ========== PROGRESS (derived from data, so deleting/editing always stays consistent) ==========
     function addDays(str, n) { const d = new Date(Date.parse(str + 'T00:00:00Z') + n * 86400000); return d.toISOString().slice(0, 10); }
     // Streak = days you logged, as long as you never go more than GRACE days between logs.
+    // A "check-in" day = you did something real in the app: punched the no-spend card, logged money spent,
+    // logged hours you actually worked, added money to a goal, or updated a card balance. Scheduling a shift does not count.
+    function activityDates() {
+      const t = today(), s = new Set();
+      (state.punch.days || []).forEach(d => s.add(d));
+      state.budget.items.forEach(i => (i.spends || []).forEach(x => x.date && s.add(x.date)));
+      state.timeEntries.forEach(e => { if (e.actual) s.add(e.date); });
+      state.goals.forEach(g => (g.contributions || []).forEach(c => c.date && s.add(c.date)));
+      (state.accounts || []).forEach(a => a.updated && s.add(a.updated));
+      return [...s].filter(d => d && d <= t).sort();
+    }
     function calcStreaks() {
       const t = today();
-      const dates = [...new Set(state.timeEntries.map(e => e.date))].filter(d => d <= t).sort();
+      const dates = activityDates();
       let longest = 0, run = 0, prev = null;
       for (const d of dates) { run = (prev && dayDiff(prev, d) <= GRACE) ? run + 1 : 1; longest = Math.max(longest, run); prev = d; }
       const last = dates.length ? dates[dates.length - 1] : null;
@@ -1303,14 +1326,14 @@
           <div class="flex flex-col items-center text-center">
             <div style="width:72px;height:96px;filter:drop-shadow(0 0 24px ${STAGE_PAL[st].glow})">${flameIcon(st)}</div>
             <div class="text-3xl font-semibold mt-2">${n} day${n === 1 ? '' : 's'}</div>
-            <div class="text-sm text-amber-200/80">${STAGE_NAMES[st]}${n ? '' : ' · log hours to light it'}</div>
+            <div class="text-sm text-amber-200/80">${STAGE_NAMES[st]}${n ? '' : ' · check in to light it'}</div>
             <div class="text-[11px] text-white/40 mt-1">Best: ${p.longestStreak} day${p.longestStreak === 1 ? '' : 's'}</div>
           </div>
           <div class="glass-subtle rounded-2xl p-3.5">
             <div class="progress-track h-2"><div class="progress-fill bg-gradient-to-r from-amber-500 to-amber-300" style="width:${pct}%"></div></div>
             <div class="text-[11px] text-white/45 mt-2">${nextAt ? `${nextAt - n} more day${nextAt - n === 1 ? '' : 's'} to ${STAGE_NAMES[st + 1]}` : 'Max flame reached'}</div>
           </div>
-          <div class="text-[12px] text-white/50 leading-relaxed">Your streak counts the days you log hours. You don't need to log every day: take up to 2 days off in a row and it keeps burning. Go 3 days without a log and it goes cold.${n && deadline ? `<br><span class="text-amber-300/90">Log by ${fmtDate(deadline)} to keep it alive.</span>` : ''}</div>
+          <div class="text-[12px] text-white/50 leading-relaxed">Your streak counts the days you check in: punch the no-spend card, log money you spent, log hours you actually worked, add to a goal, or update a card balance. Scheduling a shift doesn't count. Take up to 2 days off in a row and it keeps burning. Go 3 days without a check-in and it goes cold.${n && deadline ? `<br><span class="text-amber-300/90">Check in by ${fmtDate(deadline)} to keep it alive.</span>` : ''}</div>
           <div class="space-y-1.5">${STAGE_NAMES.slice(1).map((nm, i) => { const k = i + 1; return `
             <div class="flex items-center gap-3 glass-subtle rounded-xl px-3 py-2 ${st === k ? 'ring-1 ring-amber-400/50' : st > k ? 'opacity-60' : 'opacity-40'}">
               <div style="width:20px;height:26px">${flameIcon(k)}</div>
@@ -1370,21 +1393,45 @@
     function earnings() {
       const b = state.budget, t = today();
       const start = b.periodStart || addDays(t, -7), end = b.nextPayday || addDays(t, 7);
-      let earned = 0, noRate = false;
+      let earned = 0, noRate = false; const counted = [], out = [];
       state.timeEntries.forEach(e => {
-        if (!e.actual || e.date < start || e.date > end || e.date > t) return;
+        if (!e.actual) return;
         const r = jobRate(e.jobId);
         if (!r) { noRate = true; return; }
-        earned += r * e.hours;
+        if (e.date > t) { out.push({ e, r, why: 'dated in the future' }); return; }
+        if (e.date < start) { out.push({ e, r, why: 'before your last payday (' + fmtShort(start) + ')' }); return; }
+        if (e.date > end) { out.push({ e, r, why: 'after next payday (' + fmtShort(end) + ')' }); return; }
+        earned += r * e.hours; counted.push({ e, r });
       });
+      const recentOut = out.filter(o => dayDiff(o.e.date, t) <= 21 && o.e.date <= t);
       const up = state.timeEntries.filter(e => !e.actual && e.date >= t)
         .sort((a, c) => a.date.localeCompare(c.date) || (a.created || '').localeCompare(c.created || ''));
       const next = up.slice(0, 4);
       return {
-        earned: r2(earned), start, end, noRate, next, extra: up.length - next.length,
+        earned: r2(earned), start, end, noRate, counted, out: recentOut, outPay: r2(recentOut.reduce((s, o) => s + o.r * o.e.hours, 0)), next, extra: up.length - next.length,
         leftHours: r2(next.reduce((s, e) => s + e.hours, 0)),
         leftPay: r2(next.reduce((s, e) => s + jobRate(e.jobId) * e.hours, 0))
       };
+    }
+    function openEarnSheet() {
+      const e = earnings();
+      const row = (x, extra) => { const j = jobById(x.e.jobId); return `<div class="flex justify-between text-[12px] py-1"><span class="text-white/70 truncate pr-2">${fmtShort(x.e.date)} · ${j ? esc(j.icon) + ' ' + esc(j.name) : 'Job'}<span class="text-white/35"> · ${x.e.hours}h × ${fmt(x.r)}</span>${extra || ''}</span><span class="shrink-0 text-white/60">${fmt(x.r * x.e.hours)}</span></div>`; };
+      const unrated = state.timeEntries.filter(x => x.actual && !jobRate(x.jobId));
+      openSheet(`
+        ${sheetHead('How this adds up', `Worked hours ${fmtShort(e.start)} → ${fmtShort(e.end)}`)}
+        <div class="space-y-3">
+          <div class="glass-subtle rounded-xl p-3">
+            <div class="text-[11px] text-emerald-300 mb-1">Counted · ${fmt(e.earned)}</div>
+            ${e.counted.length ? e.counted.sort((a, c) => a.e.date.localeCompare(c.e.date)).map(x => row(x)).join('') : '<div class="text-[12px] text-white/40">No worked hours in this pay period yet.</div>'}
+          </div>
+          ${e.out.length ? `<div class="glass-subtle rounded-xl p-3">
+            <div class="text-[11px] text-orange-300 mb-1">Worked but NOT counted · ${fmt(e.outPay)}</div>
+            ${e.out.map(o => row(o, `<br><span class="text-orange-300/80">${o.why}</span>`)).join('')}
+            <div class="text-[11px] text-white/40 mt-2">If these belong in this check, move "Last payday" earlier (or "Next payday" later).</div>
+          </div>` : ''}
+          ${unrated.length ? `<div class="text-[11px] text-orange-200">${unrated.length} worked shift${unrated.length === 1 ? ' has' : 's have'} a job with no pay rate, so ${unrated.length === 1 ? 'it adds' : 'they add'} $0. Add the rate in Log.</div>` : ''}
+          <button onclick="closeSheet();setTimeout(openPeriodSheet,350)" class="w-full py-3 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Edit pay period dates</button>
+        </div>`);
     }
     function itemPaid(it) { return r2((it.spends || []).reduce((s, x) => s + x.amount, 0)); }
     function itemDone(it) { return it.amount > 0 && itemPaid(it) >= it.amount - 0.004; }
@@ -1432,8 +1479,9 @@
             </div>
             <span class="text-[11px] text-white/40">Edit</span>
           </div>
-          <div class="mt-3 text-[11px] text-white/40">On my way to</div>
-          <div class="text-4xl font-semibold text-amber-300 leading-tight">${fmt(income)}</div>
+          <div class="mt-3 text-[11px] text-white/40">On my way to · tap for breakdown</div>
+          <div class="text-4xl font-semibold text-amber-300 leading-tight tap" onclick="openEarnSheet()">${fmt(income)}</div>
+          ${e.out.length ? `<button onclick="openEarnSheet()" class="mt-2 w-full text-left text-[11px] text-orange-200 glass-subtle rounded-xl px-3 py-2">${e.out.length} worked shift${e.out.length === 1 ? '' : 's'} (~${fmt(e.outPay)}) not counted because of the pay period dates. Tap to see why →</button>` : ''}
           <div class="text-[11px] text-white/40 mt-0.5">Estimated gross pay from worked hours in this pay period · ${fmtShort(e.start)}–${fmtShort(e.end)}</div>
           <div class="progress-track h-2 mt-3.5"><div class="progress-fill ${barCls}" style="width:${pct}%"></div></div>
           <div class="flex justify-between text-[11px] mt-1.5">
@@ -1453,7 +1501,8 @@
       const billPlanned = r2(billItems.reduce((sum, i) => sum + i.amount, 0));
       const spendPlanned = r2(spendItems.reduce((sum, i) => sum + i.amount, 0));
       const spendSpent = r2(spendItems.reduce((sum, i) => sum + itemPaid(i), 0));
-      $('bud-bills-sum').textContent = billItems.length ? `${fmt(billPaid)} of ${fmt(billPlanned)} paid` : 'Bills only';
+      const undated = billItems.filter(i => !i.due).length;
+      $('bud-bills-sum').textContent = billItems.length ? (T.planned ? `${fmt(T.paid)} of ${fmt(T.planned)} paid` : 'No due dates yet') + (undated ? ` · ${undated} no date` : '') : 'Bills only';
       $('bud-spending-sum').textContent = spendItems.length ? `${fmt(spendSpent)} spent` : '';
       const renderBudgetItems = (arr, emptyText) => arr.length ? arr.map(it => {
         const paid = itemPaid(it), done = itemDone(it), ov = paid > it.amount + 0.004;
@@ -2034,16 +2083,8 @@
       const st = streakStage(state.progress.currentStreak);
       $('chat-mascot').innerHTML = mascot('', st);
       $('forge-chat').classList.add('open');
-      if (!$('forge-msgs').children.length) {
-        botSay("Hey — I'm 4orge. I can see your goals, hours, budget, and streak.\n\nAsk me anything about saving, or tap a suggestion.");
-        renderChips([
-          'How am I doing?',
-          'What should I save next?',
-          'Improve my credit',
-          'Investing basics',
-          'Banks with IRAs'
-        ]);
-      }
+      if (!$('forge-msgs').children.length) { if (chatLog.length) renderChatLog(); else forgeGreeting(); }
+      updateChatHead();
       setTimeout(() => $('forge-input').focus(), 300);
     }
     function closeForgeChat() { $('forge-chat').classList.remove('open'); }
@@ -2056,14 +2097,11 @@
       $('forge-msgs').appendChild(d); $('forge-msgs').scrollTop = $('forge-msgs').scrollHeight;
     }
     function renderChips(list) {
-      $('forge-chips').innerHTML = list.map(c => `<button type="button" class="fchip" onclick="askChip(this)">${esc(c)}</button>`).join('');
+      $('forge-chips').innerHTML = list.map(c => typeof c === 'string'
+        ? `<button type="button" class="fchip" onclick="askChip(this)">${esc(c)}</button>`
+        : `<button type="button" class="fchip fchip-act" onclick="${c.fn}">${esc(c.t)}</button>`).join('');
     }
     function askChip(btn) { $('forge-input').value = btn.textContent; sendForgeChat(); }
-    function sendForgeChat() {
-      const q = ($('forge-input').value || '').trim(); if (!q) return;
-      $('forge-input').value = ''; meSay(q);
-      setTimeout(() => { botSay(forgeReply(q)); renderChips(['How am I doing?', 'What should I save next?', 'Improve my credit', 'Investing basics']); }, 280);
-    }
     function forgeReply(raw) {
       const q = raw.toLowerCase();
       const p = state.progress;
@@ -2075,14 +2113,12 @@
       const e = earnings();
       const leftAfterDue = r2(e.earned - budgetTotals().planned);
       const nl = String.fromCharCode(10);
-      const disclaimer = nl + nl + 'Not personal financial advice — just plain education. Confirm details with the bank or a pro before you move money.';
 
-      // ----- Your Forge stats -----
-      if (/how am i|status|doing|overview|summary|my stats|my progress/.test(q)) {
+      if (/how am i|status|doing|overview|summary/.test(q)) {
         const gline = goals.length ? goals.map(g => '• ' + g.name + ': ' + fmt(goalCurrent(g)) + ' / ' + fmt(g.target) + ' (' + Math.round(goalPct(g)) + '%)').join(nl) : '• No goals yet — set one on the Goals tab.';
         return "Here's your snapshot:" + nl + nl + 'Level ' + p.level + ' · ' + levelTitle(p.level) + nl + 'Streak: ' + p.currentStreak + ' day' + (p.currentStreak===1?'':'s') + ' (' + STAGE_NAMES[streakStage(p.currentStreak)] + ')' + nl + 'Hours logged: ' + (Math.round(p.totalHours*10)/10) + nl + 'Lifetime saved: ' + fmt(p.totalSaved) + nl + nl + 'Goals:' + nl + gline + nl + nl + "This pay period you're on track for ~" + fmt(e.earned) + ' from worked hours.';
       }
-      if (/save next|what should i save|where.*(put|save)|allocate|priority|payday plan/.test(q)) {
+      if (/save next|what should i|where.*(put|save)|allocate|priority|payday plan/.test(q)) {
         if (!goals.length) return "You don't have a savings goal yet. Open Goals and create one — even a $100 emergency fund counts. I'll help you plan from there.";
         const need = goals.map(g => ({ g: g, left: Math.max(0, r2(g.target - goalCurrent(g))) })).filter(x => x.left > 0).sort((a,b)=>a.left-b.left);
         if (!need.length) return "Every goal is fully funded. Legend move. Set a bigger target or a new goal when you're ready.";
@@ -2095,12 +2131,12 @@
         else msg += nl + nl + 'Add due dates on bills so I can tell you what is truly free to save.';
         return msg;
       }
-      if (/top goal|how much.*goal|goal.*left|progress on/.test(q)) {
+      if (/top goal|how much.*goal|goal.*left|progress/.test(q)) {
         if (!top) return 'No goals yet. Create one and I will track the gap for you.';
         const left = Math.max(0, r2(top.target - goalCurrent(top)));
         return top.name + ' is at ' + fmt(goalCurrent(top)) + ' of ' + fmt(top.target) + ' (' + Math.round(goalPct(top)) + '%).' + nl + (left > 0 ? fmt(left) + ' to go.' : 'You already hit it.') + nl + nl + 'Lifetime saved across everything: ' + fmt(p.totalSaved) + '.';
       }
-      if (/budget|bill|owe|due|payday|period|warning/.test(q) && !/credit|ira|invest|stock|bank app/.test(q)) {
+      if (/budget|bill|owe|due|payday|period|warning/.test(q)) {
         const lines = dueBills.length ? dueBills.slice(0, 6).map(i => '• ' + (i.icon||'') + ' ' + i.name + ': ' + fmt(Math.max(0,i.amount-itemPaid(i))) + ' left · due ' + fmtShort(i.due)).join(nl) : '• No unpaid bills with due dates.';
         return 'Due-dated bills only (that is what the pay-period math uses):' + nl + lines + nl + nl + 'Total still due: ' + fmt(dueTotal) + nl + 'Earned this period: ~' + fmt(e.earned) + nl + (leftAfterDue >= 0 ? 'Room after those bills: ~' + fmt(leftAfterDue) : 'Shortfall vs due bills: ' + fmt(-leftAfterDue)) + nl + nl + 'Bills without a due date do not count against that number — they are just notes.';
       }
@@ -2109,84 +2145,489 @@
         const deadline = s.last ? addDays(s.last, GRACE) : null;
         return 'Your flame is ' + STAGE_NAMES[streakStage(p.currentStreak)] + ' at ' + p.currentStreak + ' day' + (p.currentStreak===1?'':'s') + ' (best ' + p.longestStreak + ').' + nl + nl + 'You can skip up to 2 days and keep it. ' + (deadline ? 'Log by ' + fmtDate(deadline) + ' to keep it alive.' : 'Log any hours (worked or scheduled) to light it.') + nl + nl + 'Consistency beats intensity — a short log still counts.';
       }
-
-      // ----- Credit -----
-      if (/credit score|improve.*credit|build.*credit|fix my credit|credit card|fico|utilization/.test(q)) {
-        return 'Solid ways people usually improve credit:' + nl + nl +
-          '1. Pay on time, every time — payment history is the biggest factor.' + nl +
-          '2. Keep credit card balances low vs limits (utilization under ~30%, under 10% is even better).' + nl +
-          '3. Don’t close old cards just to “clean up” — age of accounts helps.' + nl +
-          '4. Only apply for new credit when you need it (hard inquiries add up).' + nl +
-          '5. Check your free reports for errors and dispute mistakes.' + nl +
-          '6. If you’re thin-file, a secured card or becoming an authorized user can help build history.' + nl + nl +
-          'In Forge: keep due-dated bills paid on time and log spending so you don’t overshoot plans.' + disclaimer;
+      if (/tip|advice|how to save|save more|habit/.test(q)) {
+        return 'Practical moves that fit Forge:' + nl + nl + '1. Put a due date only on bills that actually hit this period — keeps the math honest.' + nl + '2. Use a paycheck plan on one goal so saving is automatic when money lands.' + nl + '3. Punch no-spend days — 10 punches = a reward you chose.' + nl + '4. Log hours the day you work so the streak and "on my way to" stay accurate.' + nl + '5. After payday, move money into a goal before discretionary spending.' + nl + nl + 'Want a plan for a specific goal? Name it and I will size the per-check amount.';
       }
-
-      // ----- Investing / stocks -----
-      if (/invest|stock|etf|index fund|brokerage|401k|roth|ira\b|compound|market/.test(q)) {
-        return 'Investing basics (keep it simple):' + nl + nl +
-          '• Emergency fund first — usually 3–6 months of expenses in a high-yield savings account before heavy investing.' + nl +
-          '• For long-term goals (years away), broad low-cost index funds / ETFs (like a total US or S&P 500 fund) are what a lot of people use instead of picking single stocks.' + nl +
-          '• Prefer tax-advantaged accounts when you can: 401(k) (especially if there’s a match), Roth IRA, traditional IRA.' + nl +
-          '• Time in the market beats timing the market — regular contributions beat waiting for the “perfect” day.' + nl +
-          '• Single stocks are higher risk; never invest money you need soon.' + nl + nl +
-          'Apps/brokerages people often use for IRAs & investing: Fidelity, Vanguard, Charles Schwab, SoFi, Wealthfront, Betterment, Robinhood (IRA available), E*TRADE.' + disclaimer;
-      }
-
-      // ----- Banking apps / HYSA / IRA -----
-      if (/bank(ing)? app|high.?yield|hysa|savings account|which bank|best bank|ally|sofi|chime|capital one|discover/.test(q)) {
-        return 'Banking & savings apps people often look at:' + nl + nl +
-          'High-yield savings (park emergency cash):' + nl +
-          '• Ally, Capital One 360, Discover, SoFi, American Express HYSA — rates change; compare current APY.' + nl + nl +
-          'Everyday spending + savings pockets:' + nl +
-          '• Chime, Cash App, SoFi, Capital One — good for budgeting; pair with a real HYSA for bigger emergency funds.' + nl + nl +
-          'IRAs / long-term investing (not just a checking app):' + nl +
-          '• Fidelity, Vanguard, Schwab — strong for Roth/Traditional IRAs and low-cost funds.' + nl +
-          '• SoFi, Betterment, Wealthfront — app-first, IRAs + automated investing.' + nl + nl +
-          'Tip: keep spending money separate from “don’t touch” savings so you don’t accidentally burn the emergency fund.' + disclaimer;
-      }
-
-      // ----- Emergency fund / general savings education -----
-      if (/emergency fund|rainy day|how much.*save|save more|saving tip|habit/.test(q)) {
-        return 'Practical savings moves:' + nl + nl +
-          '1. Name the goal in Forge (emergency fund, car, etc.) so every dollar has a job.' + nl +
-          '2. Automate: on payday, move money to savings/goal before discretionary spending.' + nl +
-          '3. Emergency fund target is often 3–6 months of must-pay bills — start with $500–$1,000 if you’re building from zero.' + nl +
-          '4. Use no-spend punches and spending plans so lifestyle creep doesn’t eat raises.' + nl +
-          '5. After high-interest debt is under control, layer in investing for long-term goals.' + nl + nl +
-          'Want me to size a per-paycheck amount for one of your goals? Name the goal.';
-      }
-
       if (/hello|hi\b|hey|who are you|what can you/.test(q)) {
-        return "I'm 4orge — your savings sidekick. I can talk about YOUR Forge data (goals, bills, streak, hours) and general money topics: saving, credit basics, investing concepts, banks/apps with IRAs, and habits." + nl + nl + 'Ask anything money-related. Examples: “how do I improve my credit?”, “what’s a Roth IRA?”, “good banking apps with IRAs?”';
+        return "I'm 4orge — the flame that watches your money moves. I read your goals, jobs, hours, bills with due dates, streak, and punch card." + nl + nl + 'Ask about progress, what to save next, budget pressure, or habits.';
       }
       if (/thank/.test(q)) return 'Anytime. Keep the flame lit.';
-
-      // generic fallback — still try to be useful
       if (goals.length) {
         const g = goals[0];
-        return 'I can cover your Forge stats or general money questions — savings, credit, investing basics, banks with IRAs, habits.' + nl + nl +
-          'Quick hit on your data: ' + g.name + ' is at ' + Math.round(goalPct(g)) + '% (' + fmt(goalCurrent(g)) + ' / ' + fmt(g.target) + ').' + nl + nl +
-          'Or ask something like “how do I build credit?” or “best places for a Roth IRA?”';
+        return 'I can dig into savings, goals, due bills, or your streak. Try "how am I doing?" or "what should I save next?"' + nl + nl + 'Quick hit: ' + g.name + ' is at ' + Math.round(goalPct(g)) + '% (' + fmt(goalCurrent(g)) + ' / ' + fmt(g.target) + ').';
       }
-      return 'Ask me about your goals and budget, or general topics: emergency funds, credit scores, index funds, Roth IRAs, high-yield savings, banking apps. What do you want to tackle?';
+      return 'Ask me about your goals, what to save next, due bills, or your streak. Set a goal on the Goals tab and I will get more specific.';
     }
 
+    // ========== 4ORGE AI (your own Anthropic key, stored only on this phone) ==========
+    const AI_KEY = 'forge-ai-v1';
+    const AI_MODELS = [
+      ['claude-sonnet-5-5', 'Sonnet 5.5 · best all-round (default)'],
+      ['claude-haiku-5-5', 'Haiku 5.5 · fastest and cheapest'],
+      ['claude-opus-5-5', 'Opus 5.5 · deepest answers, costs more']
+    ];
+    const GEM_MODELS = [
+      ['gemini-3.8-flash', 'Gemini 3.8 Flash · free, smartest free option'],
+      ['gemini-3.5-flash-lite', 'Gemini Flash-Lite · free, lighter and faster']
+    ];
+    // Paste your Forge server address here once it is set up and every install works with no key.
+    const FORGE_AI_URL = '';
+    let aiCfg = { provider: 'gemini', endpoint: '', key: '', keys: {}, model: 'claude-sonnet-5-5', gmodel: 'gemini-3.8-flash', share: true, search: true };
+    let aiBusy = false, aiSearchBlocked = false;
+    function aiLoad() {
+      try { const r = JSON.parse(localStorage.getItem(AI_KEY) || 'null'); if (r && typeof r === 'object') aiCfg = { ...aiCfg, ...r }; } catch (e) {}
+      if (!AI_MODELS.some(m => m[0] === aiCfg.model)) aiCfg.model = 'claude-sonnet-5-5';
+      if (!GEM_MODELS.some(m => m[0] === aiCfg.gmodel)) aiCfg.gmodel = 'gemini-3.8-flash';
+      if (!aiCfg.keys || typeof aiCfg.keys !== 'object') aiCfg.keys = {};
+      if (aiCfg.key && !aiCfg.keys.anthropic && !aiCfg.keys.gemini) { aiCfg.keys.anthropic = aiCfg.key; aiCfg.provider = 'anthropic'; }
+      aiCfg.key = aiCfg.keys[aiCfg.provider] || '';
+      if (!aiCfg.endpoint) aiCfg.endpoint = FORGE_AI_URL;
+    }
+    function aiReady() { return aiCfg.provider === 'gemini' ? !!(aiCfg.endpoint || aiCfg.key) : !!aiCfg.key; }
+    function aiModel() { return aiCfg.provider === 'gemini' ? aiCfg.gmodel : aiCfg.model; }
+    function aiProvName() { return aiCfg.provider === 'gemini' ? 'Google' : 'Anthropic'; }
+    function aiSave() {
+      try { aiCfg.keys[aiCfg.provider] = aiCfg.key; localStorage.setItem(AI_KEY, JSON.stringify(aiCfg)); return true; }
+      catch (e) { toast('Could not save on this device'); return false; }
+    }
+    aiLoad();
 
+    function isStatsQ(q) {
+      return /how am i|status|doing|overview|summary|save next|what should i|where.*(put|save)|allocate|priority|payday plan|top goal|how much.*goal|goal.*left|progress|budget|bill|owe|due|payday|period|warning|streak|flame|log.*hour|consistency|tip|advice|how to save|save more|habit|hello|hi\b|hey|who are you|what can you|thank/.test(q.toLowerCase());
+    }
+
+    // What 4orge can see about you (only if you leave "Share my Forge data" on)
+    function aiSnapshot() {
+      try {
+        const p = state.progress, e = earnings(), T = budgetTotals(), L = [];
+        L.push('Level ' + p.level + ' (' + levelTitle(p.level) + '), streak ' + p.currentStreak + ' days, ' + Math.round(p.totalHours * 10) / 10 + ' hours logged, ' + fmt(p.totalSaved) + ' saved across goals.');
+        const jobs = state.jobs.filter(j => j.active !== false).map(j => j.name + (j.rate ? ' ($' + j.rate + '/hr)' : '') + ' [' + j.type + ']');
+        if (jobs.length) L.push('Jobs: ' + jobs.join(', ') + '.');
+        L.push('Pay period ' + e.start + ' to ' + e.end + ': about ' + fmt(e.earned) + ' earned from hours marked worked; next ' + e.next.length + ' scheduled shifts total ' + e.leftHours + ' hours.');
+        if (state.goals.length) L.push('Savings goals: ' + state.goals.map(g => g.name + ' ' + fmt(goalCurrent(g)) + ' of ' + fmt(g.target) + (nextPlan(g) ? ' (next planned deposit ' + fmt(nextPlan(g).amount) + ')' : '')).join('; ') + '.');
+        if (state.budget.items.length) L.push('Budget this pay period (' + fmt(T.planned) + ' planned, ' + fmt(T.paid) + ' paid): ' + state.budget.items.map(i => i.name + ' ' + fmt(itemPaid(i)) + ' of ' + fmt(i.amount) + ' [' + (i.kind === 'spend' ? 'spending plan' : 'bill') + (i.due ? ', due ' + i.due : '') + ']').join('; ') + '.');
+        if (state.accounts.length) L.push('Accounts (balances the user typed in): ' + state.accounts.map(a => a.name + ' balance ' + fmt(a.balance) + (a.savings ? ', savings ' + fmt(a.savings) : '')).join('; ') + '.');
+        return L.join('\n');
+      } catch (err) { return ''; }
+    }
+    function aiSystem() {
+      const d = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      let s = "You are 4orge, the flame mascot inside Forge, a personal money app. You are a sharp, warm, plain-spoken money coach and a good conversationalist. You can talk about anything the user brings up. Your specialty is money: saving, budgeting, paying down debt, building and repairing credit, banking and banking apps, investing (stocks, ETFs, index funds, bonds, Roth and traditional IRAs, 401(k)s, HSAs, brokerages), basic taxes, gig and side-hustle income, big purchases, and planning. For anything non-money, answer briefly and helpfully.\n" +
+        "Today is " + d + ". Assume the user is in the United States unless they say otherwise.\n\n" +
+        "CONVERSATION: Match the user. If they are chatting, chat back in a sentence or two. If they ask a question, answer it first, then add the one thing that makes it actionable. If the best answer depends on a fact you do not have (income, debts, timeline, state, risk comfort), give a useful provisional answer using clearly stated assumptions, then ask one or two specific questions to tighten it. Remember everything said earlier in the chat and build on it. When the user says 'ok', 'yes', or 'do it', carry on with the plan you were building rather than starting over.\n\n" +
+        "PLANNING: When asked to plan anything (a savings plan, a debt payoff, a credit-building timeline, a paycheck split, an investing starter plan, a purchase), produce a concrete step-by-step plan with real numbers. Use the user's own Forge data when it is shared and relevant. Show the arithmetic briefly so they can check it, state your assumptions, and put steps in the right order (for example emergency cushion, high-interest debt, employer match, then investing). End plans with the single next action to take today.\n\n" +
+        "STYLE: casual and direct, no filler, no lecturing. It is read on a phone. Quick answers should be short. Plans and deep explanations can run up to about 400 words. Plain text only: no tables, no headers. Short paragraphs, '- ' for bullets, '1. ' for ordered steps, and **bold** for the one or two things that matter most.\n\n" +
+        "ACCURACY: never invent numbers, rates, fees, limits, features, or news. Anything that changes over time (APYs, interest rates, contribution limits, brackets, fees, minimums, promotions, stock prices, which apps or banks offer which accounts) must come from web search when it is available, and you should say it is current as of today. Prefer official sources (IRS, CFPB, the company's own page). If you cannot verify something, say so plainly and give the safest general answer instead of guessing. Double-check any math before you state it. Do not claim to know what an app or bank offers without checking.\n\n" +
+        "MONEY ADVICE: you give education and honest options, not guarantees, and you are not a licensed financial advisor, a tax professional, or an attorney. For investing, explain how things work, the real risks and fees, and what usually fits different goals and time horizons. Compare options fairly, including downsides. Do not hype individual stocks, predict prices, promise returns, or tell the user to buy or sell a specific security as if it were certain. For credit, favor on-time payments, low utilization, and not closing old accounts, and warn about credit-repair scams. Mention a tax pro or fee-only fiduciary only when the stakes really call for it, not on every answer.\n\n" +
+        "FOLLOW-UPS: at the very end of every reply, on its own last line, add exactly this hidden line with 2 or 3 short things the user might naturally ask next (under 45 characters each, phrased as the user would say them): [[chips: first | second | third]]. Never mention this line.\n";
+      if (aiCfg.share) {
+        const snap = aiSnapshot();
+        if (snap) s += "\nTHE USER'S FORGE DATA (typed into the app by the user, may be incomplete). Use it when it makes your answer better or the plan more personal, but do not recite it unprompted:\n" + snap + "\n";
+      } else s += "\nThe user has chosen not to share their Forge data with you, so do not assume anything about their numbers. Ask if you need them.\n";
+      return s;
+    }
+
+    // ----- saved chat (separate from Forge data, never in backups) -----
+    const CHAT_KEY = 'forge-chat-v1';
+    let chatLog = [], aiLastQ = '';
+    function chatLoad() {
+      try { const r = JSON.parse(localStorage.getItem(CHAT_KEY) || 'null'); if (Array.isArray(r)) chatLog = r.filter(m => m && typeof m.t === 'string' && (m.r === 'me' || m.r === 'bot')).slice(-60); } catch (e) {}
+    }
+    function chatSave() { try { localStorage.setItem(CHAT_KEY, JSON.stringify(chatLog.slice(-60))); } catch (e) {} }
+    chatLoad();
+    function aiHistoryFromLog() {
+      const out = []; let pend = null;
+      chatLog.forEach(m => {
+        if (m.r === 'me') pend = m.ai ? m.t : null;
+        else if (m.ai && pend !== null) { out.push({ role: 'user', content: pend }, { role: 'assistant', content: m.t }); pend = null; }
+      });
+      return out.slice(-16);
+    }
+
+    async function aiCallGemini(messages, useSearch, signal, on) {
+      const body = {
+        systemInstruction: { parts: [{ text: aiSystem() }] },
+        contents: messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: typeof m.content === 'string' ? m.content : '' }] })),
+        generationConfig: { maxOutputTokens: 3000 }
+      };
+      if (useSearch) body.tools = [{ google_search: {} }];
+      const viaServer = !!aiCfg.endpoint;
+      const r = viaServer
+        ? await fetch(aiCfg.endpoint, { method: 'POST', signal: signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: aiCfg.gmodel, body: body }) })
+        : await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(aiCfg.gmodel) + ':streamGenerateContent?alt=sse', {
+            method: 'POST', signal: signal,
+            headers: { 'content-type': 'application/json', 'x-goog-api-key': aiCfg.key },
+            body: JSON.stringify(body)
+          });
+      if (!r.ok) {
+        let j = null; try { j = await r.json(); } catch (e) {}
+        const er = new Error((j && j.error && j.error.message) || ('Error ' + r.status)); er.status = r.status;
+        if (/api key/i.test(er.message) && r.status !== 429) er.status = 401;
+        throw er;
+      }
+      let text = '', fin = null, started = false; const cites = new Map();
+      let buf = '';
+      const feed = chunk => {
+        buf += chunk.replace(/\r\n/g, '\n'); let i;
+        while ((i = buf.indexOf('\n\n')) >= 0) {
+          const raw = buf.slice(0, i); buf = buf.slice(i + 2);
+          raw.split('\n').forEach(line => {
+            if (line.indexOf('data:') !== 0) return;
+            let ev = null; try { ev = JSON.parse(line.slice(5).trim()); } catch (e) {}
+            const c = ev && ev.candidates && ev.candidates[0]; if (!c) return;
+            ((c.content && c.content.parts) || []).forEach(p => {
+              if (typeof p.text === 'string' && !p.thought) {
+                if (!started) { started = true; on && on({ type: 'textstart' }); }
+                text += p.text; on && on({ type: 'text', text: p.text });
+              }
+            });
+            const gm = c.groundingMetadata;
+            if (gm) { if (!gm._seen) on && on({ type: 'search' }); (gm.groundingChunks || []).forEach(g => { if (g.web && /^https:\/\//.test(g.web.uri || '')) cites.set(g.web.uri, g.web.title || g.web.uri); }); }
+            if (c.finishReason) fin = c.finishReason;
+          });
+        }
+      };
+      if (r.body && r.body.getReader) {
+        const rd = r.body.getReader(), dec = new TextDecoder();
+        for (;;) { const { done, value } = await rd.read(); if (done) break; feed(dec.decode(value, { stream: true })); }
+        feed('\n\n');
+      } else { feed((await r.text()) + '\n\n'); }
+      return { content: [{ type: 'text', text: text, citations: [...cites].map(([url, title]) => ({ url, title })) }], stop_reason: fin === 'MAX_TOKENS' ? 'max_tokens' : 'end_turn' };
+    }
+    async function aiCall(messages, useSearch, signal, on) {
+      if (aiCfg.provider === 'gemini') return aiCallGemini(messages, useSearch, signal, on);
+      const body = { model: aiCfg.model, max_tokens: 2500, system: aiSystem(), messages: messages, stream: true };
+      if (useSearch) body.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }];
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', signal: signal,
+        headers: { 'content-type': 'application/json', 'x-api-key': aiCfg.key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) {
+        let j = null; try { j = await r.json(); } catch (e) {}
+        const er = new Error((j && j.error && j.error.message) || ('Error ' + r.status)); er.status = r.status; throw er;
+      }
+      const blocks = []; let stop = null;
+      const handle = ev => {
+        if (ev.type === 'content_block_start') {
+          const b = JSON.parse(JSON.stringify(ev.content_block));
+          if (b.type === 'text') { b.text = b.text || ''; on && on({ type: 'textstart' }); }
+          if (b.type === 'server_tool_use') { b._json = ''; on && on({ type: 'search' }); }
+          blocks[ev.index] = b;
+        } else if (ev.type === 'content_block_delta') {
+          const b = blocks[ev.index], d = ev.delta; if (!b || !d) return;
+          if (d.type === 'text_delta') { b.text += d.text; on && on({ type: 'text', text: d.text }); }
+          else if (d.type === 'input_json_delta') b._json += d.partial_json;
+          else if (d.type === 'citations_delta') (b.citations = b.citations || []).push(d.citation);
+        } else if (ev.type === 'content_block_stop') {
+          const b = blocks[ev.index];
+          if (b && b.type === 'server_tool_use') { try { b.input = JSON.parse(b._json || '{}'); } catch (e) { b.input = {}; } delete b._json; }
+        } else if (ev.type === 'message_delta') {
+          if (ev.delta && ev.delta.stop_reason) stop = ev.delta.stop_reason;
+        } else if (ev.type === 'error') {
+          const er = new Error((ev.error && ev.error.message) || 'Stream error');
+          er.status = ev.error && ev.error.type === 'overloaded_error' ? 529 : 500; throw er;
+        }
+      };
+      let buf = '';
+      const feed = chunk => {
+        buf += chunk.replace(/\r\n/g, '\n'); let i;
+        while ((i = buf.indexOf('\n\n')) >= 0) {
+          const raw = buf.slice(0, i); buf = buf.slice(i + 2);
+          raw.split('\n').forEach(line => {
+            if (line.indexOf('data:') !== 0) return;
+            const s = line.slice(5).trim(); if (!s) return;
+            let ev = null; try { ev = JSON.parse(s); } catch (e) {}
+            if (ev) handle(ev);
+          });
+        }
+      };
+      if (r.body && r.body.getReader) {
+        const rd = r.body.getReader(), dec = new TextDecoder();
+        for (;;) { const { done, value } = await rd.read(); if (done) break; feed(dec.decode(value, { stream: true })); }
+        feed('\n\n');
+      } else { feed((await r.text()) + '\n\n'); }
+      return { content: blocks.filter(Boolean), stop_reason: stop };
+    }
+    function aiErrText(e) {
+      const m = String(e && e.message || '');
+      if (e && e.name === 'AbortError') return "That took too long. Try again, or turn off web search in ⚙️ for faster answers.";
+      if (e && e.status === 401) return aiProvName() + " rejected that key. Open ⚙️ and paste it again.";
+      if (e && e.status === 403) return "That key doesn't have access. Make a fresh one and paste it in ⚙️.";
+      if (e && e.status === 404) return aiProvName() + " didn't recognize the model. Pick a different one in ⚙️.";
+      if (e && e.status === 429) return aiCfg.provider === 'gemini' ? "Hit the free limit for now (the free plan has per-minute and daily caps). Wait a minute, or try again later today." : "Too many requests right now. Give it a minute and try again.";
+      if (/credit balance|billing/i.test(m)) return "Your Anthropic account is out of credit. Add some under Billing at console.anthropic.com, then ask again.";
+      if (e && e.status >= 500) return aiProvName() + " is busy right now. Try again in a moment.";
+      if (e instanceof TypeError) return "Couldn't reach " + aiProvName() + ". Check your connection and try again.";
+      return "Something went wrong: " + m;
+    }
+    function stripChips(t) { return t.replace(/\[\[[\s\S]*$/, ''); }
+    function parseChips(t) {
+      const m = /\[\[\s*chips:\s*([\s\S]*?)\]\]/i.exec(t); if (!m) return [];
+      return m[1].split('|').map(x => x.trim()).filter(x => x.length > 1 && x.length <= 60).slice(0, 3);
+    }
+    async function aiAsk(q, ui) {
+      const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 120000);
+      let working = [...aiHistoryFromLog(), { role: 'user', content: q }];
+      let search = !!aiCfg.search && !aiSearchBlocked, text = '', gap = false, droppedSearch = false, stop = null;
+      const sources = new Map();
+      const on = ev => {
+        if (ev.type === 'textstart') gap = true;
+        else if (ev.type === 'search') ui && ui.onSearch && ui.onSearch();
+        else if (ev.type === 'text') { if (gap && text) text += '\n\n'; gap = false; text += ev.text; ui && ui.onText && ui.onText(text); }
+      };
+      try {
+        for (let hop = 0; hop < 6; hop++) {
+          let j;
+          try { j = await aiCall(working, search, ctl.signal, on); }
+          catch (e) {
+            if (search && e.status === 400 && /web.?search|tool|ground|google_search|search/i.test(String(e.message))) { search = false; aiSearchBlocked = true; droppedSearch = true; hop--; continue; }
+            throw e;
+          }
+          (j.content || []).forEach(b => {
+            if (b.type === 'text') (b.citations || []).forEach(c => { if (c.url && /^https:\/\//.test(c.url)) sources.set(c.url, c.title || c.url); });
+          });
+          stop = j.stop_reason;
+          if (stop === 'pause_turn') { working = [...working, { role: 'assistant', content: j.content }]; continue; }
+          break;
+        }
+      } finally { clearTimeout(tm); }
+      const chips = parseChips(text);
+      text = stripChips(text).trim();
+      if (!text) text = "I didn't get an answer back. Try asking again.";
+      else if (stop === 'max_tokens') text += "\n\n(I ran out of room there. Say \"continue\" and I'll pick it up.)";
+      return { text, sources: [...sources].slice(0, 4), droppedSearch, chips };
+    }
+    function fmtBot(t) {
+      return esc(t)
+        .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>')
+        .replace(/`([^`\n]+)`/g, '<b>$1</b>')
+        .replace(/\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+        .replace(/^#{1,4} +(.+)$/gm, '<b>$1</b>')
+        .replace(/^[-*] /gm, '• ');
+    }
+    function botSayRich(r, d) {
+      if (!d) { d = document.createElement('div'); $('forge-msgs').appendChild(d); }
+      d.className = 'fmsg bot'; d.innerHTML = fmtBot(r.text);
+      if (r.droppedSearch) { const n = document.createElement('div'); n.className = 'fsrc'; n.textContent = "Heads up: web search isn't available on your plan, so this comes from general knowledge and rates, fees and limits may be out of date."; d.appendChild(n); }
+      if (r.sources && r.sources.length) {
+        const n = document.createElement('div'); n.className = 'fsrc'; n.appendChild(document.createTextNode('Sources: '));
+        r.sources.forEach(([u, title], i) => {
+          let host = u; try { host = new URL(u).hostname.replace(/^www\./, ''); } catch (e) {}
+          const a = document.createElement('a'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = host; a.title = title;
+          if (i) n.appendChild(document.createTextNode(' · ')); n.appendChild(a);
+        });
+        d.appendChild(n);
+      }
+      $('forge-msgs').scrollTop = $('forge-msgs').scrollHeight;
+      return d;
+    }
+    function typingOn() {
+      const d = document.createElement('div'); d.className = 'fmsg bot typing'; d.id = 'forge-typing'; d.innerHTML = '<i></i><i></i><i></i><span class="flabel"></span>';
+      $('forge-msgs').appendChild(d); $('forge-msgs').scrollTop = $('forge-msgs').scrollHeight;
+    }
+    function typingLabel(t) { const l = document.querySelector('#forge-typing .flabel'); if (l) l.textContent = t; }
+    function typingOff() { const t = $('forge-typing'); if (t) t.remove(); }
+
+    function renderChatLog() {
+      $('forge-msgs').innerHTML = '';
+      chatLog.forEach(m => { if (m.r === 'me') meSay(m.t); else botSayRich({ text: m.t, sources: m.s || [], droppedSearch: !!m.d }); });
+      renderChips(aiReady() ? ['Explain that simpler', 'Make me a plan', 'How am I doing?'] : ['How am I doing?', 'What should I save next?']);
+    }
+    function updateChatHead() {
+      const el = $('chat-sub'); if (el) el.textContent = aiReady() ? 'Ask me anything · knows your Forge data' : 'Not connected yet · tap ⚙️ to turn me on';
+    }
+    function newForgeChat() {
+      if (aiBusy) return;
+      chatLog = []; chatSave(); $('forge-msgs').innerHTML = ''; toggleForgeSettings(false); forgeGreeting();
+    }
+    function forgeGreeting() {
+      updateChatHead();
+      if (aiReady()) {
+        botSay("Hey, I'm 4orge. Ask me anything: saving, credit, investing, banking apps, or plan something out together. I'll look things up when the answer needs current info.");
+        renderChips(['How do I build my credit?', 'Best banking apps with an IRA?', 'Plan my next paycheck', 'How do index funds work?', 'How am I doing?']);
+      } else {
+        botSay("Hey, I'm 4orge. Right now I can only answer questions about your Forge numbers.\n\nTo ask me anything (credit, investing, banking apps, planning, whatever), I need a free key from Google. Tap the button below. It takes about a minute, no card needed.");
+        renderChips([{ t: '⚙️ Connect me', fn: 'toggleForgeSettings(true)' }, 'How am I doing?', 'What should I save next?']);
+      }
+    }
+    function sendForgeChat(retryQ) {
+      const q = (typeof retryQ === 'string' ? retryQ : ($('forge-input').value || '')).trim(); if (!q || aiBusy) return;
+      const isRetry = typeof retryQ === 'string';
+      if (!isRetry) { $('forge-input').value = ''; meSay(q); }
+      if (!aiReady()) {
+        chatLog.push({ r: 'me', t: q });
+        setTimeout(() => {
+          let a;
+          if (isStatsQ(q)) a = forgeReply(q);
+          else a = "I can only see your Forge numbers until you connect me. Tap Connect me below, and then ask me anything: credit, investing, banking apps, planning, whatever you want.";
+          botSay(a); chatLog.push({ r: 'bot', t: a }); chatSave();
+          renderChips([{ t: '⚙️ Connect me', fn: 'toggleForgeSettings(true)' }, 'How am I doing?', 'Payday plan']);
+        }, 250);
+        return;
+      }
+      aiLastQ = q;
+      if (!isRetry) chatLog.push({ r: 'me', t: q, ai: 1 });
+      aiBusy = true; $('forge-chips').innerHTML = ''; typingOn();
+      let bubble = null, pend = false, latest = '', fin = false;
+      const paint = () => { pend = false; if (bubble && !fin) { bubble.innerHTML = fmtBot(stripChips(latest)); $('forge-msgs').scrollTop = $('forge-msgs').scrollHeight; } };
+      const ui = {
+        onSearch() { typingLabel('looking that up…'); },
+        onText(t) {
+          latest = t;
+          if (!stripChips(t).trim()) return;
+          if (!bubble) { typingOff(); bubble = document.createElement('div'); bubble.className = 'fmsg bot'; $('forge-msgs').appendChild(bubble); }
+          if (!pend) { pend = true; requestAnimationFrame(paint); }
+        }
+      };
+      aiAsk(q, ui).then(r => {
+        fin = true; typingOff(); botSayRich(r, bubble);
+        chatLog.push({ r: 'bot', t: r.text, ai: 1, s: r.sources, d: r.droppedSearch ? 1 : 0 }); chatSave();
+        renderChips(r.chips.length ? r.chips : ['Explain that simpler', 'Make me a plan', 'How am I doing?']);
+      }).catch(e => {
+        fin = true; typingOff(); if (bubble) bubble.remove();
+        botSay(aiErrText(e));
+        renderChips([{ t: '↻ Try again', fn: 'sendForgeChat(aiLastQ)' }, { t: '⚙️ Settings', fn: 'toggleForgeSettings(true)' }]);
+      }).finally(() => { aiBusy = false; chatSave(); });
+    }
+
+    // ----- settings panel inside the chat -----
+    function toggleForgeSettings(force) {
+      const box = $('forge-settings'), open = force !== undefined ? force : box.classList.contains('hidden');
+      box.classList.toggle('hidden', !open);
+      ['forge-msgs', 'forge-chips', 'forge-inputrow'].forEach(id => $(id).style.display = open ? 'none' : '');
+      if (open) renderForgeSettings();
+    }
+    function renderForgeSettings() {
+      const prov = ui.aiProv || aiCfg.provider, gem = prov === 'gemini';
+      const has = !!(aiCfg.keys && aiCfg.keys[prov]) || (prov === aiCfg.provider && !!aiCfg.key);
+      const models = gem ? GEM_MODELS : AI_MODELS, cur = gem ? aiCfg.gmodel : aiCfg.model;
+      $('forge-settings').innerHTML = `
+        <div class="space-y-3">
+          <div class="text-sm font-semibold text-amber-200">Connect 4orge</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="setAiProv('gemini')" class="seg py-2.5 rounded-xl text-[13px] ${gem ? 'on' : ''}">Google Gemini · free</button>
+            <button type="button" onclick="setAiProv('anthropic')" class="seg py-2.5 rounded-xl text-[13px] ${gem ? '' : 'on'}">Claude · paid</button>
+          </div>
+          ${gem ? `<div>
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">Forge server address (best option, no key needed)</label>
+            <input id="ai-ep" type="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://forge-ai.yourname.workers.dev" value="${esc(aiCfg.endpoint || '')}" class="w-full mt-1 px-3.5 py-3 text-sm" />
+            <div class="text-[11px] text-white/35 mt-1">Set up once (see the setup steps). If you leave this empty, use your own free Google key below.</div>
+          </div>
+          <div class="text-[12px] text-white/55 leading-relaxed">Or your own free key, no card needed.<br>
+            1. Open <a class="text-amber-300 underline" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a> and sign in with Google.<br>
+            2. Tap <b class="text-white/80">Create API key</b> and copy it.<br>
+            3. Paste it below.<br>
+            <span class="text-white/40">Free plan limits: a few dozen questions a day, and Google may use free-tier chats to improve its products, so don't type account numbers or anything private. Web lookups may not be included on the free plan, so rates and limits can be out of date.</span></div>`
+          : `<div class="text-[12px] text-white/55 leading-relaxed">Claude through your own Anthropic account (pay-as-you-go, pennies per question).<br>
+            1. Go to <a class="text-amber-300 underline" href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer">console.anthropic.com</a> and sign up.<br>
+            2. Add a few dollars of credit under Billing, and set a monthly limit.<br>
+            3. Make an API key and paste it below.</div>`}
+          <div>
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">API key</label>
+            <input id="ai-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${has ? 'Saved on this phone. Paste a new one to replace it' : (gem ? 'AIza…' : 'sk-ant-…')}" class="w-full mt-1 px-3.5 py-3 text-sm" />
+          </div>
+          <div>
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">Model</label>
+            <select id="ai-model" class="w-full mt-1 px-3.5 py-3 text-sm">${models.map(m => `<option value="${m[0]}" ${m[0] === cur ? 'selected' : ''}>${esc(m[1])}</option>`).join('')}</select>
+          </div>
+          ${swRow(aiCfg.share, 'toggleAiOpt', 'share', '', 'Share my Forge data', 'Goals, budget, hours and card balances go with each question so answers fit you')}
+          ${swRow(aiCfg.search, 'toggleAiOpt', 'search', '', 'Look things up on the web', 'For current rates, fees and limits. Skips itself if your plan does not allow it')}
+          <div id="ai-status" class="text-[12px] text-white/50"></div>
+          <button id="ai-save" onclick="saveForgeSettings()" class="w-full py-3 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Save</button>
+          ${has ? `<button onclick="removeAiKey()" class="w-full py-2.5 rounded-xl bg-red-500/15 text-red-300 text-sm font-medium">Remove my key</button>` : ''}
+          <div class="text-[11px] text-white/35 leading-relaxed">Your key stays on this phone and only goes to ${gem ? 'Google' : 'Anthropic'}. It is not saved in your Forge data or backups. 4orge is a coach, not a licensed financial advisor.</div>
+        </div>`;
+    }
+    function setAiProv(p) { ui.aiProv = p; renderForgeSettings(); }
+    function toggleAiOpt(btn, k) { aiCfg[k] = !aiCfg[k]; btn.querySelector('.sw').classList.toggle('on', aiCfg[k]); }
+    async function aiTestKey(prov, key, model) {
+      const r = prov === 'gemini'
+        ? await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1', { headers: { 'x-goog-api-key': key } })
+        : await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+            body: JSON.stringify({ model: model, max_tokens: 8, messages: [{ role: 'user', content: 'hi' }] })
+          });
+      if (r.ok) return null;
+      let j = null; try { j = await r.json(); } catch (e) {}
+      const er = new Error((j && j.error && j.error.message) || ('Error ' + r.status)); er.status = r.status;
+      if (prov === 'gemini' && /api key/i.test(er.message)) er.status = 401;
+      throw er;
+    }
+    async function saveForgeSettings() {
+      const prov = ui.aiProv || aiCfg.provider, gem = prov === 'gemini';
+      const typed = ($('ai-key').value || '').trim(), model = $('ai-model').value;
+      if (typed && !gem && !/^sk-ant-/.test(typed)) { toast('That does not look like a Claude key'); return; }
+      if (typed && gem && !/^AIza/.test(typed)) { toast('That does not look like a Google key. It starts with AIza'); return; }
+      const key = typed || (aiCfg.keys && aiCfg.keys[prov]) || (prov === aiCfg.provider ? aiCfg.key : ''), st = $('ai-status'), btn = $('ai-save');
+      let ep = '';
+      if (gem && $('ai-ep')) {
+        ep = $('ai-ep').value.trim().replace(/\/+$/, '');
+        if (ep && !/^https:\/\/[^\s]+$/.test(ep)) { toast('The server address should start with https://'); return; }
+        if (ep) {
+          if (btn) btn.disabled = true; if (st) { st.className = 'text-[12px] text-white/50'; st.textContent = 'Checking your server…'; }
+          try { const hr = await fetch(ep); const hj = await hr.json(); if (!hj || !hj.ok) throw new Error('bad'); }
+          catch (e) { if (btn) btn.disabled = false; if (st) { st.className = 'text-[12px] text-red-300'; st.textContent = "Couldn't reach that server. Check the address and that the worker is deployed."; } return; }
+          if (btn) btn.disabled = false;
+        }
+        aiCfg.endpoint = ep;
+      }
+      if (key && !(gem && ep && !typed)) {
+        if (btn) btn.disabled = true; if (st) { st.className = 'text-[12px] text-white/50'; st.textContent = 'Checking your key…'; }
+        const keep = aiCfg.provider; aiCfg.provider = prov;
+        try { await aiTestKey(prov, key, model); }
+        catch (e) {
+          aiCfg.provider = keep; if (btn) btn.disabled = false;
+          if (e.status === 401 || e.status === 403 || e.status === 404 || /credit balance|billing/i.test(String(e.message))) {
+            aiCfg.provider = prov; const msg = aiErrText(e); aiCfg.provider = keep;
+            if (st) { st.className = 'text-[12px] text-red-300'; st.textContent = msg; } return;
+          }
+          if (st) st.textContent = '';
+        }
+        aiCfg.provider = prov; if (btn) btn.disabled = false;
+      }
+      aiCfg.provider = prov;
+      if (typed) aiCfg.keys[prov] = typed;
+      aiCfg.key = aiCfg.keys[prov] || '';
+      if (gem) aiCfg.gmodel = model; else aiCfg.model = model;
+      aiSearchBlocked = false; ui.aiProv = null;
+      if (!aiSave()) return;
+      toast(aiReady() ? 'Connected ✓' : 'Saved. Add a key to turn answers on');
+      toggleForgeSettings(false);
+      if (aiReady() && !chatLog.length) { $('forge-msgs').innerHTML = ''; forgeGreeting(); } else updateChatHead();
+    }
+    function removeAiKey() {
+      const prov = ui.aiProv || aiCfg.provider;
+      aiCfg.keys[prov] = ''; if (prov === aiCfg.provider) aiCfg.key = '';
+      aiSave(); toast('Key removed'); ui.aiProv = null;
+      toggleForgeSettings(false); updateChatHead();
+      if (!chatLog.length) { $('forge-msgs').innerHTML = ''; forgeGreeting(); }
+    }
+
+// ========== INIT ==========
+    // ========== REMINDERS ==========
+    // In-app: smart cards on Home + a toast when you open the app.
+        const NUDGES = [
+      ['streak', '🔥', 'Streak', 'Nudge me to log so the flame stays lit'],
+      ['budget', '💸', 'Budget watch', 'Spending plans near the limit, bills coming due'],
+      ['punch', '🎟️', 'No-spend punch', 'Evening nudge to punch the card'],
+      ['payday', '🎉', 'Payday heads-up', 'Payday coming or passed']
+    ];
     function nudgeOn(k) { return state.settings.nudges[k] !== false; }
 
     function computeReminders() {
       const out = [], S = state.settings, t = today(), hr = new Date().getHours();
       const e = earnings(), daysTo = dayDiff(t, e.end);
       const add = r => out.push(r);
-      if (nudgeOn('streak') && !state.timeEntries.some(x => x.date === t)) {
-        const dates = state.timeEntries.map(x => x.date).filter(d => d <= t).sort();
+      if (nudgeOn('streak') && !activityDates().includes(t)) {
+        const dates = activityDates();
         const last = dates.length ? dates[dates.length - 1] : null, n = state.progress.currentStreak;
-        if (!last) add({ id: 'streak', icon: '🔥', title: 'Log your first shift', sub: 'Light the flame. Worked or scheduled both count.', go: 'log', urgent: false });
+        if (!last) add({ id: 'streak', icon: '🔥', title: 'Check in to light the flame', sub: 'Punch the no-spend card or log what you spent or earned.', go: 'money', urgent: false });
         else if (n > 0) {
           const final = dayDiff(last, t) >= GRACE;
-          add({ id: 'streak', icon: '🔥', title: final ? `Last chance to keep your ${n}-day streak` : `Log today to keep your ${n}-day streak`, sub: final ? 'Log something today or it resets.' : 'Worked or scheduled both count.', go: 'log', urgent: final });
-        } else add({ id: 'streak', icon: '🔥', title: 'Relight your streak', sub: 'Log today to start a new one.', go: 'log', urgent: false });
+          add({ id: 'streak', icon: '🔥', title: final ? `Last chance to keep your ${n}-day streak` : `Check in today to keep your ${n}-day streak`, sub: final ? 'Check in today or it resets.' : 'Punch the card, log a spend or log hours worked.', go: 'money', urgent: final });
+        } else add({ id: 'streak', icon: '🔥', title: 'Relight your streak', sub: 'Check in today to start a new one.', go: 'money', urgent: false });
       }
       if (nudgeOn('budget')) {
         let alerts = 0;
@@ -2280,18 +2721,9 @@
 
     // ========== WALLET (your accounts as cards) ==========
     const WALLET_COLORS = [['#34d399', '#047857'], ['#60a5fa', '#1d4ed8'], ['#a78bfa', '#6d28d9'], ['#fbbf24', '#b45309'], ['#f472b6', '#be185d'], ['#94a3b8', '#334155'], ['#22d3ee', '#0e7490'], ['#f87171', '#b91c1c']];
-    const WALLET_PRESETS = [['Chime', 0], ['Cash App', 6], ['Venmo', 1], ['PayPal', 2], ['Apple Cash', 5], ['Bank', 3], ['Credit union', 4], ['Cash', 0]];
-    // Built-in card images (your own Chime and Cash App cards, trimmed). They apply by name, no upload needed.
-    const CARD_ART = {
-      chime: 'data:image/jpeg;base64,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',
-      cashapp: 'data:image/jpeg;base64,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'
-    };
-    function presetArt(name) {
-      const n = String(name || '').toLowerCase().replace(/[^a-z]/g, '');
-      if (n.includes('chime')) return CARD_ART.chime;
-      if (n.includes('cashapp')) return CARD_ART.cashapp;
-      return null;
-    }
+    const WALLET_PRESETS = [['Chime', 0], ['Cash App', 1], ['Venmo', 1], ['PayPal', 2], ['Apple Cash', 5], ['Bank', 3], ['Credit union', 4], ['Cash', 0]];
+    // Cards show their name and balance on a color until you add your own picture.
+    function presetArt() { return null; }
     function cardArt(a) { return a.art || presetArt(a.name); }
     function mixHex(h, target, amt) {
       const n = parseInt(h.slice(1), 16), m = c => Math.round(c + (target - c) * amt);
@@ -2299,12 +2731,6 @@
     }
     function cardColors(a) {
       if (a.hex) return [mixHex(a.hex, 255, .22), mixHex(a.hex, 0, .38)];
-      const n = String(a.name || '').toLowerCase();
-      if (n.includes('chime')) return ['#d9f5e9', '#00a86b'];
-      if (n.includes('cash app') || n === 'cashapp') return ['#00d632', '#006b24'];
-      if (n.includes('venmo')) return ['#008cff', '#004b9b'];
-      if (n.includes('paypal')) return ['#009cde', '#003087'];
-      if (n.includes('apple cash')) return ['#f3f4f6', '#aeb4bd'];
       return WALLET_COLORS[a.color] || WALLET_COLORS[0];
     }
     function walletOrder() {
@@ -2327,10 +2753,10 @@
       $('wallet-total').innerHTML = state.accounts.length ? `Balance <b class="text-white/80">${fmt(spend)}</b> · Savings <b class="text-emerald-300">${fmt(sav)}</b>` : '';
       $('wallet-stack').innerHTML = list.length ? list.map((a, i) => {
         const c = cardColors(a), last = i === list.length - 1, img = cardArt(a);
-        const topStyle = img ? ' style="background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,.2) 70%,transparent);padding:14px 16px;margin:0;position:relative;z-index:2"' : '';
-        const bodyStyle = img ? ' style="background:linear-gradient(0deg,rgba(0,0,0,.78),rgba(0,0,0,.25) 75%,transparent);padding:14px 16px;left:0;right:0;bottom:0;position:absolute;z-index:2"' : '';
-        const face = `<div class="wc-top"${topStyle}><span class="wc-brand">${brandMark(a.name)}<span class="wc-name">${esc(a.name)}</span></span><span class="wc-bal">${fmt(a.balance)}</span></div>
-          ${last ? `<div class="wc-body"${bodyStyle}><div>Savings held<b>${fmt(a.savings)}</b></div><div class="text-right opacity-80">Updated ${fmtShort(a.updated)}<br>Tap to edit</div></div>` : ''}`;
+        const face = img
+          ? `<span class="wc-pill" style="left:12px;top:50px">${fmt(a.balance)}</span>${last && a.savings ? `<span class="wc-pill sav" style="left:12px;bottom:12px">Savings ${fmt(a.savings)}</span>` : ''}`
+          : `<div class="wc-top"><span class="wc-brand">${brandMark(a.name)}<span class="wc-name">${esc(a.name)}</span></span><span class="wc-bal">${fmt(a.balance)}</span></div>
+          ${last ? `<div class="wc-body"><div>Savings held<b>${fmt(a.savings)}</b></div><div class="text-right opacity-80">Updated ${fmtShort(a.updated)}<br>Tap to edit</div></div>` : ''}`;
         return `<div class="wcard${img ? ' art' : ''}" role="button" aria-label="${esc(a.name)} card" style="--c1:${c[0]};--c2:${c[1]}${img ? `;background-image:url('${img}')` : ''}" onclick="tapCard('${a.id}')">${face}</div>`;
       }).join('') : `<div class="wc-ghost" onclick="openAccountSheet()">Add your Chime, Cash App or bank to see your balances here</div>`;
     }
@@ -2365,7 +2791,7 @@
               </div>
               <input id="a-art-file" type="file" accept="image/*" class="hidden" onchange="handleAccArt(event)" />
             </div>
-            <div id="a-art-note" class="text-[11px] text-white/35 mt-1.5">${a && a.art ? 'Using your image.' : presetArt(a && a.name) ? 'Using the built-in card image.' : 'Chime and Cash App cards already have their images built in. For any other card, upload a screenshot (edges trim automatically; pick one without the card number).'}</div>
+            <div id="a-art-note" class="text-[11px] text-white/35 mt-1.5">${a && a.art ? 'Using your image.' : 'No image. Your card shows its name on the color below. To use a picture, upload a screenshot (edges trim automatically; pick one without the card number).'}</div>
           </div>
           <div>
             <label class="text-[11px] text-white/40 uppercase tracking-wider">Color (used when there's no card image)</label>
@@ -2421,7 +2847,7 @@
       const src = mine || builtin;
       prev.innerHTML = src ? `<img src="${src}" style="width:100%;height:100%;object-fit:cover" alt="">` : 'none';
       const note = $('a-art-note');
-      if (note) note.textContent = mine ? 'Using your image.' : builtin ? 'Using the built-in card image.' : 'Chime and Cash App cards already have their images built in. For any other card, upload a screenshot (edges trim automatically; pick one without the card number).';
+      if (note) note.textContent = mine ? 'Using your image.' : 'No image. Your card shows its name on the color below. To use a picture, upload a screenshot (edges trim automatically; pick one without the card number).';
     }
     function clearAccArt() { ui.pendingArt = null; refreshArtPreview(); }
     function applyAccPreset(i) { $('a-name').value = WALLET_PRESETS[i][0]; pick('acolor', String(WALLET_PRESETS[i][1])); refreshArtPreview(); $('a-bal').focus(); }
