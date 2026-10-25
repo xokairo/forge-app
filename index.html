@@ -104,6 +104,35 @@
     input::placeholder { color: rgba(255,255,255,0.3); }
     input[type=date] { min-height: 48px; }
 
+
+    /* ===== Skills ===== */
+    .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .p-5 { padding: 1.25rem; }
+    .w-16 { width: 4rem; }
+    .text-\[9px\] { font-size: 9px; }
+    .sk-ring { position: relative; width: 52px; height: 52px; flex: none; }
+    .sk-ring.big { width: 64px; height: 64px; }
+    .sk-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .sk-ring-bg { fill: none; stroke: rgba(255,255,255,.09); stroke-width: 5; }
+    .sk-ring-fg { fill: none; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset .9s cubic-bezier(.22,1,.36,1); }
+    .sk-ring span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .sk-ring.big span { font-size: 15px; font-weight: 600; }
+    .sk-quick { flex: none; min-width: 64px; padding: 10px 12px; border-radius: 14px; font-size: 13px; font-weight: 700; color: #000; background: var(--c); transition: transform .2s; }
+    .sk-quick:active { transform: scale(.92); }
+    .sk-quick.done { background: rgba(255,255,255,.07); color: var(--c); border: 1px solid var(--c); }
+    .sk-dots { display: flex; justify-content: space-between; gap: 6px; }
+    .sk-dot { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .sk-dot i { width: 100%; max-width: 34px; aspect-ratio: 1; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 13px; font-weight: 700; color: #000; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); transition: background .3s, transform .3s; }
+    .sk-dot.on i { background: var(--c); border-color: var(--c); }
+    .sk-dot.now i { box-shadow: 0 0 0 2px rgba(255,255,255,.25); }
+    .sk-dot b { font-size: 9px; font-weight: 500; color: rgba(255,255,255,.35); }
+    .sk-coach { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; line-height: 1.45; color: rgba(255,255,255,.75); background: rgba(255,255,255,.05); border-radius: 12px; padding: 10px 12px; }
+    .sk-heat { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .sk-cell { aspect-ratio: 1; border-radius: 6px; background: rgba(255,255,255,.06); }
+    .sk-cell.now { outline: 2px solid rgba(255,255,255,.35); outline-offset: 1px; }
+    @keyframes skpop { 0% { transform: scale(1); } 35% { transform: scale(1.035); box-shadow: 0 0 0 3px rgba(245,158,11,.45); } 100% { transform: scale(1); } }
+    .sk-pop { animation: skpop .7s cubic-bezier(.22,1,.36,1); }
+
     /* ===== Tab bar ===== */
     .tab-bar {
       background: linear-gradient(to top, rgba(10,10,15,0.92), rgba(10,10,15,0.75));
@@ -113,7 +142,7 @@
     }
     .tab-pill {
       position: absolute; top: 8px; bottom: 8px; left: 8px;
-      width: calc((100% - 16px) / 4);
+      width: calc((100% - 16px) / 5);
       border-radius: 16px;
       background: linear-gradient(145deg, rgba(245,158,11,.2), rgba(245,158,11,.06));
       border: 1px solid rgba(245,158,11,.25);
@@ -398,6 +427,8 @@
             </button>
           </div>
 
+          <button id="home-skills" onclick="showView('skills')" class="glass-strong rounded-2xl p-3.5 w-full float"></button>
+
           <div>
             <div class="flex items-center justify-between mb-2 px-1">
               <h2 class="text-[11px] uppercase tracking-[0.15em] text-white/40 font-medium">Active Jobs</h2>
@@ -430,7 +461,7 @@
               </div>
             </div>
             <input id="backup-file" type="file" accept="application/json,.json" class="hidden" onchange="importBackup(event)" />
-            <div class="text-[10px] text-white/25 mt-2">Build Oct 25 · offline + coach</div>
+            <div class="text-[10px] text-white/25 mt-2">Build Oct 25 · skills</div>
           </div>
 
         </div>
@@ -534,6 +565,19 @@
           <button onclick="openGoalSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add goal</button>
         </div>
       </div>
+
+      <!-- SKILLS -->
+      <div id="view-skills" class="view absolute inset-0 flex flex-col safe-top hidden">
+        <div class="px-5 pt-3 pb-2">
+          <h1 class="text-[28px] font-semibold tracking-tight">Skills</h1>
+          <p class="text-sm text-white/40 mt-0.5">Get a little better every day. Tap ✓ to log, tap a card for details.</p>
+        </div>
+        <div class="flex-1 scroll-y px-5 pb-28 space-y-4">
+          <div id="sk-top"></div>
+          <div id="sk-list" class="space-y-3"></div>
+          <button onclick="openSkillSheet()" class="w-full py-3.5 rounded-2xl border border-dashed border-white/15 text-white/40 text-sm">+ Add skill</button>
+        </div>
+      </div>
     </div>
 
     <!-- Tab bar -->
@@ -544,6 +588,7 @@
         <button onclick="showView('log')" data-view="log" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">💼</span><span class="text-[10px] font-medium">Work</span></button>
         <button onclick="showView('money')" data-view="money" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">🧾</span><span class="text-[10px] font-medium">Budget</span></button>
         <button onclick="showView('goals')" data-view="goals" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">🎯</span><span class="text-[10px] font-medium">Goals</span></button>
+        <button onclick="showView('skills')" data-view="skills" class="tab-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-white/40"><span class="ico text-xl">💪</span><span class="text-[10px] font-medium">Skills</span></button>
       </div>
     </div>
   </div>
@@ -616,12 +661,12 @@
 
     const STORAGE_KEY = 'forge-v1';
     const LEVEL_TITLES = { 1:'Spark', 2:'Apprentice', 3:'Operator', 4:'Forgeman', 5:'Architect', 6:'Strategist', 7:'Master', 8:'Legend', 9:'Mythic', 10:'Eternal' };
-    const VIEW_ORDER = ['home','log','money','goals'];
+    const VIEW_ORDER = ['home','log','money','goals','skills'];
     const JOB_COLORS = ['#f59e0b','#0071ce','#06c167','#8b5cf6','#ef4444','#06b6d4','#ec4899'];
     const JOB_ICONS = ['🛒','🚗','💼','🍕','💻','📦','🛠️','☕'];
 
     let state = {
-      jobs: [], timeEntries: [], paychecks: [], goals: [],
+      jobs: [], timeEntries: [], paychecks: [], goals: [], skills: [],
       progress: { xp: 0, level: 1, totalXp: 0, currentStreak: 0, longestStreak: 0, lastLogDate: null, totalHours: 0, totalSaved: 0 },
       onboardingDone: false
     };
@@ -748,6 +793,8 @@
       state.punch = { reward: P.reward || '', days: Array.isArray(P.days) ? [...new Set(P.days)].sort().slice(0, 10) : [], claimed: P.claimed || 0 };
       state.bingo = { anchor: G.anchor || t, cycles: G.cycles && typeof G.cycles === 'object' ? G.cycles : {} };
       state.accounts = (Array.isArray(state.accounts) ? state.accounts : []).map(a => ({ id: a.id || uid(), name: String(a.name || 'Card'), balance: Number(a.balance) || 0, savings: Number(a.savings) || 0, color: Number.isInteger(a.color) ? a.color : 0, hex: /^#[0-9a-f]{6}$/i.test(a.hex || '') ? a.hex : null, art: typeof a.art === 'string' && a.art.startsWith('data:image/') ? a.art : null, updated: a.updated || today() }));
+      state.skills = (Array.isArray(state.skills) ? state.skills : []).map((s, i) => ({ id: s.id || uid(), name: String(s.name || 'Skill').slice(0, 30), icon: String(s.icon || '🎯').slice(0, 4), goal: Math.max(1, Math.min(600, Math.round(Number(s.goal)) || 20)), color: s.color || '#f59e0b', created: s.created || new Date().toISOString(),
+        logs: (Array.isArray(s.logs) ? s.logs : []).filter(l => l && /^\d{4}-\d{2}-\d{2}$/.test(l.date || '')).map(l => ({ id: l.id || uid(), date: l.date, minutes: Math.max(0, Math.round(Number(l.minutes)) || 0), note: String(l.note || '').slice(0, 140), feel: l.feel >= 1 && l.feel <= 5 ? +l.feel : null, created: l.created || '' })) }));
       const R = state.settings || {};
       state.settings = {
         nudges: { streak: true, budget: true, punch: true, payday: true, ...(R.nudges || {}) },
@@ -826,6 +873,7 @@
       state.timeEntries.forEach(e => { if (e.actual) s.add(e.date); });
       state.goals.forEach(g => (g.contributions || []).forEach(c => c.date && s.add(c.date)));
       (state.accounts || []).forEach(a => a.updated && s.add(a.updated));
+      (state.skills || []).forEach(k => k.logs.forEach(l => l.date && l.minutes > 0 && s.add(l.date)));
       return [...s].filter(d => d && d <= t).sort();
     }
     function calcStreaks() {
@@ -844,6 +892,7 @@
       state.timeEntries.forEach(e => { xp += Math.round(e.hours * 2) + (e.actual ? 5 : 2); });
       state.goals.forEach(g => { xp += Math.round(Math.max(0, goalCurrent(g)) / 10); });
       xp += (state.punch.claimed * 10 + state.punch.days.length) * 5 + state.punch.claimed * 50;
+      (state.skills || []).forEach(k => { xp += 10; k.logs.forEach(l => { xp += 8 + Math.round((l.minutes || 0) / 3); }); });
       Object.values(state.bingo.cycles).forEach(a => { xp += a.length * 12 + bingoLines(a) * 40; });
       let level = 1, rem = xp;
       while (rem >= xpNeeded(level)) { rem -= xpNeeded(level); level++; }
@@ -972,6 +1021,194 @@
       });
     }
 
+
+    // ========== SKILLS (daily practice tracker: workout, drawing, beats...) ==========
+    // A logged session counts as a Forge check-in, so practicing keeps your flame lit even on a day with no money logged.
+    const SK_GRACE = 2;                       // one rest day between sessions keeps a skill streak alive
+    const SK_MILES = [3, 5, 7, 10, 14, 21, 30, 50, 75, 100, 150, 200, 365];
+    const SK_COLORS = ['#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#3b82f6'];
+    const SK_PRESETS = [['💪', 'Workout', 30], ['🎨', 'Drawing', 20], ['🎹', 'Making beats', 45], ['🎸', 'Instrument', 20], ['🏃', 'Running', 25], ['📖', 'Reading', 20], ['✍️', 'Writing', 15], ['🧘', 'Meditation', 10], ['🗣️', 'Language', 15], ['🧠', 'Studying', 30]];
+    const SK_LEVELS = [[0, 'Just starting'], [60, 'Warming up'], [300, 'In the groove'], [900, 'Committed'], [2400, 'Skilled'], [6000, 'Advanced'], [12000, 'Master']];
+    const SK_FEEL = [['1', '😩'], ['2', '😐'], ['3', '🙂'], ['4', '😄'], ['5', '🔥']];
+    function skLevel(min) {
+      let i = 0; SK_LEVELS.forEach((l, k) => { if (min >= l[0]) i = k; });
+      const nx = SK_LEVELS[i + 1];
+      return { n: i + 1, title: SK_LEVELS[i][1], toNext: nx ? nx[0] - min : 0, pct: nx ? (min - SK_LEVELS[i][0]) / (nx[0] - SK_LEVELS[i][0]) : 1 };
+    }
+    function skMin(sk, d) { return sk.logs.reduce((a, l) => a + (l.date === d ? (+l.minutes || 0) : 0), 0); }
+    function skTotal(sk) { return sk.logs.reduce((a, l) => a + (+l.minutes || 0), 0); }
+    function skDates(sk) { const t = today(); return [...new Set(sk.logs.map(l => l.date).filter(d => d && d <= t))].sort(); }
+    function skStreak(sk) {
+      const t = today(), ds = skDates(sk); let best = 0, run = 0, prev = null;
+      for (const d of ds) { run = (prev && dayDiff(prev, d) <= SK_GRACE) ? run + 1 : 1; best = Math.max(best, run); prev = d; }
+      const last = ds.length ? ds[ds.length - 1] : null, alive = !!last && dayDiff(last, t) <= SK_GRACE;
+      return { cur: alive ? run : 0, best, last, doneToday: last === t, atRisk: alive && last !== t && dayDiff(last, t) === SK_GRACE };
+    }
+    function skWeek(sk) { const t = today(); let days = 0, min = 0; for (let i = 0; i < 7; i++) { const m = skMin(sk, addDays(t, -i)); if (m > 0) days++; min += m; } return { days, min }; }
+    function skFmtMin(m) { m = Math.round(m); if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + 'h' + (r ? ' ' + r + 'm' : ''); }
+    function skToday() { const n = state.skills.length, done = state.skills.filter(s => skMin(s, today()) > 0).length; return { n, done }; }
+    function skRing(pct, color, icon, big) {
+      const R = 24, C = 2 * Math.PI * R, p = Math.max(0, Math.min(1, pct));
+      return `<div class="sk-ring ${big ? 'big' : ''}"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="${R}" class="sk-ring-bg"/><circle cx="28" cy="28" r="${R}" class="sk-ring-fg" style="stroke:${color};stroke-dasharray:${C.toFixed(1)};stroke-dashoffset:${C.toFixed(1)}" data-off="${(C * (1 - p)).toFixed(1)}"/></svg><span>${esc(icon)}</span></div>`;
+    }
+    function skAnimateRings(root) {
+      requestAnimationFrame(() => requestAnimationFrame(() => (root || document).querySelectorAll('.sk-ring-fg[data-off]').forEach(c => { c.style.strokeDashoffset = c.dataset.off; })));
+    }
+    function skCoach() {
+      const t = today(), T = skToday(), flameToday = activityDates().includes(t);
+      if (!T.n) return { icon: '🎯', text: "Pick something you want to get better at, like working out, drawing or making beats. A little every day beats a big session once in a while." };
+      const risk = state.skills.find(s => skStreak(s).atRisk);
+      if (T.done === T.n) return { icon: '🎉', text: `All ${T.n} done today. Your Forge flame is lit, and it didn't need a single dollar logged.` };
+      if (risk) return { icon: '⚠️', text: `Your ${risk.name} streak (${skStreak(risk).cur} days) ends tomorrow if you skip today. Even 10 minutes keeps it.` };
+      if (!flameToday) return { icon: '🔥', text: `Nothing logged yet today. One skill session counts as a check-in, so your flame stays lit even if you don't log any spending.` };
+      if (T.done) return { icon: '💪', text: `${T.done} of ${T.n} done. ${T.n - T.done} to go, or call it a good day.` };
+      return { icon: '👍', text: `Your flame is already lit today. Log a session to keep ${state.skills[0].name} moving too.` };
+    }
+    function renderSkills() {
+      const box = $('sk-list'); if (!box) return;
+      const t = today(), T = skToday(), co = skCoach(), p = state.progress;
+      let wkMin = 0, wkSessions = 0; state.skills.forEach(s => { const w = skWeek(s); wkMin += w.min; wkSessions += s.logs.filter(l => l.date <= t && dayDiff(l.date, t) < 7).length; });
+      $('sk-top').innerHTML = `
+        <div class="glass-strong rounded-2xl p-4 sk-top ${ui.skPop === 'all' ? 'sk-pop' : ''}">
+          <div class="flex items-center gap-3">
+            ${skRing(T.n ? T.done / T.n : 0, '#f59e0b', T.n ? T.done + '/' + T.n : '🎯', true)}
+            <div class="flex-1 min-w-0">
+              <div class="text-[11px] text-white/40 uppercase tracking-wider">Today</div>
+              <div class="text-lg font-semibold">${T.n ? (T.done === T.n ? 'All done' : T.done + ' of ' + T.n + ' done') : 'No skills yet'}</div>
+              <div class="text-[11px] text-white/40">${wkSessions} session${wkSessions === 1 ? '' : 's'} · ${skFmtMin(wkMin)} this week</div>
+            </div>
+            <div class="text-right"><div class="text-2xl font-semibold text-amber-300">${p.currentStreak}</div><div class="text-[10px] text-white/40 uppercase tracking-wide">Flame days</div></div>
+          </div>
+          <div class="sk-coach mt-3"><span>${co.icon}</span><span>${esc(co.text)}</span></div>
+        </div>`;
+      box.innerHTML = state.skills.map(sk => {
+        const st = skStreak(sk), m = skMin(sk, t), goal = sk.goal || 20, wk = skWeek(sk), lv = skLevel(skTotal(sk));
+        const dots = [6, 5, 4, 3, 2, 1, 0].map(i => { const d = addDays(t, -i), mm = skMin(sk, d), L = 'SMTWTFS'[new Date(d + 'T00:00:00Z').getUTCDay()]; return `<button class="sk-dot ${mm > 0 ? 'on' : ''} ${i === 0 ? 'now' : ''}" style="--c:${sk.color}" onclick="event.stopPropagation();openSkillLogSheet('${sk.id}','${d}')" aria-label="${fmtDate(d)}"><i>${mm > 0 ? '✓' : ''}</i><b>${L}</b></button>`; }).join('');
+        return `<div class="glass rounded-2xl p-3.5 sk-card tap ${ui.skPop === sk.id ? 'sk-pop' : ''}" onclick="openSkillSheet('${sk.id}')">
+          <div class="flex items-center gap-3">
+            ${skRing(m / goal, sk.color, sk.icon)}
+            <div class="flex-1 min-w-0">
+              <div class="font-medium truncate">${esc(sk.name)}</div>
+              <div class="text-[11px] text-white/45 truncate">${st.cur ? '🔥 ' + st.cur + '-day streak' : 'No streak yet'} · best ${st.best}${st.best === 1 ? '' : ''}</div>
+              <div class="text-[11px] ${m >= goal ? 'text-emerald-400' : 'text-white/45'}">Today ${skFmtMin(m)} of ${goal} min goal</div>
+            </div>
+            <button class="sk-quick ${m >= goal ? 'done' : ''}" style="--c:${sk.color}" onclick="event.stopPropagation();skQuick('${sk.id}')">${m >= goal ? '✓ +' + goal : '✓ ' + goal + 'm'}</button>
+          </div>
+          <div class="sk-dots mt-3">${dots}</div>
+          <div class="flex items-center justify-between mt-2 text-[10px] text-white/35"><span>${wk.days}/7 days this week</span><span>Lv ${lv.n} · ${lv.title}</span></div>
+          <div class="progress-track h-1.5 mt-1"><div class="progress-fill" style="width:${Math.round(lv.pct * 100)}%;background:${sk.color}"></div></div>
+        </div>`;
+      }).join('') || `<div class="glass rounded-2xl p-5 text-center text-sm text-white/45">Nothing here yet. Add something you want to practice every day.</div>`;
+      skAnimateRings($('view-skills'));
+      renderHomeSkills();
+      if (ui.skPop) setTimeout(() => { ui.skPop = null; }, 900);
+    }
+    function renderHomeSkills() {
+      const el = $('home-skills'); if (!el) return;
+      const T = skToday();
+      el.innerHTML = T.n ? `<div class="flex items-center gap-3">${skRing(T.done / T.n, '#f59e0b', T.done === T.n ? '✓' : '🎯')}<div class="flex-1 min-w-0 text-left"><div class="text-sm font-medium">Skills today</div><div class="text-[11px] text-white/45">${T.done === T.n ? 'All done. Flame is lit.' : T.done + ' of ' + T.n + ' done · tap to log'}</div></div><span class="text-white/30">›</span></div>`
+        : `<div class="flex items-center gap-3"><div class="text-2xl">🎯</div><div class="flex-1 text-left"><div class="text-sm font-medium">Start a skill streak</div><div class="text-[11px] text-white/45">Workout, drawing, beats. Counts toward your flame.</div></div><span class="text-white/30">›</span></div>`;
+      skAnimateRings(el);
+    }
+    // ----- logging -----
+    function skQuick(id) { const sk = state.skills.find(s => s.id === id); if (!sk) return; skAdd(sk, today(), sk.goal || 20, '', null); }
+    function skAdd(sk, date, minutes, note, feel, logId) {
+      const before = skStreak(sk).cur, flameBefore = activityDates().includes(today());
+      if (logId) { const l = sk.logs.find(x => x.id === logId); if (l) Object.assign(l, { date, minutes, note, feel }); }
+      else sk.logs.push({ id: uid(), date, minutes, note, feel, created: new Date().toISOString() });
+      const after = skStreak(sk).cur;
+      ui.skPop = sk.id;
+      let msg = `${sk.icon} ${sk.name} · ${minutes} min`;
+      if (after > before && SK_MILES.includes(after)) msg = `🔥 ${sk.name}: ${after} days in a row!`;
+      else if (!flameBefore && date === today()) msg += ' · flame lit';
+      commit(msg);
+    }
+    function skQuickChips(goal) { return [...new Set([10, 20, 30, 45, 60, goal])].sort((a, b) => a - b).slice(0, 6); }
+    function openSkillLogSheet(id, date, logId) {
+      const sk = state.skills.find(s => s.id === id); if (!sk) return;
+      const l = logId ? sk.logs.find(x => x.id === logId) : null;
+      const d = l ? l.date : (date || today()), min = l ? l.minutes : (skMin(sk, d) ? '' : sk.goal || 20);
+      ui.pick.skfeel = l && l.feel ? String(l.feel) : '';
+      openSheet(`
+        ${sheetHead(`${esc(sk.icon)} ${esc(sk.name)}`, l ? 'Edit session' : (d === today() ? 'Log a session' : 'Log for ' + fmtDate(d)))}
+        <div class="space-y-3">
+          <div class="flex flex-wrap gap-2">${skQuickChips(sk.goal || 20).map(n => `<button type="button" class="seg px-3.5 py-2 rounded-xl text-sm font-medium" onclick="$('sk-min').value=${n}">${n}m</button>`).join('')}</div>
+          <input id="sk-min" type="number" inputmode="numeric" min="1" step="1" value="${min}" placeholder="Minutes" class="w-full px-3.5 py-3 text-sm" />
+          <input id="sk-note" type="text" value="${l ? esc(l.note || '') : ''}" placeholder="What did you work on? (optional)" class="w-full px-3.5 py-3 text-sm" />
+          <div><div class="text-[11px] text-white/40 uppercase tracking-wider mb-1.5">How did it feel?</div>${seg('skfeel', SK_FEEL.map(f => [f[0], f[1]]), ui.pick.skfeel, 'py-2.5 text-lg')}</div>
+          <input id="sk-date" type="date" value="${d}" max="${today()}" class="w-full px-3.5 py-3 text-sm" />
+          <button onclick="saveSkillLog('${sk.id}','${logId || ''}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">${l ? 'Save changes' : 'Log it'}</button>
+        </div>`);
+    }
+    function saveSkillLog(id, logId) {
+      const sk = state.skills.find(s => s.id === id); if (!sk) return;
+      const min = Math.round(parseFloat($('sk-min').value)), date = $('sk-date').value || today();
+      if (!(min > 0) || min > 1440) { toast('Enter the minutes you practiced'); return; }
+      if (date > today()) { toast("That date hasn't happened yet"); return; }
+      closeSheet(); skAdd(sk, date, min, $('sk-note').value.trim().slice(0, 140), ui.pick.skfeel ? +ui.pick.skfeel : null, logId || null);
+    }
+    function deleteSkillLog(skId, logId) { const sk = state.skills.find(s => s.id === skId); if (!sk) return; sk.logs = sk.logs.filter(l => l.id !== logId); commit('Session removed'); openSkillSheet(skId); }
+    function deleteSkill(id) { state.skills = state.skills.filter(s => s.id !== id); closeSheet(); commit('Skill deleted'); }
+    // ----- skill detail / create / edit -----
+    function openSkillSheet(id) {
+      const sk = id ? state.skills.find(s => s.id === id) : null;
+      if (!sk) {
+        ui.pick.skcolor = SK_COLORS[state.skills.length % SK_COLORS.length];
+        openSheet(`
+          ${sheetHead('New skill', 'Something you want to get better at')}
+          <div class="space-y-3">
+            <div class="flex flex-wrap gap-2">${SK_PRESETS.map((p, i) => `<button type="button" class="seg px-3 py-2 rounded-xl text-sm font-medium" onclick="skPreset(${i})">${p[0]} ${p[1]}</button>`).join('')}</div>
+            <div class="flex gap-2"><input id="sk-icon" type="text" maxlength="4" value="🎯" class="w-16 px-2 py-3 text-center text-xl" /><input id="sk-name" type="text" placeholder="Name (Workout, Drawing…)" class="flex-1 px-3.5 py-3 text-sm" /></div>
+            <input id="sk-goal" type="number" inputmode="numeric" min="1" value="20" placeholder="Daily goal in minutes" class="w-full px-3.5 py-3 text-sm" />
+            <div class="text-[11px] text-white/40">Daily goal is what the one-tap ✓ button logs. You can always log a different amount.</div>
+            <button onclick="saveSkill('')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">Add skill</button>
+          </div>`);
+        return;
+      }
+      const st = skStreak(sk), lv = skLevel(skTotal(sk)), t = today(), goal = sk.goal || 20;
+      let cells = ''; for (let i = 34; i >= 0; i--) { const d = addDays(t, -i), m = skMin(sk, d), a = m ? Math.min(1, 0.25 + 0.75 * m / goal) : 0; cells += `<div class="sk-cell ${i === 0 ? 'now' : ''}" title="${fmtDate(d)} · ${m} min" style="${m ? 'background:' + sk.color + ';opacity:' + a.toFixed(2) : ''}"></div>`; }
+      const hist = [...sk.logs].sort((a, b) => b.date.localeCompare(a.date) || (b.created || '').localeCompare(a.created || '')).slice(0, 30);
+      const avg = sk.logs.length ? Math.round(skTotal(sk) / sk.logs.length) : 0;
+      openSheet(`
+        ${sheetHead(`${esc(sk.icon)} ${esc(sk.name)}`, `Lv ${lv.n} · ${lv.title}${lv.toNext ? ' · ' + skFmtMin(lv.toNext) + ' to next' : ''}`)}
+        <div class="space-y-3">
+          <div class="grid grid-cols-4 gap-2 text-center">
+            <div class="glass-subtle rounded-xl py-2.5"><div class="font-semibold text-amber-300">${st.cur}</div><div class="text-[9px] text-white/40 uppercase">Streak</div></div>
+            <div class="glass-subtle rounded-xl py-2.5"><div class="font-semibold">${st.best}</div><div class="text-[9px] text-white/40 uppercase">Best</div></div>
+            <div class="glass-subtle rounded-xl py-2.5"><div class="font-semibold">${skFmtMin(skTotal(sk))}</div><div class="text-[9px] text-white/40 uppercase">Total</div></div>
+            <div class="glass-subtle rounded-xl py-2.5"><div class="font-semibold">${sk.logs.length}</div><div class="text-[9px] text-white/40 uppercase">Sessions</div></div>
+          </div>
+          <div><div class="text-[11px] text-white/40 uppercase tracking-wider mb-1.5">Last 5 weeks${avg ? ' · avg ' + avg + ' min' : ''}</div><div class="sk-heat">${cells}</div></div>
+          <button onclick="openSkillLogSheet('${sk.id}')" class="w-full py-3.5 rounded-2xl bg-amber-500 text-black font-semibold text-sm">+ Log a session</button>
+          <div>
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">History</label>
+            <div class="mt-2 space-y-1.5">${hist.length ? hist.map(l => `
+              <div class="flex items-center gap-3 glass-subtle rounded-xl px-3 py-2">
+                <div class="flex-1 min-w-0" onclick="openSkillLogSheet('${sk.id}','','${l.id}')">
+                  <div class="text-sm font-medium">${l.minutes} min ${l.feel ? SK_FEEL[l.feel - 1][1] : ''}</div>
+                  <div class="text-[11px] text-white/40 truncate">${fmtDate(l.date)}${l.note ? ' · ' + esc(l.note) : ''} · tap to edit</div>
+                </div>
+                <button onclick="arm(this,'deleteSkillLog','${sk.id}','${l.id}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-white/10 text-white/50">Remove</button>
+              </div>`).join('') : '<div class="text-xs text-white/30 py-2">No sessions yet. Tap the ✓ on the card for a one-tap log.</div>'}</div>
+          </div>
+          <div class="pt-1 space-y-2">
+            <label class="text-[11px] text-white/40 uppercase tracking-wider">Edit skill</label>
+            <div class="flex gap-2"><input id="sk-icon" type="text" maxlength="4" value="${esc(sk.icon)}" class="w-16 px-2 py-3 text-center text-xl" /><input id="sk-name" type="text" value="${esc(sk.name)}" class="flex-1 px-3.5 py-3 text-sm" /></div>
+            <input id="sk-goal" type="number" inputmode="numeric" min="1" value="${goal}" class="w-full px-3.5 py-3 text-sm" />
+            <button onclick="saveSkill('${sk.id}')" class="w-full py-3 rounded-xl glass-subtle text-sm font-medium">Save changes</button>
+          </div>
+          ${delBtn('deleteSkill', sk.id, 'Delete skill and its history')}
+        </div>`);
+    }
+    function skPreset(i) { const p = SK_PRESETS[i]; $('sk-icon').value = p[0]; $('sk-name').value = p[1]; $('sk-goal').value = p[2]; }
+    function saveSkill(id) {
+      const name = $('sk-name').value.trim().slice(0, 30), icon = ($('sk-icon').value.trim() || '🎯').slice(0, 4), goal = Math.max(1, Math.min(600, Math.round(parseFloat($('sk-goal').value) || 20)));
+      if (!name) { toast('Give it a name'); return; }
+      if (id) { const sk = state.skills.find(s => s.id === id); if (!sk) return; Object.assign(sk, { name, icon, goal }); closeSheet(); commit('Skill updated'); return; }
+      state.skills.push({ id: uid(), name, icon, goal, color: ui.pick.skcolor || SK_COLORS[0], logs: [], created: new Date().toISOString() });
+      closeSheet(); commit(`${icon} ${name} added · tap ✓ to log your first session`);
+    }
+
     // ========== RENDER ==========
     function render() {
       const p = state.progress;
@@ -995,6 +1232,7 @@
       $('lifetime-saved').textContent = fmt(p.totalSaved);
       renderMilestones();
       renderBudget();
+      renderSkills();
       renderReminders();
       renderWallet();
 
@@ -2575,7 +2813,7 @@ function brainAnswer(q) {
   for (const [re, ans] of BRAIN_SMALLTALK) if (re.test(q.trim())) return { text: typeof ans === 'function' ? ans() : ans, chips: ['How much will my check be?', 'Plan my check', 'How do I build credit?'] };
   return null;
 }
-const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Credit:** building it, scores, reports, utilization, collections\n- **Saving and budgeting:** emergency fund, 50/30/20, paycheck splits, gig-income budgeting\n- **Debt:** payoff methods, payday loans, student loans\n- **Banking:** where to keep savings, IRAs, Chime/Cash App, scams\n- **Investing:** index funds, Roth vs Traditional, 401(k), HSA, stocks, crypto\n- **Taxes:** gig taxes, W-4, side income\n- **Big buys:** car, rent, insurance\n- **Math:** try \"save $1,200 in 16 weeks\" or \"invest $100 a month for 20 years at 7%\"";
+const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Credit:** building it, scores, reports, utilization, collections\n- **Saving and budgeting:** emergency fund, 50/30/20, paycheck splits, gig-income budgeting\n- **Debt:** payoff methods, payday loans, student loans\n- **Banking:** where to keep savings, IRAs, Chime/Cash App, scams\n- **Investing:** index funds, Roth vs Traditional, 401(k), HSA, stocks, crypto\n- **Taxes:** gig taxes, W-4, side income\n- **Big buys:** car, rent, insurance\n- **Your skills:** streaks, \"did I work out today?\", what to practice, building habits\n- **Math:** try \"save $1,200 in 16 weeks\" or \"invest $100 a month for 20 years at 7%\"";
 
 
     // ========== 4ORGE COACH: math, dates, and answers from YOUR Forge data ==========
@@ -3000,11 +3238,52 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
       const pick = tips.slice(0, 5);
       return { text: `Based on your Forge numbers, here's where I'd focus:\n${facts.join('\n')}${facts.length ? '\n' : ''}\n` + pick.map((x, k) => `${k + 1}. ${x}`).join('\n\n') + `\n\nThese come from what you've logged, so the more you log, the sharper this gets.`, chips: ['Plan my check', 'Where is my money going?', 'Which goal first?'] };
     }
+    // ---- skills / hobbies questions ----
+    function skillsReply(q, s, c) {
+      const t = today(), T = skToday();
+      let named = state.skills.length ? cMatch(state.skills, q, 'name') : null;
+      if (!named && state.skills.length) {
+        const SYN = [[/work(?:ed|ing)? out|workouts?|gym|lift(?:ing)?|exercis|train(?:ing|ed)?|cardio/, /workout|work out|gym|lift|exercis|train|fit|run|cardio/i], [/draw|sketch|art\b|paint/, /draw|sketch|art|paint/i], [/beats?|produc|music|song|instrument|guitar|piano|studio/, /beat|music|produc|song|guitar|piano|instrument|studio/i], [/read(?:ing)?|book/, /read|book/i], [/writ(?:e|ing)|journal/, /writ|journal/i], [/meditat|mindful/, /meditat|mindful|breath/i], [/run(?:ning)?|jog/, /run|jog/i], [/study|studying|language|spanish|french/, /study|language|spanish|french|learn/i]];
+        for (const [qr, nr] of SYN) if (qr.test(s)) { const m = state.skills.find(x => nr.test(x.name)); if (m) { named = m; break; } }
+      }
+      const kw = /\b(skills?|hobb(?:y|ies)|practice[ds]?|practicing|practise|work(?:ed|ing)? out|workouts?|gym|exercis(?:e|ed|ing)|drawing|draw|sketch(?:ing)?|beats?|training|lifting|running|reading|meditat(?:e|ion|ing)|habits?)\b/.test(s);
+      if (!named && !kw) return null;
+      const personal = /\b(my|i|i've|ive|me|did|have|today|streak|log|logged|count|counts)\b/.test(s);
+      // how-to-get-better / habit advice
+      if (/how (do|can|should|would) i (get|become|be|stay|keep|build|make|start|improve|actually)|tips? (for|on) (getting better|consisten|habit|practic)|stay consistent|build (a )?habit|deliberate practice|get better at|motivat|keep (going|up)|stop (skipping|quitting)|never stick/.test(s) && !/count|streak (work|count)|does .* (count|keep)/.test(s)) {
+        const mine = state.skills.length ? `\n\nYou're already tracking ${state.skills.map(x => x.icon + ' ' + x.name).join(', ')}. ${T.done === T.n ? 'All done today, so keep that going.' : 'Log one session today and let the streak do the work.'}` : `\n\nYou haven't added a skill in Forge yet. Open the Skills tab and add one so the streak can start.`;
+        return { text: `The habit research is fairly consistent:\n- **Small and daily beats big and rare.** 15 to 30 minutes every day builds a skill faster than one long weekend session.\n- **Make it easy to start.** Same time, same place, gear already out. The goal on a bad day is just 10 minutes.\n- **Practice the hard part,** not only what you're already good at, and change one thing each session.\n- **Track it.** Seeing a streak is what keeps most people going. Don't let one missed day turn into two.\n- **Rest days are fine.** Skill streaks in Forge allow one rest day between sessions.${mine}`, chips: ['Did I practice today?', 'What should I practice today?'] };
+      }
+      if (/(does|do|will|would|can).*(count|keep|save|hold|maintain|protect|help).*(streak|flame)|(streak|flame).*(count|work|keep)|hold my (streak|flame)|keep my (streak|flame)/.test(s) && (kw || named)) {
+        return { text: `Yes. A logged skill session counts as a Forge check-in, the same as punching the no-spend card or logging a spend. So if you work out or practice and log nothing about money, your flame still stays lit.\nYou can skip up to ${GRACE - 1} days between check-ins and keep the flame, and each skill also has its own streak (one rest day allowed between sessions).`, chips: ['Did I practice today?'] };
+      }
+      if (!state.skills.length) return personal ? { text: "You haven't added a skill yet. Open the Skills tab (🎯) and tap Add. Workout, drawing, beats, reading, whatever you want to get better at. Each session you log counts as a check-in and keeps your flame lit.", chips: [] } : null;
+      const lines = x => { const st = skStreak(x), w = skWeek(x), m = skMin(x, t); return `${x.icon} **${x.name}**: ${st.cur ? st.cur + '-day streak' : 'no active streak'} (best ${st.best}) · ${m ? m + ' min today' : 'not yet today'} · ${w.days}/7 days this week · ${skFmtMin(skTotal(x))} total`; };
+      if (/what should i (practice|work on|do)|what (skill|hobby)|which (skill|one)|what('s| is) (next|left)|what do i (still )?(need|have) to (do|practice|log)|what('s| is) left (to|for) (do|practice|log)? ?today/.test(s)) {
+        const left = state.skills.filter(x => skMin(x, t) === 0).sort((a, b) => (skStreak(b).atRisk - skStreak(a).atRisk) || (skStreak(b).cur - skStreak(a).cur));
+        if (!left.length) return { text: `You've logged every skill today (${T.n} of ${T.n}). Nice. Rest, or add extra time to the one you want to level up fastest.`, chips: [] };
+        const f = left[0], st = skStreak(f);
+        return { text: `Start with **${f.icon} ${f.name}**${st.atRisk ? `. Your ${st.cur}-day streak ends tomorrow if you skip it today` : st.cur ? `, to keep your ${st.cur}-day streak going` : ''}. Your goal is ${f.goal || 20} minutes.${left.length > 1 ? '\nStill open today: ' + left.map(x => x.name).join(', ') + '.' : ''}`, chips: ['Did I practice today?'] };
+      }
+      if (named && !/\b(all|every|each|list|skills)\b/.test(s)) {
+        const x = named, st = skStreak(x), lv = skLevel(skTotal(x)), w = skWeek(x);
+        let extra = ''; if (/today|did i|\byet\b/.test(s)) extra = skMin(x, t) ? `Yes, you logged ${skMin(x, t)} minutes of ${x.name} today.\n\n` : `Not yet today. ${st.cur ? 'Log a session to keep your ' + st.cur + '-day streak.' : 'A quick ' + (x.goal || 20) + ' minutes starts one.'}\n\n`;
+        return { text: `${extra}${lines(x)}\nLevel ${lv.n} (${lv.title})${lv.toNext ? ', ' + skFmtMin(lv.toNext) + ' to the next level' : ''}. This week: ${skFmtMin(w.min)} over ${w.days} day${w.days === 1 ? '' : 's'}.`, chips: ['What should I practice today?'] };
+      }
+      if (/today|did i|have i|yet/.test(s)) {
+        const done = state.skills.filter(x => skMin(x, t) > 0), left = state.skills.filter(x => !skMin(x, t));
+        return { text: done.length ? `Logged today: ${done.map(x => x.icon + ' ' + x.name + ' (' + skMin(x, t) + ' min)').join(', ')}.${left.length ? '\nStill open: ' + left.map(x => x.name).join(', ') + '.' : '\nThat\'s everything. 🎉'}` : `Nothing logged today yet. ${left.map(x => x.icon + ' ' + x.name).join(', ')} are waiting. One session also keeps your flame lit.`, chips: ['What should I practice today?'] };
+      }
+      return { text: `Your skills:\n` + state.skills.map(x => '- ' + lines(x)).join('\n'), chips: ['What should I practice today?', 'Did I practice today?'] };
+    }
+
     function coachReply(q) {
       const s = q.toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim(); if (!s) return null;
       const c = cx(); let r;
       // date/time first for pure date questions
       if ((r = dateReply(q))) return r;
+      // skills / hobbies
+      if ((r = skillsReply(q, s, c))) return r;
       // money stress
       if (/(i'?m|im|i am|feel(ing)?|so|really) (broke|struggling|stressed|screwed|behind)|no money|out of money|can'?t (pay|afford) (my )?(bills|rent)|run(ning)? out of money|living paycheck to paycheck|paycheck to paycheck|drowning in|overwhelmed/.test(s)) return stressReply(c);
       // open-ended "do better / improve / based on my stats" advice
@@ -3173,8 +3452,12 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
         if (!last) add({ id: 'streak', icon: '🔥', title: 'Check in to light the flame', sub: 'Punch the no-spend card or log what you spent or earned.', go: 'money', urgent: false });
         else if (n > 0) {
           const final = dayDiff(last, t) >= GRACE;
-          add({ id: 'streak', icon: '🔥', title: final ? `Last chance to keep your ${n}-day streak` : `Check in today to keep your ${n}-day streak`, sub: final ? 'Check in today or it resets.' : 'Punch the card, log a spend or log hours worked.', go: 'money', urgent: final });
+          add({ id: 'streak', icon: '🔥', title: final ? `Last chance to keep your ${n}-day streak` : `Check in today to keep your ${n}-day streak`, sub: final ? 'Check in today or it resets.' : 'Punch the card, log a spend, log hours or log a skill session.', go: 'money', urgent: final });
         } else add({ id: 'streak', icon: '🔥', title: 'Relight your streak', sub: 'Check in today to start a new one.', go: 'money', urgent: false });
+      }
+      if (nudgeOn('streak') && state.skills.length && !state.skills.some(k => skMin(k, t) > 0)) {
+        const risk = state.skills.find(k => skStreak(k).atRisk);
+        add({ id: 'skills', icon: risk ? risk.icon : '🎯', title: risk ? `Keep your ${skStreak(risk).cur}-day ${risk.name} streak` : 'Log a skill session today', sub: risk ? 'It ends tomorrow if you skip today.' : 'Any practice counts as a check-in and keeps your flame lit.', go: 'skills', urgent: !!risk });
       }
       if (nudgeOn('budget')) {
         let alerts = 0;
