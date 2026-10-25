@@ -430,7 +430,7 @@
               </div>
             </div>
             <input id="backup-file" type="file" accept="application/json,.json" class="hidden" onchange="importBackup(event)" />
-            <div class="text-[10px] text-white/25 mt-2">Build Oct 24 · offline</div>
+            <div class="text-[10px] text-white/25 mt-2">Build Oct 25 · offline + coach</div>
           </div>
 
         </div>
@@ -2273,7 +2273,7 @@
     function bTok(s) { return s.toLowerCase().replace(/[^a-z0-9$%]+/g, ' ').trim().split(' ').filter(Boolean).map(bStem); }
 
     // ---- CREDIT ----
-    bk(['build credit', 'improve credit', 'raise credit', 'boost credit', 'fix credit', 'increase credit', 'gain credit', 'start credit', 'no credit', 'first credit', 'credit from scratch', 'rebuild credit', 'better credit', 'good credit'], 'Build credit',
+    bk(['improve credit score', 'raise credit score', 'increase credit score', 'boost credit score', 'build credit score', 'build credit', 'improve credit', 'raise credit', 'boost credit', 'fix credit', 'increase credit', 'gain credit', 'start credit', 'no credit', 'first credit', 'credit from scratch', 'rebuild credit', 'better credit', 'good credit'], 'Build credit',
 `Credit is built by showing you borrow and pay back on time. The fastest legit moves:
 - **Pay every bill on time.** Payment history is the biggest part of your score. Turn on autopay for at least the minimum.
 - **Keep card balances low.** Under 30% of the limit is okay, under 10% is best. Paying before the statement date helps.
@@ -2330,7 +2330,7 @@ bk(['emergency fund', 'keep in savings', 'how much savings', 'how much to save',
 - **Step 1:** a starter cushion of about $500 to $1,000.
 - **Step 2:** build toward **3 to 6 months** of essential expenses (rent, food, transport, minimum debts). Closer to 6 if your income is irregular, like gig work.
 - Keep it in a separate **high-yield savings** account that's insured, easy to reach, and not attached to your debit card.` + extra; }, ['Best place to keep savings?', 'Split my paycheck']);
-bk(['high yield', 'hysa', 'best savings account', 'where keep savings', 'where to put savings', 'savings account', 'best place save', 'place to keep savings'], 'Where to keep savings',
+bk(['where put savings', 'where do i put my savings', 'high yield', 'hysa', 'best savings account', 'where keep savings', 'where to put savings', 'savings account', 'best place save', 'place to keep savings'], 'Where to keep savings',
 `Look for a savings account that is:
 - **Insured:** FDIC (banks) or NCUA (credit unions) up to $250,000 per depositor, per bank, per ownership category.
 - **High-yield:** online banks usually pay many times what big branch banks do.
@@ -2397,7 +2397,7 @@ bk(['consolidat', 'balance transfer', 'refinance'], 'Consolidation and balance t
 `Consolidating can help if the new rate is lower **and** you stop adding new debt. Check for fees (balance transfers often cost 3% to 5%), the promo end date, and whether the total cost is really less. If you're not changing the habits that created the debt, it often comes right back.`);
 
 // ---- BANKING ----
-bk(['ira bank', 'banking app ira', 'bank with ira', 'banks that offer ira', 'app with ira', 'app ira', 'where open ira', 'open ira', 'open an ira', 'best ira', 'ira account', 'which app ira', 'apps ira', 'bank ira', 'banking ira', 'robinhood', 'fidelity', 'schwab', 'vanguard', 'sofi', 'betterment', 'wealthfront'], 'Where to open an IRA',
+bk(['best place open roth ira', 'open roth ira', 'open a roth', 'where open roth', 'ira bank', 'banking app ira', 'bank with ira', 'banks that offer ira', 'app with ira', 'app ira', 'where open ira', 'open ira', 'open an ira', 'best ira', 'ira account', 'which app ira', 'apps ira', 'bank ira', 'banking ira', 'robinhood', 'fidelity', 'schwab', 'vanguard', 'sofi', 'betterment', 'wealthfront'], 'Where to open an IRA',
 `IRAs are mostly opened at **brokerages**, not neobanks:
 - **Big brokerages:** Fidelity, Charles Schwab, Vanguard all offer Roth and Traditional IRAs with no account fees. (Vanguard is best known for low-cost funds.)
 - **App-style:** Robinhood, SoFi, Betterment, Wealthfront also offer IRAs. Some have features like a contribution match, so compare.
@@ -2494,12 +2494,25 @@ bk(['how use forge', 'what can you do', 'help', 'features', 'what can forge', 'h
 - **Home:** your cards (balances and savings held), reminders, streak.
 - **Me (4orge):** money questions. Connect the live AI in ⚙️ for open-ended ones, or just ask me and I'll use what I know.`, ['How do streaks work?', 'Build credit']);
 
+const BRAIN_JOKES = ["I told my wallet we needed to talk. It said it's going through a tough time.", "Budgeting tip: the best way to double your money is to fold it in half and put it back in your pocket.", "I'm on a seafood diet with my money. I see food, I spend money on it.", "My savings account and I are in a long-distance relationship. It's way too far from my debit card."];
 const BRAIN_SMALLTALK = [
-  [/^(hi|hey|hello|yo|sup|what'?s up|good (morning|afternoon|evening))\b/i, "Hey! Ask me anything about saving, credit, investing, banking, taxes, or your Forge numbers."],
-  [/\b(thanks|thank you|thx|appreciate)\b/i, "Anytime. Want to look at anything else?"],
-  [/\bwho are you|what are you|your name\b/i, "I'm 4orge, the flame that lives in Forge. I coach you on money, and I know your Forge numbers."],
-  [/\b(you suck|stupid|dumb|useless)\b/i, "Fair, I'm still learning. Tell me what you were hoping for and I'll try again."]
+  [/^(hi|hey|hello|yo|sup|what'?s up|whats up|wassup|howdy|hola|good (morning|afternoon|evening))\b[\s,!.]*(4orge|forge|bro|man|bud|dude|there|buddy)?[!. ]*$/i, () => "Hey! Ask me about your check, your bills, a goal, or any money question. Or try some math."],
+  [/how are you|how'?s it going|how you doing|you good\b|you ok\b/i, () => "Running hot and ready. What are we working on?"],
+  [/\b(thanks|thank you|thx|ty|appreciate)\b/i, () => "Anytime. Want to look at anything else?"],
+  [/\bgood (night|nite)\b|\bgoodnight\b|\bbye\b|\bsee ya\b|\bgtg\b|\blater\b/i, () => "Later. Punch the card and keep the flame lit."],
+  [/\bwho are you|what are you|your name|who is 4orge|are you (an? )?(ai|bot|robot|real|human)|are you chat ?gpt|are you gemini|are you claude\b/i, () => "I'm 4orge, the flame that lives in Forge. I'm a built-in assistant, not a big cloud AI: I know a lot about money, I do math, and I read your Forge numbers, all on your phone with no internet needed."],
+  [/who (made|built|created|programmed) you|where do you live/i, () => "I live inside Forge, your money app, and I run entirely on your phone."],
+  [/\b(tell me )?(a )?joke\b|make me laugh|something funny/i, () => BRAIN_JOKES[Math.floor(Math.random() * BRAIN_JOKES.length)]],
+  [/motivat|inspire|pump me up|encourage me|need a boost|keep going/i, () => { let p = ''; try { p = ` You've got a ${state.progress.currentStreak}-day streak and ${fmt(state.progress.totalSaved)} saved.`; } catch (e) {} return "Small money moves repeated beat big moves done once." + p + " Check in today and keep the flame lit."; }],
+  [/fun fact|tell me something|did you know|random fact/i, () => "Fun money fact: at 7% a year your money roughly doubles every 10 years (rule of 72). Starting 10 years earlier can matter more than saving twice as much later."],
+  [/\b(love you|you'?re (the )?best|you rock|good (job|bot)|nice work|great job|awesome|amazing)\b/i, () => "Appreciate that. Now let's make your money work."],
+  [/\b(lol|lmao|haha|hehe)\b/i, () => "Alright, back to the money."],
+  [/\b(you suck|stupid|dumb|useless|trash|hate you)\b/i, () => "Fair, I'm still learning. Tell me what you wanted and I'll try again."],
+  [/^(ok|okay|cool|nice|bet|got it|k|alright|word|dope|sounds good|fire)[.! ]*$/i, () => "Got it. Anything else on your mind?"],
+  [/^(yes|yeah|yep|yup|sure|no|nope|nah)[.! ]*$/i, () => "Tell me a bit more about what you want to do and I'll help."],
+  [/^(test|testing|hello\?|you there|can you hear me|anyone)\??[.! ]*$/i, () => "I'm here. Ask me anything about your money."]
 ];
+
 
 function brainCalc(q) {
   const s = q.toLowerCase().replace(/,/g, '');
@@ -2559,10 +2572,499 @@ function brainAnswer(q) {
     const text = typeof best.a === 'function' ? best.a() : best.a;
     return { text, chips: best.c };
   }
-  for (const [re, ans] of BRAIN_SMALLTALK) if (re.test(q.trim())) return { text: ans, chips: ['Build credit', 'Where to open an IRA?', 'How am I doing?'] };
+  for (const [re, ans] of BRAIN_SMALLTALK) if (re.test(q.trim())) return { text: typeof ans === 'function' ? ans() : ans, chips: ['How much will my check be?', 'Plan my check', 'How do I build credit?'] };
   return null;
 }
 const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Credit:** building it, scores, reports, utilization, collections\n- **Saving and budgeting:** emergency fund, 50/30/20, paycheck splits, gig-income budgeting\n- **Debt:** payoff methods, payday loans, student loans\n- **Banking:** where to keep savings, IRAs, Chime/Cash App, scams\n- **Investing:** index funds, Roth vs Traditional, 401(k), HSA, stocks, crypto\n- **Taxes:** gig taxes, W-4, side income\n- **Big buys:** car, rent, insurance\n- **Math:** try \"save $1,200 in 16 weeks\" or \"invest $100 a month for 20 years at 7%\"";
+
+
+    // ========== 4ORGE COACH: math, dates, and answers from YOUR Forge data ==========
+    function nf(n) { n = Math.round(n * 100) / 100; return n.toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+    function nz(s) { return parseFloat(String(s).replace(/,/g, '')); }
+    function dayName(d) { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }); }
+    function longDate(d) { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); }
+    function cMatch(list, q, key) {
+      const qs = new Set(bTok(q)); let best = null, bs = 0;
+      list.forEach(x => {
+        const toks = bTok(x[key || 'name'] || '').filter(t => t.length > 2); if (!toks.length) return;
+        const hit = toks.filter(t => qs.has(t)).length, sc = hit / toks.length + hit * 0.01;
+        if (hit > 0 && sc > bs) { bs = sc; best = x; }
+      });
+      return best;
+    }
+    function amountsIn(q) {
+      const out = []; const s = q.replace(/,/g, '');
+      for (const m of s.matchAll(/\$\s*(\d+(?:\.\d+)?)\s*(k\b)?|(\d+(?:\.\d+)?)\s*(k\b|bucks|dollars)/gi)) out.push(parseFloat(m[1] || m[3]) * ((m[2] || m[4] || '').toLowerCase() === 'k' ? 1000 : 1));
+      if (!out.length) for (const m of s.matchAll(/(?<![\d./-])(\d+(?:\.\d+)?)(?![\d./%-])(?!\s*(?:hours?|hrs?|h\b|weeks?|months?|years?|days?|%|percent|am|pm|st|nd|rd|th))/gi)) out.push(parseFloat(m[1]));
+      return out;
+    }
+
+    // ---- safe arithmetic (no eval) ----
+    function calcExpr(src) {
+      const toks = src.match(/\d+\.?\d*|\.\d+|[+\-*/^()%]|sqrt/g); if (!toks) return null;
+      let i = 0;
+      const peek = () => toks[i], next = () => toks[i++];
+      function prim() {
+        const t = next(); if (t === undefined) throw 0;
+        if (t === '(') { const v = add(); if (next() !== ')') throw 0; return v; }
+        if (t === '-') return -prim();
+        if (t === '+') return prim();
+        if (t === 'sqrt') { const v = prim(); if (v < 0) throw 0; return Math.sqrt(v); }
+        const n = parseFloat(t); if (isNaN(n)) throw 0;
+        return n;
+      }
+      function pct() { let v = prim(); while (peek() === '%') { next(); v = v / 100; } return v; }
+      function pow() { let v = pct(); if (peek() === '^') { next(); v = Math.pow(v, pow()); } return v; }
+      function mul() { let v = pow(); while (peek() === '*' || peek() === '/') { const o = next(), r = pow(); if (o === '/' && r === 0) throw 'div'; v = o === '*' ? v * r : v / r; } return v; }
+      function add() { let v = mul(); while (peek() === '+' || peek() === '-') { const o = next(), r = mul(); v = o === '+' ? v + r : v - r; } return v; }
+      const v = add(); if (i < toks.length) throw 0; return v;
+    }
+    function mathReply(raw) {
+      let s = ' ' + raw.toLowerCase().replace(/,(?=\d{3}\b)/g, '').replace(/[?!]+$/g, '') + ' ';
+      const money = /\$/.test(s), M = v => money ? fmt(v) : nf(v);
+      const NUM = '(\\d+(?:\\.\\d+)?)';
+      let m;
+      s = s.replace(/\bhalf of\b/g, '0.5 of').replace(/\ba quarter of\b|\bquarter of\b/g, '0.25 of').replace(/\bthird of\b/g, '0.3333333333 of').replace(/\bdouble\b/g, '2 times').replace(/\btriple\b/g, '3 times');
+      // tip
+      if (/(\btip\b.*\b(on|of|for)\b|how much.*\btip|\btip\b.*(%|percent)|\d\s*(%|percent)\s*tip|calculate.*\btip|tip calc)/.test(s) && (m = new RegExp('tip.*?\\$?\\s*' + NUM + '(?:.*?' + NUM + '\\s*(?:%|percent))?').exec(s))) {
+        let bill = parseFloat(m[1]), p = m[2] ? parseFloat(m[2]) : null; const pm = /(\d+(?:\.\d+)?)\s*(?:%|percent)/.exec(s);
+        if (pm) { p = parseFloat(pm[1]); const bm = new RegExp('\\$\\s*' + NUM).exec(s); if (bm) bill = parseFloat(bm[1]); else { const others = [...s.matchAll(new RegExp(NUM, 'g'))].map(x => parseFloat(x[1])).filter(x => x !== p); if (others.length) bill = others[0]; } }
+        if (bill > 0) {
+          if (p) return { text: `A ${nf(p)}% tip on ${fmt(bill)} is **${fmt(bill * p / 100)}**, so the total is **${fmt(bill * (1 + p / 100))}**.`, chips: ['Split it 3 ways', 'What is 15% of 80?'] };
+          return { text: `Tip on ${fmt(bill)}:\n- 15%: ${fmt(bill * .15)} (total ${fmt(bill * 1.15)})\n- 18%: ${fmt(bill * .18)} (total ${fmt(bill * 1.18)})\n- 20%: ${fmt(bill * .2)} (total ${fmt(bill * 1.2)})`, chips: [] };
+        }
+      }
+      // sales tax
+      if ((m = new RegExp('(?:sales )?tax.*?' + NUM + '\\s*(?:%|percent)').exec(s)) && /\btax\b/.test(s) && /\$|\d/.test(s) && !/(income|gig|self|w-?2|1099|refund|bracket)/.test(s)) {
+        const rate = parseFloat(m[1]); const others = [...s.replace(new RegExp(NUM + '\\s*(?:%|percent)'), ' ').matchAll(new RegExp(NUM, 'g'))].map(x => parseFloat(x[1])).filter(x => x > 0);
+        if (others.length) { const b = others[0]; return { text: `${nf(rate)}% tax on ${fmt(b)} is **${fmt(b * rate / 100)}**, so you'd pay **${fmt(b * (1 + rate / 100))}** total.`, chips: [] }; }
+      }
+      // discount
+      if ((m = new RegExp(NUM + '\\s*(?:%|percent)\\s*off.*?\\$?\\s*' + NUM).exec(s)) || (m = new RegExp('\\$?\\s*' + NUM + '.*?' + NUM + '\\s*(?:%|percent)\\s*(?:off|discount)').exec(s))) {
+        let a = parseFloat(m[1]), b = parseFloat(m[2]); let p, price; if (/%|percent/.test(s.slice(s.indexOf(m[1]), s.indexOf(m[1]) + m[1].length + 9))) { p = a; price = b; } else { price = a; p = b; }
+        return { text: `${nf(p)}% off ${fmt(price)} saves you **${fmt(price * p / 100)}**, so you pay **${fmt(price * (1 - p / 100))}**.`, chips: [] };
+      }
+      // percent change
+      if ((m = new RegExp('(?:percent|%)\\s*(?:change|increase|decrease|difference|growth).*?' + NUM + '\\s*(?:to|and|->)\\s*\\$?' + NUM).exec(s)) || (m = new RegExp('from \\$?' + NUM + ' to \\$?' + NUM).exec(s))) {
+        const a = parseFloat(m[1]), b = parseFloat(m[2]); if (a !== 0 && /percent|%|change|increase|decrease/.test(s)) { const c = (b - a) / a * 100; return { text: `From ${nf(a)} to ${nf(b)} is a **${c >= 0 ? '+' : ''}${nf(c)}%** change.`, chips: [] }; }
+      }
+      // what percent is A of B
+      if ((m = new RegExp('(?:what )?(?:percent|percentage|%)\\s*(?:is|of)\\s*\\$?' + NUM + '\\s*(?:of|out of|from|over)\\s*\\$?' + NUM).exec(s))) {
+        const a = parseFloat(m[1]), b = parseFloat(m[2]); if (b) return { text: `${nf(a)} is **${nf(a / b * 100)}%** of ${nf(b)}.`, chips: [] };
+      }
+      // increase / decrease by percent
+      if ((m = new RegExp('(increase|decrease|reduce|raise|add|subtract|take off)\\s*\\$?' + NUM + '\\s*(?:by|and|plus)?\\s*' + NUM + '\\s*(?:%|percent)').exec(s))) {
+        const base = parseFloat(m[2]), p = parseFloat(m[3]), up = /increase|raise|add/.test(m[1]); return { text: `${nf(base)} ${up ? 'up' : 'down'} ${nf(p)}% is **${M(base * (up ? 1 + p / 100 : 1 - p / 100))}**.`, chips: [] };
+      }
+      // X% of Y
+      if ((m = new RegExp(NUM + '\\s*(?:%|percent)\\s*of\\s*\\$?\\s*' + NUM).exec(s))) {
+        const p = parseFloat(m[1]), b = parseFloat(m[2]); return { text: `${nf(p)}% of ${money ? fmt(b) : nf(b)} is **${M(b * p / 100)}**.`, chips: [] };
+      }
+      // fraction of
+      if ((m = new RegExp(NUM + '\\s*(?:/|over)\\s*' + NUM + '\\s*of\\s*\\$?\\s*' + NUM).exec(s)) || (m = new RegExp('(0\\.\\d+) of \\$?\\s*' + NUM).exec(s))) {
+        const v = m.length === 4 ? parseFloat(m[1]) / parseFloat(m[2]) * parseFloat(m[3]) : parseFloat(m[1]) * parseFloat(m[2]); return { text: `That comes to **${M(v)}**.`, chips: [] };
+      }
+      // split / each
+      if ((m = new RegExp('(?:split|divide|share)\\s*\\$?\\s*' + NUM + '.*?(?:between|among|with|by|\\b)\\s*(\\d+)\\s*(?:ways?|people|persons?|friends?|of us)?').exec(s)) && /split|divide|share|each|per person/.test(s) ) {
+        const tot = parseFloat(m[1]), n = parseFloat(m[2]); if (n > 0 && n !== tot) return { text: `${fmt(tot)} split ${n} ways is **${fmt(tot / n)}** each.`, chips: [] };
+      }
+      if ((m = new RegExp('\\$?\\s*' + NUM + '\\s*(?:split|divided)\\s*(?:between|among|by|into)?\\s*(\\d+)').exec(s))) { const n = parseFloat(m[2]); if (n > 0) return { text: `${fmt(parseFloat(m[1]))} split ${n} ways is **${fmt(parseFloat(m[1]) / n)}** each.`, chips: [] }; }
+      // average
+      if (/\b(average|avg|mean)\b/.test(s)) { const ns = [...s.replace(/(?:of|is|the|average|avg|mean)/g, ' ').matchAll(new RegExp(NUM, 'g'))].map(x => parseFloat(x[1])); if (ns.length >= 2) return { text: `The average of ${ns.map(nf).join(', ')} is **${nf(ns.reduce((a, b) => a + b, 0) / ns.length)}**.`, chips: [] }; }
+      // hourly <-> annual
+      if ((m = new RegExp('\\$?\\s*' + NUM + '\\s*(?:/|an?|per)\\s*(?:hour|hr)').exec(s)) && /(year|annual|salary|month|week|day|yearly|monthly|weekly|per paycheck|full time|40)/.test(s) && !/\bfor\s+\d/.test(s)) {
+        const r = parseFloat(m[1]); return { text: `At ${fmt(r)}/hr full time (40 hrs, before taxes):\n- **${fmt(r * 40)}** a week\n- **${fmt(r * 80)}** every 2 weeks\n- **${fmt(r * 2080 / 12)}** a month\n- **${fmt(r * 2080)}** a year`, chips: [] };
+      }
+      if ((m = new RegExp('\\$?\\s*' + NUM + '\\s*(?:/|an?|per)?\\s*(?:year|yr|annual(?:ly)?|salary)').exec(s)) && /(hour|hourly)/.test(s) && /(what|how|equal|to|is)/.test(s)) {
+        const y = parseFloat(m[1]); if (y > 1000) return { text: `${fmt(y)} a year is about **${fmt(y / 2080)}/hr** at 40 hours a week, before taxes.`, chips: [] };
+      }
+      // rate x hours
+      if ((m = new RegExp('\\$?\\s*' + NUM + '\\s*(?:/|an?|per)\\s*(?:hour|hr).*?(?:for|x|times|\\*)?\\s*' + NUM + '\\s*(?:hours?|hrs?)').exec(s)) || (m = new RegExp(NUM + '\\s*(?:hours?|hrs?).*?(?:at|@|x|times)\\s*\\$?\\s*' + NUM).exec(s))) {
+        const a = parseFloat(m[1]), b = parseFloat(m[2]); const hrs = /hour|hr/.test(s.slice(s.indexOf(m[1]) + m[1].length, s.indexOf(m[1]) + m[1].length + 12)) && /(?:hours?|hrs?)\s*(?:at|@|x|times)/.test(m[0]) ? a : b, rate = hrs === a ? b : a;
+        return { text: `${nf(hrs)} hours at ${fmt(rate)}/hr is **${fmt(hrs * rate)}** before taxes (no overtime counted).`, chips: ['How much will my check be?'] };
+      }
+      // conversions
+      const cv = [[/(\d+(?:\.\d+)?)\s*(?:miles?|mi)\b.*\b(?:km|kilometers?)/, v => `${nf(v)} miles is **${nf(v * 1.609344)} km**.`], [/(\d+(?:\.\d+)?)\s*(?:km|kilometers?)\b.*\bmiles?/, v => `${nf(v)} km is **${nf(v / 1.609344)} miles**.`], [/(\d+(?:\.\d+)?)\s*(?:lbs?|pounds?)\b.*\bkg|kilo/, v => `${nf(v)} lb is **${nf(v * 0.45359237)} kg**.`], [/(\d+(?:\.\d+)?)\s*(?:kg|kilos?)\b.*\b(?:lbs?|pounds?)/, v => `${nf(v)} kg is **${nf(v / 0.45359237)} lb**.`], [/(\d+(?:\.\d+)?)\s*(?:°|degrees?)?\s*f\b.*\bc(?:elsius)?\b/, v => `${nf(v)}°F is **${nf((v - 32) * 5 / 9)}°C**.`], [/(\d+(?:\.\d+)?)\s*(?:°|degrees?)?\s*c\b.*\bf(?:ahrenheit)?\b/, v => `${nf(v)}°C is **${nf(v * 9 / 5 + 32)}°F**.`]];
+      if (/\b(convert|how many|in|to)\b/.test(s)) for (const [re, f] of cv) { const x = re.exec(s); if (x) return { text: f(parseFloat(x[1])), chips: [] }; }
+      // time facts
+      if (/how many (weeks|days|months|hours|minutes|seconds) (are )?in (a|an|1) (year|week|month|day)/.test(s)) { const t = { 'weeks|year': '52 weeks', 'days|year': '365 days (366 in a leap year)', 'months|year': '12 months', 'days|week': '7 days', 'hours|day': '24 hours', 'hours|week': '168 hours', 'days|month': 'about 30 days', 'weeks|month': 'about 4.3 weeks', 'minutes|day': '1,440 minutes', 'hours|year': '8,760 hours', 'minutes|week': '10,080 minutes', 'seconds|day': '86,400 seconds', 'minutes|year': '525,600 minutes', 'hours|month': 'about 730 hours', 'days|day': '1 day' }; const x = /how many (\w+) (?:are )?in (?:a|an|1) (\w+)/.exec(s); if (x && t[x[1] + '|' + x[2]]) return { text: `There are **${t[x[1] + '|' + x[2]]}** in a ${x[2]}.`, chips: [] }; }
+      // sqrt / square / power
+      if ((m = new RegExp('(?:square root|sqrt)\\s*(?:of)?\\s*' + NUM).exec(s))) return { text: `The square root of ${nf(parseFloat(m[1]))} is **${nf(Math.sqrt(parseFloat(m[1])))}**.`, chips: [] };
+      if ((m = new RegExp(NUM + '\\s*(?:squared)').exec(s))) return { text: `${nf(parseFloat(m[1]))} squared is **${nf(Math.pow(parseFloat(m[1]), 2))}**.`, chips: [] };
+      if ((m = new RegExp(NUM + '\\s*(?:cubed)').exec(s))) return { text: `${nf(parseFloat(m[1]))} cubed is **${nf(Math.pow(parseFloat(m[1]), 3))}**.`, chips: [] };
+      // generic expression
+      let e = s.replace(/\$/g, '').replace(/\b(what'?s|what is|whats|calculate|calc|compute|solve|how much is|how much|equals?|=|please|can you|tell me|figure out|find)\b/g, ' ')
+        .replace(/\bplus\b|\band\b(?=\s*\d)/g, '+').replace(/\bminus\b|\bless\b/g, '-').replace(/\b(times|multiplied by|multiply by|x)\b|×/g, '*').replace(/\b(divided by|divide by|over)\b|÷/g, '/').replace(/\bto the power of\b|\bpower\b/g, '^').replace(/\bpercent\b/g, '%').replace(/\bof\b/g, '*');
+      e = e.replace(/(\d)\s*x\s*(\d)/g, '$1*$2').replace(/(\d+(?:\.\d+)?)\s*(?:k)\b/g, (a, n) => String(parseFloat(n) * 1000));
+      const stripped = e.replace(/[\s\d.+\-*/^()%]|sqrt/g, '');
+      if (stripped.length === 0 && /\d\s*[+\-*/^%]\s*[\d(.-]|\(.*\)|\d\s*%/.test(e) && /[+\-*/^]/.test(e)) {
+        if (/^\s*[\d.]+\s*[-/]\s*[\d.]+\s*[-/]\s*[\d.]+\s*$/.test(e)) return null;
+        try { const v = calcExpr(e); if (isFinite(v)) return { text: `${raw.replace(/[?=\s]+$/, '').replace(/^(what'?s|what is|calculate)\s+/i, '')} = **${M(v)}**`, chips: [] }; } catch (x) { if (x === 'div') return { text: "Can't divide by zero.", chips: [] }; }
+      }
+      return null;
+    }
+
+    // ---- dates ----
+    const MONTHS = { jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2, apr: 3, april: 3, may: 4, jun: 5, june: 5, jul: 6, july: 6, aug: 7, august: 7, sep: 8, sept: 8, september: 8, oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11 };
+    const HOLIDAYS = { christmas: [11, 25], 'new year': [0, 1], "new years": [0, 1], halloween: [9, 31], valentine: [1, 14], 'valentines': [1, 14], 'fourth of july': [6, 4], 'july 4': [6, 4], juneteenth: [5, 19], 'independence day': [6, 4] };
+    function parseTargetDate(s) {
+      const t = today(), y = +t.slice(0, 4); let m;
+      for (const k in HOLIDAYS) if (s.includes(k)) { let d = new Date(y, HOLIDAYS[k][0], HOLIDAYS[k][1]); if (fmtISO(d) < t) d = new Date(y + 1, HOLIDAYS[k][0], HOLIDAYS[k][1]); return fmtISO(d); }
+      if (/thanksgiving/.test(s)) { const f = yr => { const d = new Date(yr, 10, 1); const first = (4 - d.getDay() + 7) % 7; return new Date(yr, 10, 1 + first + 21); }; let d = f(y); if (fmtISO(d) < t) d = f(y + 1); return fmtISO(d); }
+      if ((m = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s*(\d{4}))?/.exec(s))) {
+        const mo = MONTHS[m[1]], dd = +m[2]; let yr = m[3] ? +m[3] : y; let d = new Date(yr, mo, dd); if (!m[3] && fmtISO(d) < t) d = new Date(yr + 1, mo, dd); return fmtISO(d);
+      }
+      if ((m = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/.exec(s))) { let yr = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : y; let d = new Date(yr, +m[1] - 1, +m[2]); if (!m[3] && fmtISO(d) < t) d = new Date(yr + 1, +m[1] - 1, +m[2]); return fmtISO(d); }
+      if (/\btomorrow\b/.test(s)) return addDays(t, 1);
+      if (/\bnext week\b/.test(s)) return addDays(t, 7);
+      if ((m = /\bin (\d+) (day|week|month)s?\b/.exec(s))) return m[2] === 'day' ? addDays(t, +m[1]) : m[2] === 'week' ? addDays(t, 7 * +m[1]) : fmtISO(new Date(y, +t.slice(5, 7) - 1 + +m[1], +t.slice(8)));
+      return null;
+    }
+    function fmtISO(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function dateReply(q) {
+      const s = q.toLowerCase(), t = today();
+      if (/\bwhat time\b|\btime is it\b|\bcurrent time\b/.test(s)) return { text: `It's **${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}** on your phone.`, chips: [] };
+      if (/\btomorrow\b/.test(s) && /what|which|day|date/.test(s) && !/until|till/.test(s)) return { text: `Tomorrow is **${longDate(addDays(t, 1))}**.`, chips: [] };
+      if (/\byesterday\b/.test(s) && /what|which|day|date/.test(s)) return { text: `Yesterday was **${longDate(addDays(t, -1))}**.`, chips: [] };
+      if (/(what('s| is)|tell me) (the )?(date|day)( is it)?( today)?\b|today'?s date|what day is (it|today)|what is today|what'?s today|\bthe date\b/.test(s) && !/until|till|before/.test(s)) return { text: `Today is **${longDate(t)}**.`, chips: ['Days until payday?', 'Days until Christmas'] };
+      let m;
+      if (/(days?|weeks?|months?).*(left|remain|until|till|to go).*(in )?(the |this )?(year|new year|end of (the )?year)|(until|till) (the )?(end of (the )?(year)|new year'?s?)/.test(s) && !/payday|check|paid|goal|bill/.test(s)) { const ny = (+t.slice(0, 4) + 1) + '-01-01', n = dayDiff(t, ny); return { text: `**${n} day${n === 1 ? '' : 's'}** left in ${t.slice(0, 4)} (about ${nf(n / 7)} weeks). New Year's Day is ${longDate(ny)}.`, chips: [] }; }
+      if ((m = /(\d+)\s*(day|week|month)s?\s*(from now|from today|ago|later)/.exec(s)) && /what|date|day|when/.test(s)) { const k = +m[1] * (m[2] === 'week' ? 7 : m[2] === 'month' ? 30 : 1) * (m[3] === 'ago' ? -1 : 1); const d = addDays(t, k); return { text: `${m[1]} ${m[2]}${+m[1] === 1 ? '' : 's'} ${m[3] === 'ago' ? 'ago was' : 'from today is'} **${longDate(d)}**.`, chips: [] }; }
+      if (/(how many|how long|days?|weeks?|months?).*(until|till|to|before|left)\b/.test(s) && !/payday|check|paid|goal|bill/.test(s)) {
+        const d = parseTargetDate(s);
+        if (d) { const n = dayDiff(t, d); return { text: n === 0 ? `That's **today**.` : `**${n} day${n === 1 ? '' : 's'}** until ${longDate(d)} (about ${nf(n / 7)} weeks).`, chips: [] }; }
+      }
+      if ((m = /what day (?:of the week )?(?:is|does|will|was)\b(.*)/.exec(s))) { const d = parseTargetDate(m[1] || s); if (d) return { text: `${longDate(d)}.`, chips: [] }; }
+      if (/(what('s| is) the date|what date|what day).*(in|from now)/.test(s) || /\bin \d+ (day|week|month)s?\b/.test(s) && /what|date|day/.test(s)) { const d = parseTargetDate(s); if (d) return { text: `That's **${longDate(d)}**.`, chips: [] }; }
+      return null;
+    }
+
+    // ---- your pay ----
+    function weekWorked() {
+      const t = today(), ws = weekStart(t), hrsMap = {}, per = {}; let hours = 0, pay = 0;
+      state.timeEntries.filter(e => e.actual).slice().sort((a, c) => a.date.localeCompare(c.date) || (a.created || '').localeCompare(c.created || '')).forEach(e => {
+        const k = e.jobId + '|' + weekStart(e.date), prior = hrsMap[k] || 0, p = entryPay(e, prior); hrsMap[k] = prior + (+e.hours || 0);
+        if (weekStart(e.date) === ws && e.date <= t) { hours += +e.hours || 0; pay += p; const j = jobById(e.jobId); const n = j ? j.name : 'Job'; per[e.jobId] = per[e.jobId] || { name: n, hours: 0, pay: 0 }; per[e.jobId].hours += +e.hours || 0; per[e.jobId].pay += p; }
+      });
+      return { hours: r2(hours), pay: r2(pay), per, hrsMap };
+    }
+    function cx() {
+      const e = earnings(), t = today(), b = state.budget;
+      const bills = b.items.filter(i => i.kind === 'bill'), plans = b.items.filter(i => i.kind === 'spend'), dated = bills.filter(i => i.due);
+      const T = budgetTotals();
+      const owed = r2(dated.reduce((s, i) => s + Math.max(0, i.amount - itemPaid(i)), 0));
+      const plansPlanned = r2(plans.reduce((s, i) => s + i.amount, 0)), plansSpent = r2(plans.reduce((s, i) => s + itemPaid(i), 0));
+      const plansLeft = r2(plans.reduce((s, i) => s + Math.max(0, i.amount - itemPaid(i)), 0));
+      const income = e.projected, unalloc = r2(income - T.planned - plansPlanned);
+      const days = Math.max(0, dayDiff(t, e.end)), periodDays = Math.max(1, dayDiff(e.start, e.end));
+      const cash = r2(state.accounts.reduce((s, a) => s + a.balance, 0)), held = r2(state.accounts.reduce((s, a) => s + a.savings, 0));
+      const goals = state.goals.map(g => ({ g, cur: goalCurrent(g), left: Math.max(0, r2(g.target - goalCurrent(g))) }));
+      return { e, t, b, bills, plans, dated, T, owed, plansPlanned, plansSpent, plansLeft, income, unalloc, days, periodDays, cash, held, goals };
+    }
+    const GROSS = " (gross, before taxes)";
+    function noPayData(c) {
+      if (!state.jobs.some(j => j.active !== false && j.rate > 0)) return "I don't have a pay rate for any of your jobs yet. Add one in Work (Log) and I can work out your checks.";
+      return null;
+    }
+    function checkReply(q, s) {
+      const c = cx(), e = c.e; let m;
+      if (/(when|what day).*(payday|get paid|next check|paid|pay day)|days?.*(until|till|to|left|away).*(payday|check|paid|pay day)|how long.*(payday|next check|until i get paid|till i get paid)|how far.*(payday|pay day|check)|(payday|pay day).*(when|how far|how many days)/.test(s)) {
+        const d = c.days; return { text: `Your next payday is **${longDate(e.end)}**, ${d === 0 ? 'which is **today**' : d < 0 ? `which was ${-d} day${d === -1 ? '' : 's'} ago. Start the next pay period in Budget → Edit` : `**${d} day${d === 1 ? '' : 's'}** away`}.\nThis pay period runs ${fmtShort(e.start)} to ${fmtShort(e.end)}.`, chips: ['How much will my check be?', 'Plan my check'] };
+      }
+      if (/overtime|\bot\b|time and a half|time-and-a-half/.test(s)) {
+        const w = weekWorked(); const hourly = state.jobs.filter(j => j.type === 'hourly' && j.ot !== false && j.rate > 0);
+        return { text: `Forge pays **1.5x after 40 hours in a Sunday-to-Saturday week** for your hourly jobs${hourly.length ? ' (' + hourly.map(j => j.name).join(', ') + ')' : ''}. Gig jobs don't get overtime.\nThis week you've worked **${nf(w.hours)} hours**${w.hours > 40 ? ", so you're into overtime." : ` (${nf(Math.max(0, 40 - w.hours))} hours until overtime kicks in).`}`, chips: ['How much have I made this week?'] };
+      }
+      if (/take.?home|after.?tax|net pay|how much.*(tax|taxes).*(taken|come out|withh|get taken)|(taxes|tax).*(out of|from) my (check|pay)/.test(s)) {
+        const base = e.projected > 0 ? e.projected : e.earned;
+        let t = `Forge shows **gross** pay (before taxes). Your real deposit depends on your withholding, so check a pay stub.`;
+        if (base > 0) t += `\nRough idea for ${fmt(base)} gross: if 10% to 20% comes out, you'd take home about **${fmt(base * .8)} to ${fmt(base * .9)}**. That's a guess, not your actual number.\nGig income (Uber Eats) has no tax taken out at all, so set 25 to 30% aside.`;
+        return { text: t, chips: ['Gig taxes'] };
+      }
+      if (/(will|do|can) i (have |make |get )?(enough|cover)|am i (short|behind|on track|going to make it|ok|okay|good)|enough (money )?(for|to cover|to pay) (my )?(bills|rent|everything)|can i (cover|pay)( all)?( of)?( my)? bills/.test(s) && /(bill|rent|enough|cover|short|make it|on track)/.test(s)) {
+        const need = c.T.planned; if (!c.dated.length) return { text: "None of your bills have due dates yet, so I can't tell. Add due dates on the ones that hit this check and ask me again.", chips: [] };
+        const diff = r2(c.income - need);
+        return { text: `Due-dated bills this period: **${fmt(need)}**.\nExpected pay (earned + scheduled): **${fmt(c.income)}**${GROSS}.\n${diff >= 0 ? `You're covered with **${fmt(diff)}** to spare.${c.plansPlanned ? ` After your spending plans (${fmt(c.plansPlanned)}) that's ${fmt(c.unalloc)} left.` : ''}` : `You're short by **${fmt(-diff)}** unless you add more shifts.`}${diff < 0 && e.noRate ? '\nSome of your jobs have no pay rate yet, so that estimate may be low.' : ''}`, chips: ['Plan my check', 'What bills are due?'] };
+      }
+      if (/(how many|how much).*hours?.*(do i need|to make|to earn|to get|to cover|to hit|to reach|should i work|would i need|must i work)|hours.*(to|will it take).*(make|earn|get|reach|cover)|(work|hours).*(to|for).*(make|earn|get|cover)\s*\$?\d/.test(s)) {
+        const amt = amountsIn(q)[0]; if (!amt) return { text: "How much do you want to make? Try \"how many hours to make $200\".", chips: [] };
+        const jobs = state.jobs.filter(j => j.active !== false && j.rate > 0); if (!jobs.length) return { text: noPayData(c), chips: [] };
+        return { text: `To make **${fmt(amt)}** (before taxes):\n` + jobs.map(j => `- **${j.name}** at ${fmt(j.rate)}/hr: about ${nf(amt / j.rate)} hours`).join('\n') + `\nOvertime would shorten it a little if you're past 40 hours that week.`, chips: [] };
+      }
+      if (/(if i|what if|how much.*(if|for)|would i (make|get|earn)|will i (make|get|earn)).*\d+(\.\d+)?\s*(more\s*)?(hours?|hrs?)|how much (is|are|would) \d+(\.\d+)?\s*(more\s*)?(hours?|hrs?)|\d+(\.\d+)?\s*(hours?|hrs?).*(make|earn|get|pay|worth)/.test(s) && !/hours? (do|did|have) i/.test(s)) {
+        const hm = /(\d+(?:\.\d+)?)\s*(?:more\s*)?(?:hours?|hrs?)/.exec(s); const hrs = hm ? parseFloat(hm[1]) : 0; if (!hrs) return null;
+        const jobs = state.jobs.filter(j => j.active !== false && j.rate > 0); if (!jobs.length) return { text: noPayData(c), chips: [] };
+        const jm = cMatch(jobs, q, 'name'), w = weekWorked(); const list = jm ? [jm] : jobs;
+        const lines = list.map(j => { const prior = (w.hrsMap[j.id + '|' + weekStart(c.t)] || 0); const p = entryPay({ jobId: j.id, hours: hrs, actual: true }, prior); return `- **${j.name}**: ${fmt(p)}${p > j.rate * hrs + 0.01 ? ' (includes overtime)' : ''}`; });
+        return { text: `${nf(hrs)} more hours would add about${GROSS}:\n` + lines.join('\n') + (c.days >= 0 ? `\nYour check would go from ${fmt(c.income)} to about ${fmt(c.income + (jm ? entryPay({ jobId: jm.id, hours: hrs, actual: true }, w.hrsMap[jm.id + '|' + weekStart(c.t)] || 0) : 0))}${jm ? '' : ' (pick a job and I\'ll total it)'}.` : ''), chips: [] };
+      }
+      if (/(hourly|pay) rate|how much.*(per|an|a|every) hour|what.*(do i|i) (make|get|earn|get paid).*(hour|hr)|my wage|what do i (make|get paid|earn) (at|per)|pay per hour|per hour/.test(s) && !/how many/.test(s)) {
+        const jobs = state.jobs.filter(j => j.active !== false); if (!jobs.length) return { text: "You haven't added any jobs yet. Add one in Work.", chips: [] };
+        return { text: jobs.map(j => `- **${j.name}**: ${j.rate > 0 ? fmt(j.rate) + '/hr' + (j.type === 'hourly' && j.ot !== false ? ' (overtime after 40 hrs/week)' : '') : 'no pay rate set'}`).join('\n') + `\nYou can change a rate by editing the job in Work.`, chips: [] };
+      }
+      if (/(how many|how much|what).*hours?.*(did i|have i|i('ve| have)?|do i have).*(work|log|put in|done|worked|so far)|hours (worked|logged|so far)|total hours|how many hours.*(this (week|period|check)|so far)/.test(s) && !/left|schedul|remain|upcoming|need/.test(s)) {
+        const w = weekWorked(); if (/week/.test(s)) return { text: `This week (Sun to today) you've worked **${nf(w.hours)} hours**, about **${fmt(w.pay)}**${GROSS}.${Object.values(w.per).length > 1 ? '\n' + Object.values(w.per).map(x => `- ${x.name}: ${nf(x.hours)}h`).join('\n') : ''}`, chips: ['How much will my check be?'] };
+        return { text: `In this pay period (${fmtShort(e.start)} to ${fmtShort(e.end)}) you've worked **${nf(e.hours)} hours** for about **${fmt(e.earned)}**${GROSS}.\nAll-time you've logged ${nf(state.progress.totalHours)} hours in Forge.`, chips: [] };
+      }
+      if (/hours?.*(left|schedul|remain|ahead|upcoming|do i have (this|next))|(next|upcoming|my) (shifts?|schedule)|when.*(do i work|am i working|is my next shift)|am i working|what.*(shifts?|schedule)|what days?.*(work|working|off|scheduled)|which days?.*(work|working|scheduled)/.test(s)) {
+        const up = e.next; if (!up.length) return { text: "You don't have any shifts scheduled in this pay period. Add them in Work.", chips: [] };
+        return { text: `You have **${nf(e.leftHours)} hours** scheduled before payday (about ${fmt(e.leftPay)}${GROSS}):\n` + up.slice(0, 8).map(x => { const j = jobById(x.jobId); return `- ${dayName(x.date).slice(0, 3)} ${fmtShort(x.date)} · ${j ? j.name : 'Job'} · ${nf(x.hours)}h`; }).join('\n'), chips: ['How much will my check be?'] };
+      }
+      if (/(how much|what).*(will|gonna|going to|should|could|would|can).*(make|get|earn|receive|bring|be|have|see).*(check|paycheck|pay period|period|this week|payday|pay)|(projected|expected|estimate[d]?|forecast).*(check|pay|income|earning)|how big.*(check|paycheck)|what.*(my )?(next |upcoming |this )?(check|paycheck).*(be|look(ing)? like|worth|going to be)|how much.*(getting|gonna get|going to get|will i get|am i getting).*(paid|pay)|^what'?s? my (next |upcoming )?(paycheck|check|pay)$|^my (next )?(paycheck|check)$|what will my (next )?(check|paycheck)|how much is (my|the) (next |upcoming |this )?(check|paycheck)|how much (is|will) (my|the) (next |upcoming )?(check|paycheck)|my (next )?(check|paycheck) (amount|total|estimate)|how much am i (getting|going to get|gonna get) (paid|on)|how much do i get paid/.test(s)) {
+        const bad = noPayData(c); if (bad && !e.projected) return { text: bad, chips: [] };
+        let t = `Your next check (${fmtShort(e.start)} to ${fmtShort(e.end)}), about${GROSS}:\n- Worked so far: **${fmt(e.earned)}** (${nf(e.hours)}h)\n- Scheduled ahead: **${fmt(e.schedPay)}** (${nf(e.schedHours)}h)\n- Expected total: **${fmt(e.projected)}**`;
+        if (e.out && e.out.length) t += `\n\nHeads up: ${e.out.length} worked shift${e.out.length === 1 ? '' : 's'} (${fmt(e.outPay)}) fall outside this period's dates. Tap the number in Budget to count them if they belong in this check.`;
+        if (e.noRate) t += `\nSome hours have no pay rate, so they count as $0.`;
+        return { text: t + `\nTake-home will be lower after taxes.`, chips: ['Plan my check', 'Will I cover my bills?'] };
+      }
+      if (/(how much|what).*(have i|did i|i've|ive|i have|i).*(made|earned|worked for|got|bring in|brought in)|earned so far|made so far|on my way to|how much.*(made|earned).*(so far|this (week|period|check|month|year|today))|my earnings|how much.*(so far)|income (so far|this)|how much (did|have|do) i (make|earn)\b.*(week|period|check|so far|today|month)/.test(s) && !/\bbills?\b/.test(s)) {
+        const w = weekWorked();
+        if (/today/.test(s)) { const tp = state.timeEntries.filter(x => x.actual && x.date === c.t); const h = tp.reduce((a, x) => a + (+x.hours || 0), 0); return { text: h ? `Today you've logged **${nf(h)} hours** worked.` : "You haven't logged any worked hours today yet.", chips: [] }; }
+        if (/week/.test(s)) return { text: `This week you've made about **${fmt(w.pay)}**${GROSS} from ${nf(w.hours)} hours worked.`, chips: [] };
+        return { text: `So far this pay period you've earned about **${fmt(e.earned)}**${GROSS} from ${nf(e.hours)} hours worked (${fmtShort(e.start)} to ${fmtShort(e.end)}).`, chips: ['How much will my check be?'] };
+      }
+      return null;
+    }
+
+    // ---- your budget, spending, goals ----
+    function billLines(list) { return list.slice(0, 8).map(i => `- ${i.icon || ''} ${i.name}: **${fmt(Math.max(0, i.amount - itemPaid(i)))}** left${i.due ? ' · due ' + fmtShort(i.due) : ''}`.replace('-  ', '- ')).join('\n'); }
+    function planReply(c) {
+      const e = c.e, bad = noPayData(c);
+      let L = [];
+      if (bad && !e.projected) return { text: bad + "\nOnce I know your pay I'll build a plan with your bills and goals.", chips: [] };
+      L.push(`**Plan for this check** (${fmtShort(e.start)} to ${fmtShort(e.end)}, payday ${c.days === 0 ? 'today' : c.days < 0 ? 'passed' : 'in ' + c.days + ' day' + (c.days === 1 ? '' : 's')}):`);
+      L.push(`1. Money in, about${GROSS}: **${fmt(c.income)}** (earned ${fmt(e.earned)} + scheduled ${fmt(e.schedPay)})`);
+      const unpaid = c.dated.filter(i => !itemDone(i)).sort((a, b) => a.due.localeCompare(b.due));
+      L.push(`2. Bills with due dates: **${fmt(c.T.planned)}**${unpaid.length ? ' (' + fmt(c.owed) + ' still unpaid)' : ' (all paid)'}`);
+      if (unpaid.length) L.push(billLines(unpaid.slice(0, 5)));
+      if (c.plans.length) L.push(`3. Spending plans: **${fmt(c.plansPlanned)}** (${c.plans.slice(0, 4).map(i => i.name + ' ' + fmt(i.amount)).join(', ')})`);
+      const free = c.unalloc;
+      if (free < 0) {
+        L.push(`\nThat's **${fmt(-free)} more than you're expected to make**. Options, in order: add a shift or two, trim a spending plan, ask for a due date change on a bill, or move a goal deposit to next check.`);
+        return { text: L.join('\n'), chips: ['Can I afford $50?', 'What bills are due?'] };
+      }
+      L.push(`\nLeft to assign: **${fmt(free)}**.`);
+      const open = c.goals.filter(x => x.left > 0).sort((a, b) => a.left - b.left);
+      const hasCushion = c.held + c.cash >= 500 || state.goals.some(g => /emergency|cushion|rainy|safety/i.test(g.name));
+      if (free > 0) {
+        const buffer = r2(free * 0.15), pool = r2(free - buffer);
+        if (!open.length) L.push(`Suggested: keep **${fmt(buffer)}** as a buffer and put **${fmt(pool)}** into savings. You have no goals yet, so make one (start with a $500 emergency cushion).`);
+        else {
+          let left = pool; const lines = [];
+          open.forEach((x, idx) => { const np = nextPlan(x.g), want = np ? np.amount : Math.min(x.left, r2(pool * (idx === 0 ? .6 : .4))); const put = Math.min(left, want, x.left); if (put > 0) { lines.push(`- **${x.g.name}**: ${fmt(put)}${np ? ' (your planned deposit)' : ''}`); left = r2(left - put); } });
+          L.push(`Suggested split:\n${lines.join('\n')}\n- Buffer: ${fmt(r2(buffer + left))} kept flexible`);
+          if (!hasCushion) L.push(`You don't have an emergency cushion yet. A first $500 goal protects everything else.`);
+        }
+      }
+      L.push(`\nIf hours drop, the buffer is what you cut first, then goal deposits. Bills stay.`);
+      return { text: L.join('\n'), chips: ['Can I afford $50?', 'Where is my money going?', 'Which goal first?'] };
+    }
+    function affordReply(q, c) {
+      const amt = amountsIn(q)[0]; if (!amt) return { text: "How much is it? Ask like \"can I afford $80?\" and I'll check it against your check, bills and plans.", chips: [] };
+      const item = (/(?:buy|get|afford|spend on|splurge on|treat myself to|purchase)\s+(?:a |an |the |some |new )?([a-z][a-z' -]{2,30}?)(?:\s+(?:for|at|that|which|\$|it|if|today|tonight|now|this)|[?.,!]|$)/i.exec(q) || [])[1];
+      const name = item && !/^(it|that|this|something|anything)$/i.test(item.trim()) ? item.trim() : 'that';
+      const bad = noPayData(c);
+      const L = [];
+      const cashNote = c.cash > 0 ? `Your cards hold **${fmt(c.cash)}**${c.held ? ' (' + fmt(c.held) + ' of it is set-aside savings)' : ''}.` : '';
+      if (!c.dated.length && !c.plans.length && !c.income) return { text: `I can't judge ${fmt(amt)} yet because I don't see a check, bills or plans. ${cashNote || 'Add your hours and bills in Forge and ask again.'}`, chips: [] };
+      const verdict = amt <= c.unalloc ? 'yes' : amt <= c.unalloc + c.plansLeft * 0.5 ? 'tight' : 'no';
+      if (verdict === 'yes') L.push(`**Yes, ${name === 'that' ? 'it fits' : name + ' fits'}.** After bills and spending plans you have about **${fmt(c.unalloc)}** unassigned this check, so ${fmt(amt)} leaves **${fmt(c.unalloc - amt)}**.`);
+      else if (verdict === 'tight') L.push(`**It's tight.** You have about ${fmt(Math.max(0, c.unalloc))} unassigned, so ${fmt(amt)} would dip into your spending plans or goal deposits by about ${fmt(amt - Math.max(0, c.unalloc))}. If you do it, cut that much from a spending plan.`);
+      else L.push(`**I'd wait.** After bills (${fmt(c.T.planned)}) and spending plans (${fmt(c.plansPlanned)}), you're at **${fmt(c.unalloc)}** this check, so ${fmt(amt)} puts you about ${fmt(amt - Math.max(0, c.unalloc))} over.`);
+      if (cashNote) L.push(cashNote + (c.cash - c.held < amt ? ` The spendable part (${fmt(Math.max(0, c.cash - c.held))}) is less than ${fmt(amt)}.` : ''));
+      if (verdict !== 'yes') { const per = c.days > 0 ? Math.ceil(c.days / 7) : 1; L.push(`A plan instead: save about **${fmt(amt / Math.max(1, Math.min(8, per * 2)))} a week** for ${Math.max(1, Math.min(8, per * 2))} weeks, or add a Forge goal and a paycheck plan for it.`); }
+      L.push(`Estimates use gross pay, so leave some room for taxes.`);
+      return { text: L.join('\n'), chips: ['Plan my check', 'Where is my money going?'] };
+    }
+    function spendReply(q, s, c) {
+      const all = c.b.items.filter(i => (i.spends || []).length), tot = r2(all.reduce((a, i) => a + itemPaid(i), 0));
+      if (/how much (have i |did i |i've |ive )?(spent|spend|paid|put)/.test(s) && /(on|for|toward|towards|to|in) /.test(s)) {
+        const it = cMatch(c.b.items, q.replace(/how much (have i |did i )?(spent|spend)/i, ''), 'name');
+        if (it) return { text: `${it.icon || ''} **${it.name}**: ${fmt(itemPaid(it))} ${it.kind === 'bill' ? 'paid' : 'spent'} of ${fmt(it.amount)}${it.amount - itemPaid(it) > 0 ? ' (' + fmt(it.amount - itemPaid(it)) + ' left)' : it.amount - itemPaid(it) < -0.004 ? ' (over by ' + fmt(itemPaid(it) - it.amount) + ')' : ''}.`.trim(), chips: [] };
+      }
+      if (!all.length) return { text: `You haven't logged any spending this pay period yet. Tap + Pay / + Spend on a bill or spending plan whenever you buy something and I'll show where it goes. Every logged purchase also keeps your streak alive.`, chips: ['Plan my check'] };
+      const billsPaid = r2(c.bills.reduce((x, i) => x + itemPaid(i), 0));
+      const sorted = all.slice().sort((a, b) => itemPaid(b) - itemPaid(a));
+      const L = [`This pay period you've logged **${fmt(tot)}**: **${fmt(c.plansSpent)}** flexible spending and **${fmt(billsPaid)}** toward bills.`];
+      sorted.slice(0, 5).forEach(i => L.push(`- ${i.icon || ''} ${i.name}: ${fmt(itemPaid(i))}${i.amount ? ' of ' + fmt(i.amount) + ' (' + Math.round(itemPaid(i) / i.amount * 100) + '%)' : ''}`.replace('-  ', '- ')));
+      const elapsed = Math.min(1, Math.max(0.05, dayDiff(c.e.start, c.t) / c.periodDays));
+      const over = c.plans.filter(i => i.amount > 0 && itemPaid(i) / i.amount > elapsed + 0.15).sort((a, b) => itemPaid(b) / b.amount - itemPaid(a) / a.amount);
+      if (over.length) L.push(`\n**Watch:** ${over.slice(0, 2).map(i => `${i.name} is at ${Math.round(itemPaid(i) / i.amount * 100)}% with ${Math.round(elapsed * 100)}% of the period gone`).join('; ')}. Slow it down or move money from a plan that's under.`);
+      else if (c.plans.length) L.push(`\nYour spending plans are on pace for where you are in the period. Nice.`);
+      const sp = c.plans.filter(i => itemPaid(i) > 0).sort((a, b) => itemPaid(b) - itemPaid(a))[0];
+      if (sp) L.push(`Biggest flexible spend: **${sp.name}**. Trimming it by 20% would free about ${fmt(itemPaid(sp) * 0.2)} by payday.`);
+      const P = state.punch, last7 = Array.from({ length: 7 }, (_, k) => addDays(c.t, -k)); const nos = last7.filter(d => P.days.includes(d)).length;
+      L.push(`No-spend days punched in the last week: **${nos}** of 7.`);
+      return { text: L.join('\n'), chips: ['Can I afford $50?', 'Plan my check'] };
+    }
+    function goalReply(q, s, c) {
+      const open = c.goals;
+      if (!open.length) return { text: "You haven't made a savings goal yet. Make one in Goals (try a $500 emergency cushion), then ask me how long it'll take.", chips: [] };
+      const gm = cMatch(open.map(x => ({ name: x.g.name, x })), q, 'name'), pick = gm ? gm.x : (open.length === 1 ? open[0] : null);
+      if (/(total|lifetime|altogether|all together).*(saved|saving)|how much (have i|do i have|did i) (saved|put away|set aside)|how much.*saved/.test(s) && !gm) {
+        const tot = open.reduce((a, x) => a + x.cur, 0); return { text: `You've saved **${fmt(tot)}** across ${open.length} goal${open.length === 1 ? '' : 's'}:\n` + open.map(x => `- ${x.g.name}: ${fmt(x.cur)} of ${fmt(x.g.target)} (${Math.round(goalPct(x.g))}%)`).join('\n') + (c.held ? `\nPlus ${fmt(c.held)} marked as savings held on your cards.` : ''), chips: ['Which goal first?'] };
+      }
+      if (/which goal|what goal|focus on|prioriti[sz]e|goal.*first|first.*goal|what should i save (for )?(first|next)|save next|what.*save.*(first|next)/.test(s)) {
+        const o = open.filter(x => x.left > 0).sort((a, b) => a.left - b.left); if (!o.length) return { text: "Every goal is fully funded. Set a bigger target or start a new goal.", chips: [] };
+        const cushion = o.find(x => /emergency|cushion|rainy|safety/i.test(x.g.name)); const f = cushion && cushion.cur < 500 ? cushion : o[0];
+        return { text: `I'd go **${f.g.name}** first. ${cushion && f === cushion ? 'An emergency cushion protects everything else.' : `It's the closest to done (**${fmt(f.left)}** to go), and finishing one keeps you motivated.`}\n` + o.slice(0, 4).map(x => `- ${x.g.name}: ${fmt(x.left)} left`).join('\n') + (c.unalloc > 0 ? `\nAbout ${fmt(c.unalloc)} is unassigned this check, so you could put ${fmt(Math.min(f.left, c.unalloc * .6))} there.` : ''), chips: ['Plan my check'] };
+      }
+      if (!pick && /(how long|when|how many (weeks|paychecks|months)|how soon|until|till)/.test(s)) return { text: `Which goal? You have: ${open.map(x => x.g.name).join(', ')}. Ask like "how long until ${open[0].g.name}?"`, chips: open.slice(0, 3).map(x => 'How long until ' + x.g.name + '?') };
+      if (pick) {
+        const g = pick.g, left = pick.left, np = nextPlan(g), pendPlan = (g.plan || []).filter(p => !p.done);
+        if (left <= 0) return { text: `**${g.name}** is fully funded (${fmt(pick.cur)} of ${fmt(g.target)}). 🎉`, chips: [] };
+        if (/(how long|when|how many (weeks|paychecks|months)|how soon|how fast|reach|hit|finish|complete|done|get to)/.test(s)) {
+          const periodWeeks = Math.max(1, c.periodDays / 7);
+          let per = np ? np.amount : 0, basis = np ? 'your paycheck plan' : '';
+          const contribs = (g.contributions || []).filter(x => x.amount > 0);
+          if (!per && contribs.length) { per = r2(contribs.reduce((a, x) => a + x.amount, 0) / contribs.length); basis = 'your average deposit'; }
+          if (!per && c.unalloc > 0) { per = r2(c.unalloc * 0.5); basis = '50% of what\'s unassigned each check'; }
+          if (!per) return { text: `**${g.name}** needs **${fmt(left)}** more. I don't see a deposit pattern or any free money in your budget yet. Try putting ${fmt(Math.max(10, Math.round(left / 12)))} per check (about 12 checks) and set it as a paycheck plan.`, chips: [] };
+          let n; if (pendPlan.length && np) { let sum = 0; n = 0; for (const p of pendPlan) { sum += p.amount; n++; if (sum >= left) break; } if (sum < left) n += Math.ceil((left - sum) / pendPlan[pendPlan.length - 1].amount); } else n = Math.ceil(left / per);
+          return { text: `**${g.name}**: ${fmt(pick.cur)} of ${fmt(g.target)}, **${fmt(left)}** to go.\nAt ${fmt(per)} per check (${basis}) you'd finish in about **${n} check${n === 1 ? '' : 's'}**, roughly ${nf(n * periodWeeks)} weeks (around ${fmtShort(addDays(c.t, Math.round(n * periodWeeks * 7)))}).\nPaying ${fmt(per * 1.5)} per check would cut that to about ${Math.ceil(left / (per * 1.5))}.`, chips: ['Plan my check', 'Which goal first?'] };
+        }
+        if (/(per|each|every).*(check|paycheck|week|pay)|how much (should|do|can|would) i (put|save|set aside|deposit|add)/.test(s)) {
+          const checks = [4, 8, 12]; return { text: `**${g.name}** needs **${fmt(left)}** more. Per check:\n` + checks.map(n => `- Done in ${n} checks: **${fmt(left / n)}** each`).join('\n') + (c.unalloc > 0 ? `\nYou have about ${fmt(c.unalloc)} unassigned this check, so ${c.unalloc >= left / 4 ? 'the 4-check pace is doable' : c.unalloc >= left / 8 ? 'the 8-check pace is realistic' : 'the 12-check pace is safest'}.` : ''), chips: [] };
+        }
+        return { text: `**${g.name}**: ${fmt(pick.cur)} of ${fmt(g.target)} (${Math.round(goalPct(g))}%). **${fmt(left)}** to go.${np ? `\nNext planned deposit: ${fmt(np.amount)}.` : ''}`, chips: ['How long until ' + g.name + '?', 'Which goal first?'] };
+      }
+      return { text: open.map(x => `- **${x.g.name}**: ${fmt(x.cur)} of ${fmt(x.g.target)} (${fmt(x.left)} to go)`).join('\n'), chips: ['Which goal first?', 'How much have I saved?'] };
+    }
+    function wantReply(q, s, c) {
+      // "I want to buy/save/go ... $N (by/in ...)"  -> plan to get there with your numbers
+      const amts = amountsIn(q); if (!amts.length) return null; const amt = Math.max(...amts);
+      const thing = (/(?:buy|get|save (?:up )?for|saving for|pay for|afford|book|go to|go on|trip to|purchase)\s+(?:a |an |the |some |new )?([a-z][a-z' -]{2,28}?)(?:\s+(?:for|at|by|in|that|which|costs?|\$)|[?.,!]|$)/i.exec(q) || [])[1];
+      const target = parseTargetDate(s); const L = [];
+      const nm = thing ? thing.trim() : 'that';
+      const wks = target ? Math.max(1, dayDiff(c.t, target) / 7) : null;
+      L.push(`**${nm === 'that' ? 'Goal' : nm}: ${fmt(amt)}**`);
+      const opts = wks ? [Math.round(wks)] : [6, 12, 24];
+      L.push(opts.map(w => `- In ${w} weeks: **${fmt(amt / w)} a week** (${fmt(amt / w * 2)} per biweekly check)`).join('\n'));
+      if (c.income) { const perCheck = c.unalloc > 0 ? c.unalloc : 0; L.push(perCheck > 0 ? `You have about **${fmt(perCheck)}** unassigned this check, so ${amt <= perCheck ? 'you could cover it from this check.' : `that covers ${Math.round(perCheck / amt * 100)}% of it per check if you put it all there. About ${Math.ceil(amt / perCheck)} checks.`}` : `Right now your bills and plans use up this whole check, so you'd need to free money (trim a plan or add shifts).`); }
+      L.push(`Want it tracked? Make it a goal in Goals and add a paycheck plan.`);
+      return { text: L.join('\n'), chips: ['Plan my check', 'Can I afford $' + Math.round(amt / 4) + '?'] };
+    }
+    function stressReply(c) {
+      const L = ["That's a heavy spot to be in, and it's fixable one step at a time. Here's what I'd do first:"];
+      const unpaid = c.dated.filter(i => !itemDone(i)).sort((a, b) => a.due.localeCompare(b.due));
+      if (unpaid.length) L.push(`1. **Cover what's due soonest**: ${unpaid.slice(0, 3).map(i => `${i.name} (${fmt(i.amount - itemPaid(i))}, ${fmtShort(i.due)})`).join(', ')}. Housing, utilities, food, transport come before cards and wants.`);
+      else L.push(`1. **List what's due soonest** in Budget with due dates so we know what can't wait.`);
+      L.push(`2. If a bill can't be paid in full, **call before it's late** and ask for a payment plan or a later date. Most will say yes.`);
+      L.push(`3. Pause wants and pad your check with extra shifts or gig hours where you can.`);
+      L.push(`4. Free help: 211.org for local assistance, and the nonprofit NFCC (nfcc.org) for credit counseling.`);
+      if (c.income) L.push(`\nOn paper you're expected to make about ${fmt(c.income)} this check against ${fmt(c.T.planned)} in due-dated bills.`);
+      return { text: L.join('\n'), chips: ['Plan my check', 'Will I cover my bills?'] };
+    }
+
+
+    // ---- open-ended "how can I do better" advice, built from the user's own numbers ----
+    function adviceReply(c, s) {
+      s = s || '';
+      const e = c.e, w = weekWorked(), tips = [], facts = [];
+      const hourly = state.jobs.filter(j => j.active !== false && j.type === 'hourly' && j.rate > 0);
+      const jobs = state.jobs.filter(j => j.active !== false && j.rate > 0);
+      if (!jobs.length && !state.budget.items.length && !state.goals.length && !state.accounts.length) return { text: "I don't have much of your data yet, so anything I said would be generic. Add a job with a rate, your bills and one savings goal, then ask me again and I'll point at real numbers.", chips: ['How do I save more?', 'What can you answer?'] };
+      if (c.income) facts.push(`Expected check: **${fmt(c.income)}**${GROSS} (${fmt(e.earned)} earned so far, ${fmt(e.schedPay)} scheduled).`);
+      // 1. money left over or short
+      if (c.income && c.unalloc < 0) tips.push(`**Fix the gap first.** Your bills and spending plans are ${fmt(-c.unalloc)} more than this check. Add a shift, trim a spending plan, or push a goal deposit to next check.`);
+      else if (c.income && c.unalloc > 0) {
+        const g = c.goals.filter(x => x.left > 0).sort((a, b) => a.left - b.left)[0];
+        tips.push(`**Give your leftover a job.** About ${fmt(c.unalloc)} is unassigned this check${g ? `. Put ${fmt(Math.min(c.unalloc * 0.85, g.left))} toward **${g.g.name}** (${fmt(g.left)} to go) and keep the rest as a buffer` : '. Start a savings goal so it has somewhere to go'}. Money without a plan tends to get spent.`);
+      }
+      // 2. spending habits
+      const sp = c.b.items.filter(i => (i.spends || []).length).map(i => ({ i, n: itemPaid(i) })).sort((a, b) => b.n - a.n);
+      const flex = sp.filter(x => x.i.kind === 'spend');
+      if (flex.length) {
+        const top = flex[0], over = c.plans.filter(i => itemPaid(i) > i.amount + 0.004);
+        tips.push(`**Watch ${top.i.name}.** It's your biggest flexible spend so far at ${fmt(top.n)} of ${fmt(top.i.amount)}${top.n >= top.i.amount * 0.7 ? ', already ' + Math.round(top.n / top.i.amount * 100) + '% used' : ''}. ${over.length ? 'Over budget: ' + over.map(i => i.name).join(', ') + '. ' : ''}Cutting that by 20% frees about ${fmt(top.i.amount * 0.2)} a check.`);
+      } else if (c.plans.length) tips.push(`**Log what you spend.** You have spending plans but nothing logged against them, so I can't see your habits yet. Add each purchase and I'll tell you where it leaks.`);
+      // 3. income side
+      if (hourly.length) {
+        const j = hourly[0], toOT = Math.max(0, 40 - w.hours);
+        if (w.hours >= 40) tips.push(`**You're in overtime this week** (${nf(w.hours)} hours). Every extra hour pays about ${fmt(j.rate * 1.5)} at ${j.name}, so extra shifts are worth the most right now.`);
+        else if (e.leftHours > 0) tips.push(`**Hours are your biggest lever.** You've got ${nf(e.leftHours)} hours scheduled before payday. Each extra hour at ${j.name} adds about ${fmt(j.rate)}${w.hours > 0 ? `, and you're ${nf(toOT)} hours from overtime this week (1.5x after 40)` : ''}. Even 4 more hours is about ${fmt(j.rate * 4)}.`);
+        else tips.push(`**Add hours.** Nothing is scheduled before payday. Each hour at ${j.name} is about ${fmt(j.rate)}, so 8 more hours adds roughly ${fmt(j.rate * 8)}.`);
+      } else if (jobs.length) tips.push(`**Pick up more gigs on your best-paying days.** ${jobs[0].name} pays ${fmt(jobs[0].rate)}/hr, and gig income has no tax taken out, so set aside 25 to 30% as you go.`);
+      // 4. bills
+      const od = c.bills.filter(i => i.due && i.due < c.t && !itemDone(i));
+      if (od.length) tips.push(`**Handle overdue first:** ${od.map(i => i.name).join(', ')}. Late fees and credit damage cost more than almost any other leak.`);
+      const nodate = c.bills.filter(i => !i.due && !itemDone(i));
+      if (nodate.length) tips.push(`**Add due dates** to ${nodate.map(i => i.name).slice(0, 3).join(', ')}. Bills without dates aren't counted in your must-pay, so your plan looks better than it is.`);
+      // 5. goals + cushion
+      const cushion = state.goals.find(g => /emergency|cushion|rainy|safety/i.test(g.name));
+      if (!cushion && c.cash + c.held < 500) tips.push(`**Build a starter cushion.** A $500 emergency goal keeps one surprise from landing on a card or a late bill.`);
+      else if (cushion && goalCurrent(cushion) < cushion.target) tips.push(`**Finish ${cushion.name}.** ${fmt(Math.max(0, cushion.target - goalCurrent(cushion)))} to go. At $50 a check that's ${Math.ceil(Math.max(0, cushion.target - goalCurrent(cushion)) / 50)} checks.`);
+      // 6. habits
+      const n = state.punch.days.length;
+      tips.push(`**Stay consistent.** Your no-spend punch card is ${n}/10 and your flame is at ${state.progress && state.progress.streak != null ? state.progress.streak : 'its current'} streak. A no-spend day or two a week is the easiest free money there is.`);
+      const pick = tips.slice(0, 5);
+      return { text: `Based on your Forge numbers, here's where I'd focus:\n${facts.join('\n')}${facts.length ? '\n' : ''}\n` + pick.map((x, k) => `${k + 1}. ${x}`).join('\n\n') + `\n\nThese come from what you've logged, so the more you log, the sharper this gets.`, chips: ['Plan my check', 'Where is my money going?', 'Which goal first?'] };
+    }
+    function coachReply(q) {
+      const s = q.toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim(); if (!s) return null;
+      const c = cx(); let r;
+      // date/time first for pure date questions
+      if ((r = dateReply(q))) return r;
+      // money stress
+      if (/(i'?m|im|i am|feel(ing)?|so|really) (broke|struggling|stressed|screwed|behind)|no money|out of money|can'?t (pay|afford) (my )?(bills|rent)|run(ning)? out of money|living paycheck to paycheck|paycheck to paycheck|drowning in|overwhelmed/.test(s)) return stressReply(c);
+      // open-ended "do better / improve / based on my stats" advice
+      if (/\b(my|me|i|i'm|im|we|you)\b/.test(s) && (/(based on|according to|looking at|from|using|with) (my|the) (stats|numbers|data|spending|habits|check|hours|income|history|budget|forge)|how (can|do|could|should|would) i (do|be|get|make|become|handle|manage|run|use|improve|grow|step)\b.*\b(better|smarter|ahead|improve|more)|how (can|do|could|should) i (improve|grow|boost|increase|fix|level up|step up|tighten|optimi[sz]e)|what (should|can|could|do) i (change|fix|improve|focus|work on|do better|do differently|cut|stop|start)|where (can|should|could) i (cut|improve|save|trim|do better)|what am i doing (wrong|right)|room for improvement|any (tips|advice|suggestions|ideas|pointers)|(give|got|have) (me )?(some )?(tips|advice|suggestions|pointers)|(rate|grade|score|judge|review|evaluate|assess|audit) (my|me)|how('s| is| are) (my )?(finances|financial|money|budget|habits|situation)|financial (health|situation|picture|check.?up)|(do|make|get|be|save|earn|spend) (a )?(lot )?(better|smarter|more wisely)|(next|this) (paycheck|check|pay).*(better|improve|more|bigger|larger)|bigger (check|paycheck)|boost my (check|pay|income|savings)|get ahead|how (can|do) i (make|earn|get|bring in) more|make more money|earn more|stop (wasting|overspending|being broke)|tighten up|what would you (do|change|tell)|what('s| is) (your )?(advice|take|suggestion)|(improve|better) (my )?(money|finances|spending|budget|habits)|(do|doing) (better|good|well|ok|okay|alright)\b|am i (on the right track|doing enough|saving enough|wasting)|financially|what (do|would) you (recommend|suggest|advise)|doing wrong|is my budget (good|ok|okay|bad|fine|any good|working|realistic)|(out of|climb out of|dig out of) (the )?(hole|debt|broke)|what.*(change|fix) (about|in|with) (my|me)/.test(s) && !/(credit score|invest|stock|ira\b|401|crypto|roth|taxes?\b)/.test(s))) return adviceReply(c, s);
+      // pay / checks
+      if ((r = checkReply(q, s))) return r;
+      // plan my check
+      if (/(how (should|do|can|would) i|what (should|do|would) i|help me|can you|let'?s).*(budget|split|spend|allocate|divide|plan|use|do with|handle|break down|manage).*(my |this |the |next |our )?(check|paycheck|pay|money|income|earnings|cash)|budget (my|this|the|next) (check|paycheck|money|pay)|plan (my|this|the|next) (check|paycheck|pay|money)|where should (my|the) money go|what to do with (my|this|the) (check|money|pay)|split my (check|paycheck|pay)|allocate (my|this)|(how|what).*(budget|plan).*(based on|with).*(spending|habits|goals|what i want)|break down my (check|paycheck)|make me a (plan|budget)|budget plan|my budget plan|give me a budget|make a budget for me|^plan my (check|money)|^budget my/.test(s)) return planReply(c);
+      // can I afford
+      if (/(can|could|will) i (afford|buy|spend|get|treat|swing|justify|splurge|pay for|go out|take)|(should|could|would) i (buy|spend|get|splurge|treat|pay for|go for)|do i have (enough|room|the money|money)|is it (ok|okay|fine|smart|worth|a good idea|too much)|(afford|swing|fits? (in )?my budget)\b/.test(s) && amountsIn(q).length) return affordReply(q, c);
+      if (/(can|could|will) i (afford|swing)\b|\bafford\b/.test(s) && !amountsIn(q).length) return { text: "How much is it? Ask like \"can I afford $80?\" and I'll check it against your check, bills and plans.", chips: ['Can I afford $50?'] };
+      // a specific card / account
+      if (state.accounts.length && /how much|balance|what'?s in|what is in|total in|do i have in/.test(s) && !/\b(spend|owe|make|made|earn|save|goal)\b/.test(s)) {
+        const am = cMatch(state.accounts, q, 'name');
+        if (am) return { text: `**${am.name}**: ${fmt(am.balance)}${am.savings ? ` (${fmt(am.savings)} of that is set aside as savings, so about ${fmt(am.balance - am.savings)} to spend)` : ''}. Last updated ${fmtShort(am.updated || c.t)}.`, chips: ['How much do I have in my accounts?'] };
+      }
+      // bills
+      if (/(what|which|any).*(bills?|payments?|expenses?).*(due|owe|upcoming|coming|left|unpaid|this)|what (do )?i owe|what should i pay (first|next)|what.*pay first|bills? (due|this|left|coming)|upcoming bills?|next bill|due (soon|next)|which bill|bills i (owe|have)|overdue|am i late|priorit(y|ize|ise).*(bills?|pay)|(bills?|due) (list|dates?)|what bills?|which bills?|(list|show)( me)?( all)?( of)?( my)? bills/.test(s)) {
+        const unpaid = c.bills.filter(i => !itemDone(i)).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
+        if (!c.bills.length) return { text: "You haven't added any bills yet. Add them in Budget → Add bill (and give them due dates).", chips: [] };
+        if (!unpaid.length) return { text: "Every bill on your list is paid. 🎉", chips: ['Plan my check'] };
+        const od = unpaid.filter(i => i.due && i.due < c.t);
+        return { text: `Still unpaid (soonest first):\n${billLines(unpaid)}\n\nTotal still owed on due-dated bills: **${fmt(c.owed)}**.${od.length ? `\n**Overdue:** ${od.map(i => i.name).join(', ')}. Handle ${od.length === 1 ? 'that' : 'those'} first.` : ''}\nRule of thumb: housing, utilities, food, transport, insurance first, then minimum debt payments, then the rest.`, chips: ['Will I cover my bills?', 'Plan my check'] };
+      }
+      // remaining in plan
+      if (/how much (is |do i have |have i got )?(left|remaining).*(in|on|for|of|to spend)|how much (do )?i (still )?owe (on|for|to)|how much.*(left|remaining) (in|on|for) (my )?/.test(s) && !/goal|saving/.test(s)) {
+        const it = cMatch(c.b.items, q.replace(/how much.*?(left|remaining|owe)/i, ''), 'name');
+        if (it) { const lft = r2(it.amount - itemPaid(it)); return { text: `${it.icon || ''} **${it.name}**: ${lft >= 0 ? fmt(lft) + ' left' : 'over by ' + fmt(-lft)} (${fmt(itemPaid(it))} of ${fmt(it.amount)} ${it.kind === 'bill' ? 'paid' : 'spent'}).${c.days > 0 && lft > 0 && it.kind === 'spend' ? ` That's about **${fmt(lft / Math.max(1, c.days))} a day** until payday.` : ''}`.trim(), chips: [] }; }
+      }
+      // how much can I spend
+      if (/how much (can|could|do|should|am i able to) i (spend|have to spend|blow|use)|(spending|fun|free|extra|spare|leftover|left over|disposable|play) (money|cash)|how much.*(free|leftover|left over|available|spare|extra)|safe to spend|daily (budget|limit|allowance)|how much (per|a|each) day|money to spend|what('s| is| do i have) left to spend|how much.*left to spend|how much (do i have|have i got|is there) (left )?to spend|how much do i have to work with/.test(s)) {
+        if (!c.income && !c.cash) return { text: "I need a check or card balances to work that out. Log some hours or add a card first.", chips: [] };
+        const dd = Math.max(1, c.days), free = c.unalloc;
+        const L = [];
+        if (c.income) L.push(`After due-dated bills (${fmt(c.T.planned)}) and spending plans (${fmt(c.plansPlanned)}), you have about **${fmt(Math.max(0, free))}** unassigned from this check${free < 0 ? ` (you're ${fmt(-free)} over)` : ''}.`);
+        if (c.plansLeft > 0) L.push(`Your spending plans still have **${fmt(c.plansLeft)}** left, which is about **${fmt(c.plansLeft / dd)} a day** for ${dd} more day${dd === 1 ? '' : 's'}.`);
+        if (c.cash > 0) L.push(`Your cards hold ${fmt(c.cash)}${c.held ? ' (' + fmt(c.held) + ' is savings)' : ''}.`);
+        return { text: L.join('\n') + `\nIf it's gross pay, leave a cushion for taxes.`, chips: ['Plan my check', 'Can I afford $50?'] };
+      }
+      // spending habits
+      if (/(where|what).*(money|cash|check|paycheck).*(going|went|go|been going)|spending (habit|pattern|analysis|report|breakdown|summary)|am i overspending|(biggest|most|top|largest).*(expense|spend|spending|category|cost)|what.*(i spend|am i spending).*(most|the most)|how('s| is| are) (my )?spending|over ?budget|how much (have i |did i |i've |ive )?(spent|spend)|analy[sz]e my spending|spent so far|my habits|spending habits|where did my money go|how am i spending|break.*down.*spending|expenses so far|what have i (spent|been spending)|(category|categories).*(most|biggest|top|highest)|spend(ing)? (the )?most|most (am i|do i|i) (spending|spend)/.test(s)) return spendReply(q, s, c);
+      // accounts
+      if (/(how much|what).*(in my|do i have|have i got|total).*(account|accounts|bank|card|cards|balance|cash app|chime|venmo|paypal|wallet)|my balance|total balance|how much money do i have|how much cash do i have|what'?s my balance|balances?\b.*(cards?|accounts?)|how much is in/.test(s)) {
+        if (!state.accounts.length) return { text: "You haven't added any cards yet. Add your Chime, Cash App or bank on Home and I'll total them.", chips: [] };
+        const sp = r2(c.cash - c.held);
+        return { text: `Across your cards you have **${fmt(c.cash)}** in balances, with **${fmt(c.held)}** of that marked as savings held, so about **${fmt(sp)}** to spend.\n` + state.accounts.map(a => `- ${a.name}: ${fmt(a.balance)}${a.savings ? ' (savings ' + fmt(a.savings) + ')' : ''}`).join('\n') + `\nBalances are what you typed in, last updated ${fmtShort(state.accounts.map(a => a.updated).sort().slice(-1)[0] || c.t)}.`, chips: ['Can I afford $50?'] };
+      }
+      // punch card
+      if (/no.?spend|punch(es| card)?|days without spending|spending free/.test(s) && !/how do|what is/.test(s)) {
+        const P = state.punch, n = P.days.length; return { text: `Your no-spend punch card is at **${n} of 10**.${n >= 10 ? ' Full! Claim your reward.' : ` ${10 - n} more no-spend day${10 - n === 1 ? '' : 's'} to earn your reward.`}\nYou've claimed ${P.claimed} reward${P.claimed === 1 ? '' : 's'} so far. ${P.days.includes(c.t) ? "Today is already punched." : "Haven't spent today? Punch it in Budget."}`, chips: [] };
+      }
+      // goals
+      if (/\bgoals?\b|saved|savings goal|save next|what should i save|which goal|how long until|how long till|how long to (reach|hit|finish)|until i (reach|hit|have)|milestone/.test(s) || (state.goals.length && /\b(my|mine|i|i'm|me|our)\b/.test(s) && cMatch(state.goals.map(g => ({ name: g.name.replace(/\b(fund|goal|savings?)\b/ig, '') })), q, 'name') && /(how|when|much|left|more|long|progress|status|standing|doing|where)/.test(s) && !/how much should i (have|keep)|should i (have|keep|build)|what is (a|an)\b|what'?s (a|an)\b/.test(s)) || (state.goals.length && cMatch(state.goals.map(g => ({ name: g.name.replace(/\b(fund|goal|savings?|trip|to|the|a)\b/ig, '') })), q, 'name') && /\bmore\b|to go|how long|left\b|progress|short/.test(s) && !/should i/.test(s))) {
+        if (/how (do|does|can) (i|a|the) (goal|set)|what is a goal/.test(s)) return null;
+        return goalReply(q, s, c);
+      }
+      // wants a thing with a price
+      if (/(i want|i wanna|i'?d like|i need|planning|trying|thinking|looking) (to )?(buy|get|save|go|book|afford|pay|purchase|take|do|fix|replace)|save (up )?(for|to)|saving (up )?for|\bbudget for\b|how (do|can|should) i (save|afford|pay for|get|buy)/.test(s) && amountsIn(q).length && !/in \d+ (weeks?|months?|years?|days?)/.test(s)) { r = wantReply(q, s, c); if (r) return r; }
+      return null;
+    }
 
     // ----- chat plumbing (saved only on this phone, never in backups) -----
     const CHAT_KEY = 'forge-chat-v1';
@@ -2604,14 +3106,38 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
       botSay("Hey, I'm 4orge. I know a lot about saving, credit, investing, banking, taxes and your Forge numbers, and I work with no internet. Ask away, or try the math: \"save $1,200 in 16 weeks\".");
       renderChips(BRAIN_CHIPS);
     }
-    function brainReply(q) {
-      if (/what can you (answer|do|help)|what do you know|^topics?$|what (topics|questions)/i.test(q.trim())) return { text: BRAIN_TOPICS, chips: ['How do I build credit?', 'Where can I open an IRA?', 'Split my paycheck'] };
-      const mine = /how am i|my (goal|budget|streak|bills?|progress|balance|hours)|payday plan|save next|budget warning|streak status|overview|summary|status/i.test(q) && !/how (does|do|is|are).*(work|calculated|counted)|what('s| is) (a |the )?(streak|xp|level)/i.test(q);
-      if (mine) return { text: forgeReply(q), chips: ['Split my paycheck', 'Emergency fund', 'What can you answer?'] };
-      const r = brainAnswer(q);
-      if (r) return r;
-      if (isStatsQ(q)) return { text: forgeReply(q), chips: ['What can you answer?'] };
-      return { text: "I don't have a built-in answer for that one yet, and I'd rather say so than guess.\n\n" + BRAIN_TOPICS, chips: ['How do I build credit?', 'Split my paycheck', 'How am I doing?'] };
+    const SLANG = { hw: 'how', wht: 'what', wat: 'what', wats: "what's", whats: "what's", thats: "that's", hows: "how's", u: 'you', ur: 'your', r: 'are', y: 'why', rn: 'right now', bc: 'because', cuz: 'because', pls: 'please', plz: 'please', thx: 'thanks', gonna: 'going to', wanna: 'want to', gotta: 'got to', lemme: 'let me', imma: "i'm going to", ive: "i've", im: "i'm", dont: "don't", cant: "can't", wont: "won't", didnt: "didn't", doesnt: "doesn't", isnt: "isn't", arent: "aren't", shouldnt: "shouldn't", wouldnt: "wouldn't", couldnt: "couldn't", paychek: 'paycheck', lookin: 'looking', gettin: 'getting', goin: 'going', makin: 'making', spendin: 'spending', savin: 'saving', payck: 'paycheck', bout: 'about', abt: 'about', tho: 'though', ppl: 'people', bal: 'balance', acct: 'account', accts: 'accounts', 'w/': 'with', thru: 'through', tmw: 'tomorrow', pychck: 'paycheck', chek: 'check', chck: 'check', bruh: '', bro: '', yo: '', ya: 'you', yall: 'you', tmrw: 'tomorrow', tmr: 'tomorrow', mo: 'month', mth: 'month', wk: 'week', hr: 'hour', hrs: 'hours', info: 'information', '$$': 'money', dollars: 'dollars', bucks: 'dollars' };
+    const VOCAB = ['paycheck', 'payday', 'afford', 'budget', 'spending', 'spend', 'saving', 'savings', 'credit', 'invest', 'investing', 'income', 'overtime', 'hours', 'worked', 'schedule', 'scheduled', 'shifts', 'balance', 'goals', 'emergency', 'retirement', 'overspending', 'expenses', 'upcoming', 'projected', 'estimate', 'earnings', 'earned', 'money', 'bills', 'check', 'taxes', 'stocks', 'buying', 'should', 'much', 'many', 'which', 'where', 'month', 'weeks', 'today', 'tomorrow', 'christmas', 'thanksgiving', 'halloween', 'percent', 'divided', 'multiply', 'average', 'square', 'tonight', 'rent', 'work', 'make', 'made', 'cover', 'enough', 'plan', 'left', 'owe', 'due'];
+    function edit1(a, b) {
+      if (a === b) return true; const la = a.length, lb = b.length; if (Math.abs(la - lb) > 1) return false;
+      if (la === lb) { let d = []; for (let i = 0; i < la; i++) if (a[i] !== b[i]) d.push(i); if (d.length === 1) return true; if (d.length === 2 && d[1] === d[0] + 1 && a[d[0]] === b[d[1]] && a[d[1]] === b[d[0]]) return true; return false; }
+      const [s, l] = la < lb ? [a, b] : [b, a]; let i = 0; while (i < s.length && s[i] === l[i]) i++; return s.slice(i) === l.slice(i + 1);
+    }
+    function normalizeQ(q) {
+      let s = q.replace(/[’‘]/g, "'");
+      s = s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, ' ');
+      s = s.replace(/\b([a-z']+)\b/gi, w => { const lw = w.toLowerCase(); if (Object.prototype.hasOwnProperty.call(SLANG, lw)) return SLANG[lw]; if (lw.length >= 5 && !VOCAB.includes(lw)) { for (const v of VOCAB) if (v.length >= 5 && !v.startsWith(lw) && !lw.startsWith(v) && edit1(lw, v)) return v; } return w; });
+      return s.replace(/\s+/g, ' ').trim();
+    }
+    function brainReply(q0) {
+      const q = normalizeQ(q0) || q0;
+      if (/what can you (answer|do|help)|what do you know|^topics?$|what (topics|questions)|what (all )?can i ask/i.test(q.trim())) return { text: BRAIN_TOPICS, chips: ['How do I build credit?', 'Plan my check', 'How much will my check be?'] };
+      let r;
+      try { r = mathReply(q); if (r) return r; } catch (e) {}
+      try {
+        const cr = brainCalc(q);
+        if (cr) {
+          let extra = '';
+          try { const c = cx(); if (/save|reach|afford|goal|put away|raise|need/i.test(q) && c.unalloc > 0 && !/invest|pay\s*off|double/i.test(q)) extra = `\n\nFor reference, you have about ${fmt(c.unalloc)} unassigned this check after bills and spending plans.`; } catch (e) {}
+          return { text: cr + extra, chips: ['Plan my check', 'Which goal first?'] };
+        }
+      } catch (e) {}
+      try { r = coachReply(q); if (r) return r; } catch (e) { console.error(e); }
+      if (/how am i|^status|overview|summary|how('s| is) (my )?(streak|progress|level)|my (streak|level|progress|xp)\b|streak status|flame status/i.test(q) && !/how (does|do|is|are).*(work|calculated|counted)/i.test(q)) return { text: forgeReply(q), chips: ['Plan my check', 'Which goal first?', 'What can you answer?'] };
+      r = brainAnswer(q); if (r) return r;
+      if (isStatsQ(q) && /\b(my|i|me)\b/i.test(q)) return { text: forgeReply(q), chips: ['What can you answer?'] };
+      if (/\b(my|me|i|i'm|im)\b/i.test(q) && /(money|spend|save|saving|budget|check|pay|income|bills?|goals?|hours|earn|cash|broke|debt|stats|numbers|finances)/i.test(q)) { try { const ar = adviceReply(cx(), q.toLowerCase()); if (ar) return { text: "I didn't catch the exact question, so here's a read on your own numbers:\n\n" + ar.text, chips: ar.chips }; } catch (e) {} }
+      return { text: "I don't have a built-in answer for that one yet, and I'd rather say so than guess.\n\n" + BRAIN_TOPICS, chips: ['How much will my check be?', 'Plan my check', 'How do I build credit?'] };
     }
     function sendForgeChat() {
       const q = ($('forge-input').value || '').trim(); if (!q || brainBusy) return;
