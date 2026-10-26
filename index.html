@@ -350,6 +350,39 @@
     .reorder-hint.show { opacity: 1; }
     @keyframes forgeJiggle { from { transform: rotate(-.45deg); } to { transform: rotate(.45deg); } }
 
+
+    /* Keep the app interface from entering iOS text-selection/highlight mode.
+       Typing fields remain selectable/editable. Long-press reordering still works. */
+    html, body, body * { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none; }
+    input, textarea, select, [contenteditable="true"], #forge-input, #sheet input, #sheet textarea, #sheet [contenteditable="true"] {
+      -webkit-user-select: text !important; user-select: text !important; -webkit-touch-callout: default;
+    }
+    .forge-head-icon { width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.055);color:rgba(255,255,255,.82);font-size:22px;line-height:1;flex-shrink:0; }
+    .forge-head-icon:active { background:rgba(245,158,11,.18); }
+    #forge-brain-modal { display:none;position:fixed;inset:0;z-index:240;background:rgba(3,5,10,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);align-items:center;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
+    #forge-brain-modal.open { display:flex; }
+    #forge-brain-panel { width:min(100%,560px);max-height:88dvh;overflow:hidden;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.14);border-radius:24px;background:linear-gradient(155deg,rgba(25,28,36,.98),rgba(12,14,20,.98));box-shadow:0 24px 90px rgba(0,0,0,.55); }
+    .forge-brain-head { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 18px 14px;border-bottom:1px solid rgba(255,255,255,.1); }
+    #forge-brain-title { font-size:18px;font-weight:750;color:#fde68a;letter-spacing:-.02em; }
+    .forge-brain-head p { font-size:11px;color:rgba(255,255,255,.48);margin-top:3px; }
+    .forge-brain-body { overflow:auto;padding:16px 18px 20px;-webkit-overflow-scrolling:touch; }
+    .brain-stat-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px; }
+    .brain-stat { padding:12px 8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.045);border-radius:14px;min-width:0; }
+    .brain-stat strong { display:block;font-size:18px;color:#fcd34d;overflow-wrap:anywhere; }
+    .brain-stat span { display:block;font-size:10px;line-height:1.35;color:rgba(255,255,255,.52);margin-top:3px; }
+    .brain-explain { font-size:12px;line-height:1.55;color:rgba(255,255,255,.7);margin:14px 0 18px; }
+    .brain-section-title { font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(253,230,138,.8);font-weight:700;margin:18px 0 9px; }
+    .brain-topic-list { display:flex;flex-wrap:wrap;gap:7px; }
+    .brain-topic { border:1px solid rgba(245,158,11,.2);background:rgba(245,158,11,.07);color:rgba(255,255,255,.78);font-size:11px;padding:7px 9px;border-radius:10px; }
+    .brain-gap-list { display:flex;flex-direction:column;gap:7px; }
+    .brain-gap { padding:10px 11px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.035);border-radius:12px;font-size:12px;color:rgba(255,255,255,.78);overflow-wrap:anywhere; }
+    .brain-gap small { display:block;font-size:10px;color:rgba(255,255,255,.35);margin-top:4px; }
+    .brain-empty { font-size:12px;color:rgba(255,255,255,.4);padding:12px;border:1px dashed rgba(255,255,255,.12);border-radius:12px; }
+    .brain-actions { display:flex;flex-wrap:wrap;gap:7px;margin-top:16px; }
+    .brain-actions button { padding:9px 11px;border-radius:11px;background:rgba(245,158,11,.13);border:1px solid rgba(245,158,11,.25);color:#fde68a;font-size:11px;font-weight:600; }
+    .brain-actions .brain-clear { background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.55); }
+    .brain-footnote { font-size:10px;line-height:1.45;color:rgba(255,255,255,.34);margin-top:12px; }
+
     .view { will-change: transform, opacity; }
   </style>
 </head>
@@ -626,7 +659,8 @@
           <div class="text-sm font-semibold text-amber-200">4orge</div>
           <div id="chat-sub" class="text-[11px] text-white/40">Built in · works offline</div>
         </div>
-        <button onclick="newForgeChat()" class="text-white/50 text-xs px-1.5">New</button>
+        <button type="button" onclick="newForgeChat()" class="forge-head-icon" aria-label="Start a new chat" title="New chat">+</button>
+        <button type="button" onclick="openForgeBrain()" class="forge-head-icon" aria-label="Open 4orge brain" title="4orge brain and knowledge gaps">⚙</button>
         <button onclick="closeForgeChat()" class="text-white/40 text-sm px-2">Close</button>
       </div>
       <div id="forge-msgs"></div>
@@ -636,6 +670,29 @@
         <button onclick="sendForgeChat()" class="px-4 rounded-xl bg-amber-500 text-black font-semibold text-sm">Send</button>
       </div>
     </div>
+  </div>
+
+  <div id="forge-brain-modal" aria-hidden="true" onclick="if(event.target===this)closeForgeBrain()">
+    <section id="forge-brain-panel" role="dialog" aria-modal="true" aria-labelledby="forge-brain-title">
+      <header class="forge-brain-head">
+        <div><div id="forge-brain-title">4orge's Brain</div><p>Offline knowledge · local diagnostics · no cloud AI</p></div>
+        <button type="button" class="forge-head-icon" onclick="closeForgeBrain()" aria-label="Close brain">×</button>
+      </header>
+      <div class="forge-brain-body">
+        <div class="brain-stat-grid">
+          <div class="brain-stat"><strong id="brain-topic-count">—</strong><span>knowledge entries</span></div>
+          <div class="brain-stat"><strong id="brain-gap-count">0</strong><span>unanswered prompts saved</span></div>
+          <div class="brain-stat"><strong id="brain-test-count">Not run</strong><span>phrase coverage test</span></div>
+        </div>
+        <p class="brain-explain">This is the rule-based, offline brain that answers questions today. When 4orge cannot answer, the question is saved on this device so we can identify missing topics and improve the actual answer logic.</p>
+        <div class="brain-section-title">Knowledge map</div>
+        <div id="brain-topic-list" class="brain-topic-list"></div>
+        <div class="brain-section-title">Questions 4orge couldn't answer</div>
+        <div id="brain-gap-list" class="brain-gap-list"></div>
+        <div class="brain-actions"><button type="button" onclick="runForgeBrainTest()">Run 8,000 phrase checks</button><button type="button" onclick="exportForgeBrainGaps()">Export gaps</button><button type="button" class="brain-clear" onclick="clearForgeBrainGaps()">Clear saved gaps</button></div>
+        <p class="brain-footnote">Phrase checks measure routing coverage, not whether every answer is accurate. Gap logs stay in this browser's local storage.</p>
+      </div>
+    </section>
   </div>
 
   <div id="toast"></div>
@@ -3426,7 +3483,8 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
       r = brainAnswer(q); if (r) return r;
       if (isStatsQ(q) && /\b(my|i|me)\b/i.test(q)) return { text: forgeReply(q), chips: ['What can you answer?'] };
       if (/\b(my|me|i|i'm|im)\b/i.test(q) && /(money|spend|save|saving|budget|check|pay|income|bills?|goals?|hours|earn|cash|broke|debt|stats|numbers|finances)/i.test(q)) { try { const ar = adviceReply(cx(), q.toLowerCase()); if (ar) return { text: "I didn't catch the exact question, so here's a read on your own numbers:\n\n" + ar.text, chips: ar.chips }; } catch (e) {} }
-      return { text: "I don't have a built-in answer for that one yet, and I'd rather say so than guess.\n\n" + BRAIN_TOPICS, chips: ['How much will my check be?', 'Plan my check', 'How do I build credit?'] };
+      saveForgeBrainGap(q0);
+      return { text: "I don't have a built-in answer for that one yet, and I'd rather say so than guess.\n\n" + BRAIN_TOPICS + "\n\nI saved this question locally in my Brain's knowledge gaps so it can be reviewed and used to improve my offline answers.", chips: ['How much will my check be?', 'Plan my check', 'How do I build credit?'] };
     }
     function sendForgeChat() {
       const q = ($('forge-input').value || '').trim(); if (!q || brainBusy) return;
@@ -3439,6 +3497,63 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
         renderChips(r.chips && r.chips.length ? r.chips : BRAIN_CHIPS);
         brainBusy = false;
       }, 320 + Math.random() * 280);
+    }
+
+// ========== 4ORGE BRAIN INSPECTOR / OFFLINE KNOWLEDGE GAPS ==========
+    const FORGE_GAPS_KEY = '4orge-brain-gaps-v1';
+    function loadForgeBrainGaps() {
+      try { const v = JSON.parse(localStorage.getItem(FORGE_GAPS_KEY) || '[]'); return Array.isArray(v) ? v : []; }
+      catch (e) { return []; }
+    }
+    function saveForgeBrainGap(question) {
+      const q = String(question || '').trim().replace(/\s+/g, ' ').slice(0, 500);
+      if (!q) return;
+      const gaps = loadForgeBrainGaps();
+      const key = q.toLowerCase();
+      const found = gaps.find(g => String(g.q).toLowerCase() === key);
+      if (found) { found.count = (found.count || 1) + 1; found.last = new Date().toISOString(); }
+      else gaps.unshift({ q, count: 1, first: new Date().toISOString(), last: new Date().toISOString() });
+      try { localStorage.setItem(FORGE_GAPS_KEY, JSON.stringify(gaps.slice(0, 200))); } catch (e) {}
+      if ($('forge-brain-modal')?.classList.contains('open')) renderForgeBrain();
+    }
+    function openForgeBrain() {
+      renderForgeBrain();
+      $('forge-brain-modal').classList.add('open');
+      $('forge-brain-modal').setAttribute('aria-hidden', 'false');
+    }
+    function closeForgeBrain() {
+      $('forge-brain-modal').classList.remove('open');
+      $('forge-brain-modal').setAttribute('aria-hidden', 'true');
+    }
+    function renderForgeBrain() {
+      const topicNames = [...new Set(BRAIN.map(x => x.t))];
+      $('brain-topic-count').textContent = BRAIN.length;
+      const gaps = loadForgeBrainGaps();
+      $('brain-gap-count').textContent = gaps.reduce((n, g) => n + (g.count || 1), 0);
+      $('brain-topic-list').innerHTML = topicNames.length
+        ? topicNames.map(t => `<span class="brain-topic">${esc(t)}</span>`).join('')
+        : '<div class="brain-empty">No topic entries are loaded.</div>';
+      $('brain-gap-list').innerHTML = gaps.length
+        ? gaps.map(g => `<div class="brain-gap">${esc(g.q)}${g.count > 1 ? ` <b>×${g.count}</b>` : ''}<small>Last seen ${esc(new Date(g.last || g.first || Date.now()).toLocaleString())}</small></div>`).join('')
+        : '<div class="brain-empty">No unanswered questions saved yet. Ask 4orge naturally; any question that reaches the honest fallback will appear here.</div>';
+    }
+    function runForgeBrainTest() {
+      const result = typeof window.run4orgePhraseTests === 'function' ? window.run4orgePhraseTests() : null;
+      if (!result) { $('brain-test-count').textContent = 'Unavailable'; return; }
+      $('brain-test-count').textContent = `${result.handled}/${result.total}`;
+      toast(`Phrase checks: ${result.handled} routed, ${result.fallback} fallback, ${result.errors} errors. This tests routing, not answer quality.`);
+    }
+    function exportForgeBrainGaps() {
+      const payload = { app: '4orge', exportedAt: new Date().toISOString(), offlineKnowledgeEntries: BRAIN.map(x => ({ title: x.t, keywords: x.k })), unansweredQuestions: loadForgeBrainGaps() };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a');
+      a.href = url; a.download = '4orge-brain-gaps.json'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    function clearForgeBrainGaps() {
+      if (!confirm('Clear the locally saved unanswered questions? This does not change your goals, budget, or other app data.')) return;
+      try { localStorage.removeItem(FORGE_GAPS_KEY); } catch (e) {}
+      renderForgeBrain(); toast('Saved knowledge gaps cleared.');
     }
 
 // ========== PERSONAL LAYOUT: LONG-PRESS TO REORDER ==========
@@ -3534,6 +3649,7 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
       if (e.button !== undefined && e.button !== 0) return;
       const el = e.target.closest('#punch-card, #bingo-card, #goals-list > *, #sk-list > *, #bud-bills > *, #bud-spending > *, #wallet-stack > .wcard');
       if (!el || !reorderCandidate(el)) return;
+      if (e.target.closest('input, textarea, select, button, a, [contenteditable="true"]')) return;
       if (el.closest('#goals-list, #sk-list, #bud-bills, #bud-spending, #wallet-stack') && el.classList.contains('hidden')) return;
       reorderPress = { el, x: e.clientX, y: e.clientY, pointerId: e.pointerId, timer: null, started: false };
       reorderPress.timer = setTimeout(() => {
@@ -3565,6 +3681,7 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
     document.addEventListener('pointerup', reorderStop, { passive: true });
     document.addEventListener('pointercancel', reorderStop, { passive: true });
     document.addEventListener('contextmenu', function(e) { if (e.target.closest('.reorder-ready')) e.preventDefault(); });
+    document.addEventListener('selectstart', function(e) { if (!e.target.closest('input, textarea, select, [contenteditable="true"]')) e.preventDefault(); });
     const reorderObserver = new MutationObserver(scheduleReorderRefresh);
     reorderObserver.observe(document.getElementById('views'), { childList: true, subtree: true });
     window.addEventListener('load', scheduleReorderRefresh);
