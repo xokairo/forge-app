@@ -342,12 +342,41 @@
 
 
     /* iOS-style long-press reordering */
-    .reorder-ready { touch-action: pan-y; }
-    .reorder-jiggle { touch-action: none; animation: forgeJiggle .16s ease-in-out infinite alternate; outline: 1px solid rgba(251,191,36,.42); cursor: grab; }
-    .reorder-dragging { opacity: .48; transform: scale(.98); }
-    .reorder-over { box-shadow: 0 0 0 2px rgba(251,191,36,.72), 0 8px 24px rgba(245,158,11,.12); }
+    .reorder-ready { touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+    .reorder-jiggle {
+      touch-action: none !important;
+      -webkit-user-select: none;
+      user-select: none;
+      animation: forgeJiggle .14s ease-in-out infinite alternate;
+      outline: 1px solid rgba(251,191,36,.5);
+      cursor: grabbing;
+    }
+    .reorder-dragging {
+      opacity: .55;
+      transform: scale(.97);
+      z-index: 40;
+      position: relative;
+    }
+    .reorder-over { box-shadow: 0 0 0 2px rgba(251,191,36,.8), 0 8px 24px rgba(245,158,11,.18); }
     .reorder-hint { position: fixed; z-index: 180; left: 50%; bottom: calc(78px + env(safe-area-inset-bottom)); transform: translateX(-50%); padding: 8px 12px; border-radius: 999px; background: rgba(20,20,27,.94); border: 1px solid rgba(255,255,255,.14); color: rgba(255,255,255,.8); font-size: 11px; pointer-events: none; opacity: 0; transition: opacity .18s; white-space: nowrap; }
     .reorder-hint.show { opacity: 1; }
+    html.reorder-lock,
+    html.reorder-lock body {
+      overflow: hidden !important;
+      touch-action: none !important;
+      overscroll-behavior: none !important;
+      -webkit-overflow-scrolling: auto !important;
+    }
+    html.reorder-lock #views,
+    html.reorder-lock .view,
+    html.reorder-lock [data-reorder-scope] {
+      touch-action: none !important;
+      overscroll-behavior: none !important;
+    }
+    @keyframes forgeJiggle {
+      from { transform: rotate(-1.1deg) scale(.97); }
+      to { transform: rotate(1.1deg) scale(.97); }
+    }
     @keyframes forgeJiggle { from { transform: rotate(-.45deg); } to { transform: rotate(.45deg); } }
 
 
@@ -2648,6 +2677,46 @@ bk(['50 30 20', '50/30/20', 'budget method', 'how to budget', 'budgeting', 'star
 - **Pay yourself first:** move savings out the day you get paid, spend the rest freely.
 - **Envelope/limits:** a fixed amount per category (food, gas, fun) and stop when it's gone. That's what your Forge **spending plans** do.
 Tip: first track real spending for 2 weeks before judging yourself. Most people are off by a lot.`, ['Split my paycheck', 'How do I stop overspending?']);
+bk(['how much should go to needs', 'how much to needs', 'percent to needs', 'percentage to needs', '50% needs', '50 percent needs', 'go to needs', 'needs percentage', 'needs vs wants', 'needs and wants', 'money to needs', 'should go to needs', 'how much needs', 'what percent needs', 'what percentage needs', 'portion to needs', 'share to needs', 'allocate to needs', 'budget for needs'], 'How much should go to needs', () => {
+  let e = null; try { e = earnings(); } catch (x) {}
+  const base = e && e.earned > 0 ? e.earned : null;
+  let s = `A common starting split is the **50/30/20** rule:
+
+- **~50% to needs** — rent/housing, utilities, groceries, transport, insurance, minimum debt payments, and anything required to keep life running
+- **~30% to wants** — eating out, subscriptions for fun, shopping, entertainment
+- **~20% to savings and extra debt payments**
+
+**Needs** means: if you stopped paying it, life or work breaks soon (housing, food, getting to work, required insurance, minimums on debt).
+
+**Wants** are flexible: streaming, extra food delivery, new clothes when you already have enough.
+
+If rent alone eats more than 50% (common in expensive cities), the rule flexes — cover true needs first, shrink wants, and keep *any* savings habit going, even small.
+
+In Forge: put true needs in **Must pay** bills with due dates, put flexible categories in **spending plans**, and route leftover into **goals**.`;
+  if (base) s += `\n\nOn your current ~${fmt(base)} worked-so-far total, a 50/30/20 sketch is about **${fmt(base * 0.5)} needs**, **${fmt(base * 0.3)} wants**, **${fmt(base * 0.2)} savings** (gross estimate — take-home is lower after taxes).`;
+  s += `\n\nNot personal financial advice — a planning rule of thumb. Adjust to your rent and bills.`;
+  return s;
+}, ['Split my paycheck', 'How do I manage subscriptions?', 'How do I budget?']);
+
+bk(['manage subscriptions', 'manage my subscriptions', 'subscription', 'subscriptions', 'cancel subscription', 'cancel subscriptions', 'cancel a sub', 'cancel one sub', 'recurring charge', 'recurring charges', 'streaming cost', 'too many subscriptions', 'cut subscriptions', 'subscription audit', 'monthly subscriptions'], 'How to manage subscriptions',
+`Subscriptions are easy to forget and they quietly eat wants (and sometimes needs) budget.
+
+**Do a 10-minute audit:**
+1. List every recurring charge (bank/Cash App/Chime statements + App Store/Google Play + card statements).
+2. Mark each: **keep**, **downgrade**, or **cancel**.
+3. Cancel anything you haven't used in 30 days.
+4. For "keep," note the monthly cost and whether it's a need (e.g. work tool) or a want (streaming, boxes).
+
+**Control them:**
+- Put all wants-subs under one spending plan in Forge so you see the monthly cap.
+- Prefer annual plans only if you already used the monthly version for months.
+- Set calendar reminders a week before free trials end.
+- After canceling, watch one more statement to confirm the charge is gone.
+
+**Rule of thumb:** if you can't name the last time you opened it, cancel. You can always resubscribe later.
+
+In Forge: log the total under a spending plan like "Subscriptions," and use the no-spend punch card on days you skip impulse upgrades.`, ['How much should go to needs?', 'How do I stop overspending?', 'Split my paycheck']);
+
 bk(['split paycheck', 'split my check', 'paycheck split', 'divide paycheck', 'what to do with paycheck', 'allocate paycheck', 'split my pay'], 'Splitting a paycheck', () => {
   let e = null; try { e = earnings(); } catch (x) {}
   const base = e && e.earned > 0 ? e.earned : null;
@@ -2799,6 +2868,147 @@ bk(['how use forge', 'what can you do', 'help', 'features', 'what can forge', 'h
 - **Home:** your cards (balances and savings held), reminders, streak.
 - **Me (4orge):** money questions. Ask me directly; I work offline using built-in guidance and your saved Forge numbers.`, ['How do streaks work?', 'Build credit']);
 
+
+// ---- EXPANDED OFFLINE Q&A (phrase-coverage growth, no online AI) ----
+bk(['grocery budget', 'groceries', 'food budget', 'plan a grocery', 'grocery shopping', 'spend on food', 'food cost', 'meal plan', 'meal prep', 'how much groceries'], 'Grocery budget',
+`Food is often the biggest flexible cost after rent.
+- Set a **weekly** grocery number (easier than monthly).
+- Shop from a list; eat before you go.
+- Build 5–7 default meals you can cook without a recipe.
+- Generic brands, frozen veg, and bulk rice/beans cut cost without feeling punished.
+- Track delivery/takeout separate from groceries — they are usually wants.
+In Forge: make a spending plan called Groceries and punch no-spend days when you cook at home.`, ['How do I stop overspending?', 'How much should go to needs?']);
+
+bk(['track spending', 'track my spending', 'where does my money go', 'spending tracker', 'how to track', 'monitor spending', 'see where money goes'], 'How to track spending',
+`You can't fix what you don't see.
+1. Pick one place of truth (Forge spending plans + your main bank).
+2. For 2 weeks, log every outflow into a few buckets: needs, wants, debt, savings.
+3. Don't judge the first week — just collect data.
+4. Then set caps only on the 2–3 categories that actually hurt.
+Forge spending plans are those caps. Bills with due dates cover the fixed stuff.`, ['How do I stop overspending?', 'Plan my check']);
+
+bk(['lifestyle creep', 'raise lifestyle', 'spend more when i earn more', 'upgrade lifestyle', 'scope creep money'], 'Lifestyle creep',
+`Lifestyle creep is when every raise disappears into a slightly nicer normal.
+Countermeasures:
+- On a raise, auto-route **half** (or more) to savings/debt before you see it.
+- Keep last month's spending caps for 30 days after income goes up.
+- Upgrade one thing on purpose, not five by accident.
+In Forge: leave spending plans unchanged when hours/pay rise; put the extra into a goal.`, ['What to do with a windfall', 'Savings habits']);
+
+bk(['sinking fund', 'sinking funds', 'save for irregular', 'annual bills', 'car registration', 'save for christmas'], 'Sinking funds',
+`A **sinking fund** is saving a little each check for a known future bill (tires, Christmas, car registration, insurance annual).
+Math: cost ÷ number of checks until due = amount to set aside each payday.
+In Forge: make a goal per sinking fund, or one "Irregular bills" goal, and use paycheck plans so it leaves automatically.`, ['Saving toward a goal', 'Plan my check']);
+
+bk(['order of operations', 'financial priority', 'what to pay first', 'money priority', 'should i save or pay debt', 'save or invest first', 'priority money'], 'Money order of operations',
+`A practical order most people can use:
+1. **Cover true needs** (housing, utilities, food, transport, insurance, minimum debt payments)
+2. **Tiny emergency buffer** ($500–$1,000) so one surprise doesn't become debt
+3. **High-interest debt** (especially credit cards) harder than "investing" while paying 20%+ interest
+4. **Employer 401(k) match** if you have one — free money
+5. **Build 3–6 months expenses** in savings
+6. **Then** invest long-term (IRA/index funds) and sink funds for goals
+Your order can shift, but needs and minimums always come before lifestyle upgrades.`, ['Emergency fund', 'Debt payoff methods', 'Starting to invest']);
+
+bk(['take home pay', 'net pay', 'after taxes', 'why is my check less', 'gross vs net', 'deductions'], 'Gross vs take-home pay',
+`**Gross** is before taxes and deductions. **Net / take-home** is what hits your account.
+Typical pulls: federal income tax, Social Security, Medicare, state tax (if any), health premiums, 401(k).
+Forge "on my way to" is an estimate from hours × rate (and OT rules) — it is closer to gross unless you adjust. Plan bills against **what actually deposits**, not the headline rate × hours.`, ['How much will my check be?', 'Tax tips for W-2 jobs']);
+
+bk(['overtime', 'ot pay', 'time and a half', 'how does overtime work', 'overtime hours'], 'How overtime works',
+`For many hourly jobs in the US, overtime is **1.5×** your regular rate after **40 hours in a workweek** (employer workweek rules vary).
+Some roles are exempt. Tips, differentials, and premiums can change the math.
+In Forge, hourly jobs apply weekly OT automatically after 40h when calculating "on my way to."`, ['How much will my check be?', 'Budgeting on irregular income']);
+
+bk(['payday prep', 'prepare for payday', 'before payday', 'day before payday', 'when i get paid'], 'Payday prep',
+`The day before payday:
+1. Open Budget — note due-dated bills and remaining spending plans
+2. Decide the goal deposit **before** lifestyle spending
+3. On payday morning: move goal money first, then pay due bills, then spend from what's left
+That sequence beats "see what happens."`, ['Plan my check', 'Savings habits']);
+
+bk(['direct deposit', 'split deposit', 'deposit split', 'paycheck deposit'], 'Direct deposit splits',
+`Many employers/apps let you split deposits: e.g. $100 to savings, rest to checking.
+If available, use it — automation beats willpower.
+If not, same-day manual transfer to savings/goal works. Forge paycheck plans are the reminder checklist.`, ['Savings habits', 'Plan my check']);
+
+bk(['minimum payment', 'minimum payments', 'only pay minimum', 'min due'], 'Minimum payments trap',
+`Paying only the minimum keeps the account current but mostly pays interest. Balances shrink slowly.
+If you have extra: avalanche (highest interest first) or snowball (smallest balance first) beats minimums-only.
+Always pay at least the minimum on time — late fees and score damage cost more than the extra principal payment.`, ['Debt payoff methods', 'Credit card basics']);
+
+bk(['negotiate bill', 'lower bill', 'call and ask', 'discount bill', 'retention offer'], 'Negotiating bills',
+`For internet, phone, insurance:
+- Ask about retention/promotional rates before canceling
+- Compare one competitor quote first
+- Be polite, firm, ready to switch
+Annual insurance shop can save more than weekly coupon clipping. Put savings into a goal so it doesn't vanish.`, ['Spending less', 'Insurance basics']);
+
+bk(['credit vs debit', 'debit or credit', 'use credit card or debit'], 'Credit vs debit',
+`**Debit** spends your money now. **Credit** borrows until you pay the statement.
+If you pay credit **in full every month**, you can earn rewards and build payment history without interest.
+If you carry balances, credit becomes expensive debt — debit or cash may protect you better until habits are stable.`, ['Credit card basics', 'Build credit']);
+
+bk(['how interest works', 'loan interest', 'apr meaning', 'what is apr', 'interest on debt'], 'How loan interest works',
+`APR is the yearly cost of borrowing. On credit cards, interest usually accrues on unpaid balances after the grace period.
+Carrying $1,000 at ~20% APR costs on the order of ~$200/year if you never pay it down — and more if you only pay minimums.
+Paying principal early saves interest. That's why high-APR debt is priority after a small emergency buffer.`, ['Debt payoff methods', 'Credit card basics']);
+
+bk(['when to invest', 'should i invest', 'invest or save', 'ready to invest', 'invest while debt'], 'When to start investing',
+`A common sequence:
+1. Enough cash that a flat tire isn't a crisis
+2. Capture any **401(k) match**
+3. Attack high-interest debt
+4. Then invest monthly into broad index funds/IRAs for long-term goals (5+ years)
+Investing while paying 22% card interest is usually swimming upstream. Short-term needs stay in savings, not the market.`, ['Starting to invest', 'Emergency fund', 'Debt payoff methods']);
+
+bk(['build wealth', 'get rich', 'become wealthy', 'wealth building', 'generational wealth'], 'Building wealth basics',
+`Boring version that works for most people:
+- Spend less than you earn
+- Avoid high-interest debt
+- Automate savings/investing
+- Increase skills/income over time
+- Stay invested long enough for compounding
+There is no reliable shortcut. Consistency beats intensity.`, ['Savings habits', 'Compound interest', 'Earning more']);
+
+bk(['first bank account', 'open a bank', 'open bank account', 'which bank', 'choose a bank'], 'Choosing a bank account',
+`Look for: FDIC/NCUA insurance, low/no monthly fees, ATM access you actually use, and a savings rate that isn't tiny if you keep a balance.
+Many people use a checking account for spending + a high-yield savings account for emergency/goals.
+In Forge, track both as cards with balance and savings held.`, ['Banking and payment apps', 'Where to keep savings']);
+
+bk(['gas budget', 'transport budget', 'commute cost', 'uber budget', 'gas money'], 'Transport budget',
+`Commute costs add up: gas, maintenance, parking, rideshare.
+Cap rideshare as a spending plan. Batch trips. Carpool if possible.
+If Uber Eats driving is income, track **profit after gas**, not gross payouts.`, ['Budgeting on irregular income', 'Spending less']);
+
+bk(['impulse buying', 'impulse spend', 'fomo spending', 'scroll and buy', 'add to cart'], 'Impulse spending',
+`Slow the gap between urge and pay:
+- 24-hour rule on non-essentials
+- Remove saved cards from shopping apps
+- Unsubscribe marketing emails
+- No-spend punches in Forge turn "I didn't buy" into a visible streak
+If a purchase still matters tomorrow, it can fit a plan.`, ['Spending less', 'How to manage subscriptions']);
+
+bk(['what to do with a raise', 'got a raise', 'salary increase', 'hourly raise'], 'What to do with a raise',
+`Before lifestyle upgrades:
+1. Increase automatic savings/debt payments by part of the raise
+2. Keep old spending caps one month
+3. Then decide one intentional upgrade
+A raise that fully becomes new subscriptions is treadmill, not progress.`, ['Lifestyle creep', 'Savings habits']);
+
+bk(['plan grocery', 'how much food', 'food stamps', 'eat cheap', 'cheap meals'], 'Eating cheaper',
+`High-impact moves: cook staples in batches, limit delivery to a set number of times per week, water at home, and treat snacks as a budget line.
+A "cheap meals list" on your phone beats improvising hungry at 9pm.`, ['Grocery budget', 'Spending less']);
+
+bk(['financial goals', 'set financial goals', 'money goals', 'what goals should i have'], 'Setting money goals',
+`Good goals are specific: amount + date + why.
+Examples: $1,000 emergency by March; $800 trip by August; $0 credit card by December.
+In Forge: create the goal, set a paycheck plan, log deposits. Milestones beat vague "save more."`, ['Saving toward a goal', 'Emergency fund']);
+
+bk(['how does forge help', 'why use forge', 'what is forge for', 'point of this app'], 'Why Forge exists',
+`Forge is for turning hours → expected pay → bills/plans → savings goals, with streaks so consistency is visible.
+4orge answers from offline knowledge + your numbers — no account required for the brain to work on-device.`, ['What Forge can do', 'How streaks and levels work in Forge']);
+
 const BRAIN_JOKES = ["I told my wallet we needed to talk. It said it's going through a tough time.", "Budgeting tip: the best way to double your money is to fold it in half and put it back in your pocket.", "I'm on a seafood diet with my money. I see food, I spend money on it.", "My savings account and I are in a long-distance relationship. It's way too far from my debit card."];
 const BRAIN_SMALLTALK = [
   [/^(hi|hey|hello|yo|sup|what'?s up|whats up|wassup|howdy|hola|good (morning|afternoon|evening))\b[\s,!.]*(4orge|forge|bro|man|bud|dude|there|buddy)?[!. ]*$/i, () => "Hey! Ask me about your check, your bills, a goal, or any money question. Or try some math."],
@@ -2868,8 +3078,16 @@ function brainAnswer(q) {
   BRAIN.forEach(e => {
     let sc = 0;
     e.k.forEach(k => {
+      const kl = k.toLowerCase();
       const kt = bTok(k); if (!kt.length) return;
-      if (kt.every(t => qs.has(t))) { const v = kt.length * 2 + (qlow.includes(k.toLowerCase()) ? 1 : 0); if (v > sc) sc = v; }
+      // Full phrase in question is a strong hit
+      if (kl.length >= 6 && qlow.includes(kl)) { const v = kt.length * 3 + 4; if (v > sc) sc = v; return; }
+      if (kt.every(t => qs.has(t))) { const v = kt.length * 2 + (qlow.includes(kl) ? 1 : 0); if (v > sc) sc = v; }
+      // Soft: majority of multi-token key present
+      else if (kt.length >= 2) {
+        const hit = kt.filter(t => qs.has(t)).length;
+        if (hit >= Math.ceil(kt.length * 0.75)) { const v = hit + 1; if (v > sc) sc = v; }
+      }
     });
     if (sc > bs) { bs = sc; best = e; }
   });
@@ -2880,7 +3098,7 @@ function brainAnswer(q) {
   for (const [re, ans] of BRAIN_SMALLTALK) if (re.test(q.trim())) return { text: typeof ans === 'function' ? ans() : ans, chips: ['How much will my check be?', 'Plan my check', 'How do I build credit?'] };
   return null;
 }
-const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Credit:** building it, scores, reports, utilization, collections\n- **Saving and budgeting:** emergency fund, 50/30/20, paycheck splits, gig-income budgeting\n- **Debt:** payoff methods, payday loans, student loans\n- **Banking:** where to keep savings, IRAs, Chime/Cash App, scams\n- **Investing:** index funds, Roth vs Traditional, 401(k), HSA, stocks, crypto\n- **Taxes:** gig taxes, W-4, side income\n- **Big buys:** car, rent, insurance\n- **Your skills:** streaks, \"did I work out today?\", what to practice, building habits\n- **Math:** try \"save $1,200 in 16 weeks\" or \"invest $100 a month for 20 years at 7%\"";
+const BRAIN_TOPICS = "Here's what I know offline (no internet needed):\n- **Credit:** building it, scores, reports, utilization, collections, credit vs debit\n- **Saving & budgeting:** emergency fund, 50/30/20, needs vs wants, paycheck splits, groceries, subscriptions, sinking funds, lifestyle creep\n- **Debt:** payoff methods, minimums trap, interest, payday loans, student loans\n- **Banking:** HYSA, IRAs, Chime/Cash App, fees, scams\n- **Investing:** when to start, index funds, Roth vs Traditional, 401(k), HSA\n- **Taxes & pay:** gig taxes, W-4, gross vs take-home, overtime\n- **Goals:** trips, car, housing, payday prep, raises, impulse spending\n- **Your Forge data:** checks, bills, goals, streaks, affordability math\n- **Math:** try \"save $800 for a trip in 10 weeks\" or \"invest $100 a month for 20 years at 7%\"";
 
 
     // ========== 4ORGE COACH: math, dates, and answers from YOUR Forge data ==========
@@ -3344,6 +3562,101 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
       return { text: `Your skills:\n` + state.skills.map(x => '- ' + lines(x)).join('\n'), chips: ['What should I practice today?', 'Did I practice today?'] };
     }
 
+
+    function goalCoachReply(q, s, c) {
+      const wantsSave = /(start )?(saving|save)|put (money|cash) (aside|away)|set aside|build (up )?savings|fund|pay for|get ready for|prepare for|money for|budget for/.test(s);
+      const action = /(what should i do|how (do|can|should) i|help me|how to|tips? (to|for)|plan (to|for)|based on)/.test(s) || wantsSave;
+      if (!action && !wantsSave) return null;
+      const targets = [
+        [/trip|travel|vacation|holiday|flight|getaway|cruise/, 'trip', 'a trip'],
+        [/car|vehicle|down payment on (a )?car|auto/, 'car', 'a car'],
+        [/house|home|apartment|rent deposit|moving|move out|first place/, 'housing', 'housing / moving'],
+        [/wedding|engagement/, 'wedding', 'a wedding'],
+        [/emergency|rainy day|safety net/, 'emergency', 'an emergency fund'],
+        [/laptop|phone|computer|pc|console|ps5|xbox/, 'gear', 'that purchase'],
+        [/school|tuition|course|certification|bootcamp/, 'education', 'school / training'],
+        [/debt|pay\s*off|credit card balance/, 'debt', 'debt payoff'],
+        [/christmas|holiday gifts|birthday gifts|\bgifts\b/, 'gifts', 'gifts'],
+        [/business|side hustle|inventory|equipment/, 'business', 'a business cost']
+      ];
+      let kind = null, label = null;
+      for (let i = 0; i < targets.length; i++) {
+        if (targets[i][0].test(s)) { kind = targets[i][1]; label = targets[i][2]; break; }
+      }
+      if (!kind && /(coming up|upcoming|based on|for (my|a|the) |toward|towards)/.test(s) && wantsSave) {
+        kind = 'goal'; label = 'that goal';
+      }
+      if (!kind && !wantsSave) return null;
+      if (!kind) { kind = 'goal'; label = 'your goal'; }
+      const amts = (typeof amountsIn === 'function') ? amountsIn(q) : [];
+      const targetAmt = amts.length ? amts[0] : null;
+      let weeks = null;
+      const mWeeks = s.match(/(\d+)\s*(weeks?|wks?)/);
+      const mMonths = s.match(/(\d+)\s*(months?|mos?)/);
+      const mDays = s.match(/(\d+)\s*(days?)/);
+      if (mWeeks) weeks = +mWeeks[1];
+      else if (mMonths) weeks = +mMonths[1] * 4;
+      else if (mDays) weeks = Math.max(1, Math.round(+mDays[1] / 7));
+      else if (/next week|this week/.test(s)) weeks = 1;
+      else if (/next month|this month/.test(s)) weeks = 4;
+      else if (/in a year|this year|next year/.test(s)) weeks = 52;
+      const unalloc = c && c.unalloc > 0 ? c.unalloc : 0;
+      const earned = c && c.earned > 0 ? c.earned : 0;
+      const goals = (state.goals || []);
+      let existing = null;
+      if (kind === 'trip') existing = goals.find(g => /trip|travel|vacation|holiday/i.test(g.name || ''));
+      else if (kind === 'car') existing = goals.find(g => /car|auto|vehicle/i.test(g.name || ''));
+      else if (kind === 'emergency') existing = goals.find(g => /emergency|rainy/i.test(g.name || ''));
+      const lines = [];
+      lines.push("Here's a practical plan to start saving for **" + label + "**" + (targetAmt ? " (~" + fmt(targetAmt) + ")" : "") + ".");
+      lines.push("");
+      lines.push("**1. Make the target real**");
+      if (existing) {
+        const left = Math.max(0, (existing.target || 0) - goalCurrent(existing));
+        lines.push("You already have a goal **" + existing.name + "** at " + fmt(goalCurrent(existing)) + " / " + fmt(existing.target) + " (" + Math.round(goalPct(existing)) + "%). About **" + fmt(left) + "** left.");
+      } else {
+        const gname = kind === 'trip' ? 'Trip' : kind === 'car' ? 'Car fund' : kind === 'emergency' ? 'Emergency fund' : 'Savings goal';
+        lines.push('In **Goals**, add something like "' + gname + '"' + (targetAmt ? ' with target **' + fmt(targetAmt) + '**' : ' with your best cost estimate') + '. A named goal beats a vague intention.');
+      }
+      lines.push("");
+      lines.push("**2. Pick a pace**");
+      const goalTarget = targetAmt || (existing ? Math.max(0, existing.target - goalCurrent(existing)) : null);
+      if (goalTarget && weeks) {
+        const perWeek = goalTarget / weeks;
+        const perCheck = perWeek * 2;
+        lines.push("With ~**" + weeks + " week" + (weeks === 1 ? "" : "s") + "** and **" + fmt(goalTarget) + "** to go:");
+        lines.push("- About **" + fmt(perWeek) + "/week** or **~" + fmt(perCheck) + " per biweekly check**");
+      } else if (goalTarget) {
+        lines.push("Without a date yet, try these paces for **" + fmt(goalTarget) + "**:");
+        [4, 8, 12, 26].forEach(function(n) { lines.push("- " + n + " checks: **" + fmt(goalTarget / n) + "** each"); });
+        lines.push("If it's soon, use fewer checks. If it's flexible, stretch it.");
+      } else {
+        lines.push("Estimate the total, then divide by the number of paychecks before you need the money. That is your per-check auto-move.");
+      }
+      lines.push("");
+      lines.push("**3. Use this check first**");
+      if (unalloc > 0) {
+        lines.push("After due-dated bills and spending plans, you have about **" + fmt(unalloc) + "** unassigned this period. Route part of that into the " + label + " goal on payday.");
+      } else if (earned > 0) {
+        lines.push("Your worked-so-far total is ~**" + fmt(earned) + "**. After bills with due dates and spending caps, anything left can go toward " + label + ".");
+      } else {
+        lines.push("Log hours and set due dates on bills so I can show how much of each check is free for " + label + ".");
+      }
+      lines.push("");
+      lines.push("**4. Lock the habit**");
+      lines.push("- On payday: move the goal amount **before** discretionary spending");
+      lines.push("- Park it in a separate savings pocket (or savings held on a card in Forge)");
+      lines.push("- Use **no-spend punches** on days you'd normally bleed small cash");
+      if (kind === 'trip') lines.push("- Add a 10–15% buffer for fees, bags, and food so the fund isn't emptied day one");
+      lines.push("");
+      lines.push('Tell me **the total cost** and **when you need the money** (e.g. "save $800 for a trip in 10 weeks") and I\'ll tighten the numbers.');
+      return {
+        text: lines.join("\n"),
+        chips: existing ? ["How am I doing?", "Plan my check", "Which goal first?"] : ["Plan my check", "How much should I save?", "Emergency fund"]
+      };
+    }
+
+
     function coachReply(q) {
       const s = q.toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim(); if (!s) return null;
       const c = cx(); let r;
@@ -3351,6 +3664,7 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
       if ((r = dateReply(q))) return r;
       // skills / hobbies
       if ((r = skillsReply(q, s, c))) return r;
+      if ((r = goalCoachReply(q, s, c))) return r;
       // money stress
       if (/(i'?m|im|i am|feel(ing)?|so|really) (broke|struggling|stressed|screwed|behind)|no money|out of money|can'?t (pay|afford) (my )?(bills|rent)|run(ning)? out of money|living paycheck to paycheck|paycheck to paycheck|drowning in|overwhelmed/.test(s)) return stressReply(c);
       // open-ended "do better / improve / based on my stats" advice
@@ -3483,8 +3797,26 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
       r = brainAnswer(q); if (r) return r;
       if (isStatsQ(q) && /\b(my|i|me)\b/i.test(q)) return { text: forgeReply(q), chips: ['What can you answer?'] };
       if (/\b(my|me|i|i'm|im)\b/i.test(q) && /(money|spend|save|saving|budget|check|pay|income|bills?|goals?|hours|earn|cash|broke|debt|stats|numbers|finances)/i.test(q)) { try { const ar = adviceReply(cx(), q.toLowerCase()); if (ar) return { text: "I didn't catch the exact question, so here's a read on your own numbers:\n\n" + ar.text, chips: ar.chips }; } catch (e) {} }
+      try {
+        const c2 = cx();
+        const gr = goalCoachReply(q0, String(q0 || '').toLowerCase(), c2);
+        if (gr) return gr;
+      } catch (e) {}
+      try {
+        const ar = adviceReply(cx(), String(q0 || '').toLowerCase());
+        if (ar && ar.text) return { text: "I didn't match that exactly, so here's guidance from your Forge numbers:\n\n" + ar.text, chips: ar.chips || ['Plan my check'] };
+      } catch (e) {}
+      try {
+        const c2 = cx();
+        const gr = goalCoachReply(q0, String(q0 || '').toLowerCase(), c2);
+        if (gr) return gr;
+      } catch (e) {}
+      try {
+        const ar = adviceReply(cx(), String(q0 || '').toLowerCase());
+        if (ar && ar.text) return { text: "I didn't match that exactly, so here's guidance from your Forge numbers:\n\n" + ar.text, chips: ar.chips || ['Plan my check'] };
+      } catch (e) {}
       saveForgeBrainGap(q0);
-      return { text: "I don't have a built-in answer for that one yet, and I'd rather say so than guess.\n\n" + BRAIN_TOPICS + "\n\nI saved this question locally in my Brain's knowledge gaps so it can be reviewed and used to improve my offline answers.", chips: ['How much will my check be?', 'Plan my check', 'How do I build credit?'] };
+      return { text: "I don't have a built-in answer for that exact question yet — I work offline from a fixed knowledge map plus your Forge data (checks, bills, goals, streaks).\n\nTry asking in terms of a goal or your numbers, for example:\n• \"What should I do to start saving for a trip?\"\n• \"Plan my check\"\n• \"Can I afford $80?\"\n• \"How do I build credit?\"\n\nI saved this in Brain → Unanswered so we can expand offline knowledge from real gaps.", chips: ['What should I do to start saving for a trip?', 'Plan my check', 'How do I build credit?'] };
     }
     function sendForgeChat() {
       const q = ($('forge-input').value || '').trim(); if (!q || brainBusy) return;
@@ -3565,6 +3897,9 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
     reorderHint.className = 'reorder-hint';
     reorderHint.textContent = 'Drag to reorder · release to save';
     document.body.appendChild(reorderHint);
+
+    const REORDER_SEL = '#punch-card, #bingo-card, #goals-list > [data-reorder-key], #sk-list > [data-reorder-key], #bud-bills > [data-reorder-key], #bud-spending > [data-reorder-key], #wallet-stack > .wcard';
+
     function reorderKey(el) {
       if (!el) return '';
       if (el.dataset.reorderKey) return el.dataset.reorderKey;
@@ -3574,17 +3909,35 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
     function reorderSave(scope) {
       const box = document.querySelector('[data-reorder-scope="' + scope + '"]');
       if (!box) return;
-      reorderOrders[scope] = Array.from(box.children).map(reorderKey).filter(Boolean);
+      const keys = Array.from(box.children)
+        .filter(el => el.classList.contains('reorder-ready') || el.dataset.reorderKey || el.id === 'punch-card' || el.id === 'bingo-card')
+        .map(reorderKey)
+        .filter(Boolean);
+      if (!keys.length) return;
+      reorderOrders[scope] = keys;
       try { localStorage.setItem(REORDER_KEY, JSON.stringify(reorderOrders)); } catch (e) {}
     }
     function reorderApply(scope, box) {
       if (!box || !reorderOrders[scope] || !reorderOrders[scope].length) return;
       const wanted = reorderOrders[scope], children = Array.from(box.children);
-      const sorted = children.slice().sort((a, b) => {
+      const movable = children.filter(el => el.classList.contains('reorder-ready') || el.dataset.reorderKey);
+      if (!movable.length) return;
+      const sorted = movable.slice().sort((a, b) => {
         const ai = wanted.indexOf(reorderKey(a)), bi = wanted.indexOf(reorderKey(b));
         return (ai < 0 ? 9999 : ai) - (bi < 0 ? 9999 : bi);
       });
-      if (sorted.some((el, i) => el !== children[i])) sorted.forEach(el => box.appendChild(el));
+      // Re-insert only movable nodes relative to each other; leave fixed siblings alone
+      let anchor = null;
+      sorted.forEach(el => {
+        if (!anchor) {
+          // place first movable at its sorted position among original movables
+          const firstMov = children.find(c => movable.includes(c));
+          if (firstMov && el !== firstMov) box.insertBefore(el, firstMov);
+        } else if (anchor.nextElementSibling !== el) {
+          box.insertBefore(el, anchor.nextElementSibling);
+        }
+        anchor = el;
+      });
     }
     function refreshReorderTargets() {
       if (reorderActive) return;
@@ -3598,23 +3951,33 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
       ];
       targets.forEach(([scope, box, onlyIds]) => {
         if (!box) return;
-        // Home allows only the two challenge cards to move relative to each other.
         if (scope === 'home-challenges') {
           const a = document.getElementById('punch-card'), b = document.getElementById('bingo-card');
           if (!a || !b || a.parentElement !== b.parentElement) return;
           box.dataset.reorderScope = scope;
-          [a,b].forEach(el => { el.classList.add('reorder-ready'); el.dataset.reorderKey = el.id; });
-          const wanted = reorderOrders[scope] || ['punch-card','bingo-card'];
-          const current = [a,b].sort((x,y) => x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
-          const sorted = current.slice().sort((x,y) => wanted.indexOf(x.id) - wanted.indexOf(y.id));
-          // Insert only within their original adjacent challenge-card slots.
-          if (sorted[0] !== current[0]) box.insertBefore(sorted[0], sorted[1]);
+          [a, b].forEach(el => { el.classList.add('reorder-ready'); el.dataset.reorderKey = el.id; });
+          const wanted = reorderOrders[scope] || ['punch-card', 'bingo-card'];
+          const order = [a, b].sort((x, y) => {
+            const pos = x.compareDocumentPosition(y);
+            return pos & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+          });
+          const sorted = [a, b].slice().sort((x, y) => wanted.indexOf(x.id) - wanted.indexOf(y.id));
+          if (sorted[0] !== order[0]) {
+            // swap the two challenge cards only
+            if (order[0].nextElementSibling === order[1]) box.insertBefore(order[1], order[0]);
+            else box.insertBefore(sorted[0], sorted[1]);
+          }
           return;
         }
         box.dataset.reorderScope = scope;
         Array.from(box.children).forEach(el => {
           if (el.classList.contains('hidden') || el.classList.contains('wc-ghost')) return;
+          // Skills / goals lists: every direct card is movable; Lifetime Saved / Today Tracker live outside these lists
           el.classList.add('reorder-ready');
+          if (!el.dataset.reorderKey) {
+            // stable key if render already set one
+            if (el.getAttribute('data-reorder-key')) el.dataset.reorderKey = el.getAttribute('data-reorder-key');
+          }
         });
         reorderApply(scope, box);
       });
@@ -3626,71 +3989,248 @@ const BRAIN_TOPICS = "Here's what I know without needing the internet:\n- **Cred
     function reorderCandidate(el) {
       if (!el) return false;
       if (el.id === 'punch-card' || el.id === 'bingo-card') return true;
-      return !!(el.parentElement && ['goals','skills','budget-bills','budget-spending','wallet'].includes(el.parentElement.dataset.reorderScope));
+      return !!(el.parentElement && ['goals', 'skills', 'budget-bills', 'budget-spending', 'wallet'].includes(el.parentElement.dataset.reorderScope));
     }
     function reorderScopeOf(el) {
+      if (!el) return null;
       if (el.id === 'punch-card' || el.id === 'bingo-card') return 'home-challenges';
       return el.parentElement && el.parentElement.dataset.reorderScope;
     }
-    function reorderStop() {
+    function reorderClearVisual() {
+      document.querySelectorAll('.reorder-over').forEach(n => n.classList.remove('reorder-over'));
+      document.querySelectorAll('.reorder-jiggle, .reorder-dragging').forEach(n => {
+        n.classList.remove('reorder-jiggle', 'reorder-dragging');
+        n.style.pointerEvents = '';
+        n.style.zIndex = '';
+        n.style.transition = '';
+      });
+    }
+    function reorderStop(e) {
       if (reorderPress && reorderPress.timer) clearTimeout(reorderPress.timer);
+      const wasActive = reorderActive;
+      const press = reorderPress;
       reorderPress = null;
-      if (reorderActive) {
-        const el = reorderActive;
-        el.classList.remove('reorder-dragging','reorder-jiggle');
-        document.querySelectorAll('.reorder-over').forEach(n => n.classList.remove('reorder-over'));
-        const scope = reorderScopeOf(el);
+      if (wasActive) {
+        try {
+          if (press && press.pointerId != null) wasActive.releasePointerCapture(press.pointerId);
+        } catch (err) {}
+        const scope = reorderScopeOf(wasActive);
+        reorderClearVisual();
         if (scope) reorderSave(scope);
         reorderActive = null;
         reorderHint.classList.remove('show');
+        if (typeof reorderUnlockScroll === 'function') reorderUnlockScroll();
+        else document.documentElement.classList.remove('reorder-lock');
       }
     }
-    document.addEventListener('pointerdown', function(e) {
+    function reorderActivate(el, pointerId) {
+      if (!el || reorderActive) return;
+      reorderActive = el;
+      if (reorderPress) reorderPress.started = true;
+      el.classList.add('reorder-jiggle', 'reorder-dragging');
+      el.style.zIndex = '40';
+      // Hard lock page scroll (iOS-friendly): freeze body position
+      const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      document.documentElement.classList.add('reorder-lock');
+      document.body.dataset.reorderScrollY = String(scrollY);
+      document.body.style.position = 'fixed';
+      document.body.style.top = '-' + scrollY + 'px';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      reorderHint.classList.add('show');
+      try { if (pointerId != null) el.setPointerCapture(pointerId); } catch (err) {}
+      try { if (navigator.vibrate) navigator.vibrate(28); } catch (err) {}
+    }
+    function reorderUnlockScroll() {
+      document.documentElement.classList.remove('reorder-lock');
+      const y = parseInt(document.body.dataset.reorderScrollY || '0', 10) || 0;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      delete document.body.dataset.reorderScrollY;
+      window.scrollTo(0, y);
+    }
+    function reorderFindOver(clientX, clientY, active) {
+      const prev = active.style.pointerEvents;
+      active.style.pointerEvents = 'none';
+      const hit = document.elementFromPoint(clientX, clientY);
+      active.style.pointerEvents = prev;
+      if (!hit) return null;
+      return hit.closest(REORDER_SEL);
+    }
+    function reorderSwapHome(active, over) {
+      if (!((active.id === 'punch-card' && over.id === 'bingo-card') || (active.id === 'bingo-card' && over.id === 'punch-card'))) return;
+      const parent = active.parentElement;
+      if (!parent || parent !== over.parentElement) return;
+      const aNext = active.nextElementSibling;
+      const oNext = over.nextElementSibling;
+      if (aNext === over) parent.insertBefore(over, active);
+      else if (oNext === active) parent.insertBefore(active, over);
+      else {
+        parent.insertBefore(active, oNext);
+        parent.insertBefore(over, aNext);
+      }
+    }
+    function reorderPlace(active, over, clientY) {
+      if (!active || !over || active === over) return;
+      const scopeA = reorderScopeOf(active), scopeB = reorderScopeOf(over);
+      if (!scopeA || scopeA !== scopeB) return;
+      if (active.parentElement !== over.parentElement) return;
+      if (scopeA === 'home-challenges') {
+        reorderSwapHome(active, over);
+        document.querySelectorAll('.reorder-over').forEach(n => n.classList.remove('reorder-over'));
+        over.classList.add('reorder-over');
+        return;
+      }
+      document.querySelectorAll('.reorder-over').forEach(n => n.classList.remove('reorder-over'));
+      over.classList.add('reorder-over');
+      const rect = over.getBoundingClientRect();
+      const after = clientY > rect.top + rect.height / 2;
+      const box = over.parentElement;
+      if (after) {
+        if (over.nextElementSibling !== active) box.insertBefore(active, over.nextElementSibling);
+      } else {
+        if (active.nextElementSibling !== over) box.insertBefore(active, over);
+      }
+    }
+    // While dragging near top/bottom of the scrollable view, nudge that section (iOS-style edge scroll)
+    function reorderEdgeScroll(clientY) {
+      if (!reorderActive) return;
+      const view = reorderActive.closest('.view') || document.getElementById('views') || document.scrollingElement;
+      if (!view) return;
+      const rect = view.getBoundingClientRect ? view.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+      const edge = 56;
+      let dy = 0;
+      if (clientY < rect.top + edge) dy = -Math.min(18, (rect.top + edge - clientY) * 0.35);
+      else if (clientY > rect.bottom - edge) dy = Math.min(18, (clientY - (rect.bottom - edge)) * 0.35);
+      if (!dy) return;
+      // Prefer scrolling the main app scroller; body is fixed so scroll the views container if it scrolls
+      const scroller = document.getElementById('views') || view;
+      if (scroller && scroller.scrollHeight > scroller.clientHeight) scroller.scrollTop += dy;
+      else window.scrollBy(0, dy);
+    }
+
+    document.addEventListener('pointerdown', function (e) {
       if (e.button !== undefined && e.button !== 0) return;
-      const el = e.target.closest('#punch-card, #bingo-card, #goals-list > *, #sk-list > *, #bud-bills > *, #bud-spending > *, #wallet-stack > .wcard');
+      if (reorderActive) return;
+      const el = e.target.closest(REORDER_SEL);
       if (!el || !reorderCandidate(el)) return;
       if (e.target.closest('input, textarea, select, button, a, [contenteditable="true"]')) return;
-      if (el.closest('#goals-list, #sk-list, #bud-bills, #bud-spending, #wallet-stack') && el.classList.contains('hidden')) return;
-      reorderPress = { el, x: e.clientX, y: e.clientY, pointerId: e.pointerId, timer: null, started: false };
-      reorderPress.timer = setTimeout(() => {
+      reorderPress = {
+        el,
+        x: e.clientX,
+        y: e.clientY,
+        pointerId: e.pointerId,
+        timer: null,
+        started: false
+      };
+      reorderPress.timer = setTimeout(function () {
         if (!reorderPress || reorderPress.el !== el) return;
-        reorderActive = el; reorderPress.started = true;
-        el.classList.add('reorder-jiggle');
-        reorderHint.classList.add('show');
-        try { if (navigator.vibrate) navigator.vibrate(25); } catch (e) {}
-      }, 520);
+        reorderActivate(el, e.pointerId);
+      }, 480);
     }, { passive: true });
-    document.addEventListener('pointermove', function(e) {
+
+    document.addEventListener('pointermove', function (e) {
       if (!reorderPress) return;
       if (!reorderPress.started) {
-        if (Math.abs(e.clientX - reorderPress.x) > 12 || Math.abs(e.clientY - reorderPress.y) > 12) {
-          clearTimeout(reorderPress.timer); reorderPress = null;
+        const dx = Math.abs(e.clientX - reorderPress.x), dy = Math.abs(e.clientY - reorderPress.y);
+        if (dx > 10 || dy > 10) {
+          clearTimeout(reorderPress.timer);
+          reorderPress = null;
         }
         return;
       }
-      const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('#punch-card, #bingo-card, #goals-list > *, #sk-list > *, #bud-bills > *, #bud-spending > *, #wallet-stack > .wcard');
-      if (!over || over === reorderActive || reorderScopeOf(over) !== reorderScopeOf(reorderActive)) return;
-      if (reorderActive.parentElement !== over.parentElement) return;
-      document.querySelectorAll('.reorder-over').forEach(n => n.classList.remove('reorder-over'));
-      over.classList.add('reorder-over');
-      const rect = over.getBoundingClientRect(), after = e.clientY > rect.top + rect.height / 2;
-      const box = over.parentElement;
-      if (after) { if (over.nextElementSibling !== reorderActive) box.insertBefore(reorderActive, over.nextElementSibling); }
-      else if (over !== reorderActive.nextElementSibling) box.insertBefore(reorderActive, over);
+      e.preventDefault();
+      if (e.pointerId != null && reorderPress.pointerId != null && e.pointerId !== reorderPress.pointerId) return;
+      reorderEdgeScroll(e.clientY);
+      const over = reorderFindOver(e.clientX, e.clientY, reorderActive);
+      if (!over) return;
+      reorderPlace(reorderActive, over, e.clientY);
+    }, { passive: false });
+
+    // Extra iOS safety: block any touchmove while dragging (prevents rubber-band scroll)
+    document.addEventListener('touchmove', function (e) {
+      if (!reorderActive) return;
+      e.preventDefault();
+      const t = e.touches && e.touches[0];
+      if (!t || !reorderActive) return;
+      reorderEdgeScroll(t.clientY);
+      const over = reorderFindOver(t.clientX, t.clientY, reorderActive);
+      if (over) reorderPlace(reorderActive, over, t.clientY);
+    }, { passive: false });
+
+    // Patch reorderStop to unlock scroll — replace body of existing function by redefining
+    // (reorderStop is defined earlier; we override behavior via wrapping after unlock helper exists)
+
+    document.addEventListener('pointerup', function (e) {
+      if (reorderPress && reorderPress.timer) clearTimeout(reorderPress.timer);
+      const wasActive = reorderActive;
+      const press = reorderPress;
+      reorderPress = null;
+      if (wasActive) {
+        try {
+          if (press && press.pointerId != null) wasActive.releasePointerCapture(press.pointerId);
+        } catch (err) {}
+        const scope = reorderScopeOf(wasActive);
+        reorderClearVisual();
+        if (scope) reorderSave(scope);
+        reorderActive = null;
+        reorderHint.classList.remove('show');
+        reorderUnlockScroll();
+      }
     }, { passive: true });
-    document.addEventListener('pointerup', reorderStop, { passive: true });
-    document.addEventListener('pointercancel', reorderStop, { passive: true });
-    document.addEventListener('contextmenu', function(e) { if (e.target.closest('.reorder-ready')) e.preventDefault(); });
-    document.addEventListener('selectstart', function(e) { if (!e.target.closest('input, textarea, select, [contenteditable="true"]')) e.preventDefault(); });
+    document.addEventListener('pointercancel', function (e) {
+      if (reorderPress && reorderPress.timer) clearTimeout(reorderPress.timer);
+      const wasActive = reorderActive;
+      const press = reorderPress;
+      reorderPress = null;
+      if (wasActive) {
+        try {
+          if (press && press.pointerId != null) wasActive.releasePointerCapture(press.pointerId);
+        } catch (err) {}
+        const scope = reorderScopeOf(wasActive);
+        reorderClearVisual();
+        if (scope) reorderSave(scope);
+        reorderActive = null;
+        reorderHint.classList.remove('show');
+        reorderUnlockScroll();
+      }
+    }, { passive: true });
+    document.addEventListener('lostpointercapture', function (e) {
+      if (reorderActive && e.target === reorderActive) {
+        const scope = reorderScopeOf(reorderActive);
+        reorderClearVisual();
+        if (scope) reorderSave(scope);
+        reorderActive = null;
+        reorderPress = null;
+        reorderHint.classList.remove('show');
+        reorderUnlockScroll();
+      }
+    }, { passive: true });
+
+    document.addEventListener('contextmenu', function (e) {
+      if (e.target.closest('.reorder-ready, .reorder-jiggle')) e.preventDefault();
+    });
+    document.addEventListener('selectstart', function (e) {
+      if (reorderActive || reorderPress) {
+        if (!e.target.closest('input, textarea, select, [contenteditable="true"]')) e.preventDefault();
+      }
+    });
+
     const reorderObserver = new MutationObserver(scheduleReorderRefresh);
-    reorderObserver.observe(document.getElementById('views'), { childList: true, subtree: true });
+    const viewsEl = document.getElementById('views');
+    if (viewsEl) reorderObserver.observe(viewsEl, { childList: true, subtree: true });
     window.addEventListener('load', scheduleReorderRefresh);
     setTimeout(scheduleReorderRefresh, 80);
 
     // Offline phrase-coverage diagnostics: 40 topics x 10 openings x 20 endings = 8,000 prompts.
     window.run4orgePhraseTests = function() {
       const seeds = [
-        'How much will my paycheck be','How much did I earn','What bills are due','Can I afford this purchase','How do I save money','How do I build credit','What is a credit score','How do I pay off debt','What is an emergency fund','How do I start investing','What is a Roth IRA','How do taxes work for gig work','How do I budget','How much should I save','How do I stop overspending','How do savings goals work','How does my streak work','What can you do','Tell me a joke','How am I doing','How much is left in my budget','What is compound interest','How do I split my paycheck','How do I save for a car','What is a high yield savings account','How do I avoid scams','What is buy now pay later','How does overtime work','How do I plan for irregular income','How can I make extra money','What is a 401k','What is an HSA','How do I improve my finances','How do I save for rent','How do I manage subscriptions','How do I plan a grocery budget','How much should go to needs','What is the debt snowball','What is the debt avalanche','How do I prepare for payday'
+        'How much will my paycheck be','How much did I earn','What bills are due','Can I afford this purchase','How do I save money','How do I build credit','What is a credit score','How do I pay off debt','What is an emergency fund','How do I start investing','What is a Roth IRA','How do taxes work for gig work','How do I budget','How much should I save','How do I stop overspending','How do savings goals work','How does my streak work','What can you do','Tell me a joke','How am I doing','How much is left in my budget','What is compound interest','How do I split my paycheck','How do I save for a car','What is a high yield savings account','How do I avoid scams','What is buy now pay later','How does overtime work','How do I plan for irregular income','How can I make extra money','What is a 401k','What is an HSA','How do I improve my finances','How do I save for rent','How do I manage subscriptions','How do I plan a grocery budget','How much should go to needs','What is the debt snowball','What is the debt avalanche','How do I prepare for payday',
+        'What should I do to start saving for a trip','How do I save for a vacation','What is lifestyle creep','What is a sinking fund','Should I invest or pay debt first','What is the order of money priorities','Why is my take home less than gross','How does overtime pay work','What should I do on payday','How do I split direct deposit','Why are minimum payments bad','How do I negotiate a bill','Should I use credit or debit','How does loan interest work','When should I start investing','How do I build wealth','How do I choose a bank','How do I budget for gas','How do I stop impulse buying','What should I do with a raise','How do I eat cheaper','How do I set financial goals','How do I track my spending','Where does my money go','What is FOMO spending','How do I save for Christmas','Should I save or pay off debt'
       ];
       const starts = ['','Please tell me ','Can you explain ','Can you help me with ','I want to know ','Quick question: ','I need help understanding ','Could you tell me ','Help me figure out ','I am wondering '];
       const tails = ['',' please',' for me',' in simple terms',' step by step',' with an example',' and what should I do next',' and what should I avoid',' if I am new to this',' for my situation',' honestly',' without jargon',' in plain English',' when I get paid',' if my income changes',' if I have little money',' before I make a decision',' and give me a plan',' and ask me what you need to know',' and explain why'];
