@@ -1,13 +1,60 @@
-// Forge offline cache. Network first (so updates show up), cache as the fallback when offline.
-const CACHE = 'forge-offline-v1';
+// 4orge offline cache.
+// Network first, cached files as fallback when offline.
+
+const CACHE = '4orge-offline-v2';
 const FILES = ['./', 'index.html', 'forge-icon-v2.png'];
-self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES).catch(() => {})).then(() => self.skipWaiting())); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
-self.addEventListener('fetch', e => {
-  const r = e.request;
-  if (r.method !== 'GET' || new URL(r.url).origin !== location.origin) return;
-  e.respondWith(
-    fetch(r).then(res => { if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(r, copy)); } return res; })
-      .catch(() => caches.match(r).then(m => m || caches.match('index.html') || caches.match('./')))
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE)
+      .then(cache => cache.addAll(FILES).catch(() => {}))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys =>
+        Promise.all(
+          keys
+            .filter(key => key !== CACHE)
+            .map(key => caches.delete(key))
+        )
+      )
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', event => {
+  const request = event.request;
+
+  if (
+    request.method !== 'GET' ||
+    new URL(request.url).origin !== location.origin
+  ) {
+    return;
+  }
+
+  event.respondWith(
+    fetch(request)
+      .then(response => {
+        if (response && response.ok) {
+          const copy = response.clone();
+
+          caches.open(CACHE)
+            .then(cache => cache.put(request, copy));
+        }
+
+        return response;
+      })
+      .catch(() =>
+        caches.match(request)
+          .then(cached =>
+            cached ||
+            caches.match('index.html') ||
+            caches.match('./')
+          )
+      )
   );
 });
